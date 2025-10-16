@@ -4,6 +4,8 @@ import controller.worker.ConvertImageListSwingWorker;
 import dto.ConvertImageRequestDTO;
 import dto.GUIControllerComponentsDTO;
 import dto.ImageFormatDTO;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import service.ImageConverterFacadeService;
 import service.impl.ImageConverterFacadeServiceImpl;
 import util.FileSystemSupportGuiUtil;
@@ -14,6 +16,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class GuiController {
+    private static final Logger log = LogManager.getLogger(GuiController.class);
+
     private final JTextField sourceDirectoryTextField;
     private final JButton chooseSourceDirectoryButton;
     private final JList<String> sourceDirectoryFilesList;
@@ -99,15 +103,17 @@ public class GuiController {
                         .fileImageList(fileImageListToConvert)
                         .destinationDirectory(destinationPath)
                         .imageFormat(targetFormat)
-                        .errorListJList(errorsJList)
+                        .errorListJPanel(errorListPanel)
                         .enableUI(this::enableUI)
                         .frame(frame)
+                        .errorListJList(errorsJList)
                         .build();
 
                 new ConvertImageListSwingWorker(guiControllerInput)
                         .execute();
 
             } catch (Exception ex) {
+                log.error(ex);
                 throw new RuntimeException(ex);
             }
         });
@@ -121,7 +127,6 @@ public class GuiController {
         convertButton.setEnabled(enableFlag);
         targetFileFormatComboBox.setEnabled(enableFlag);
 
-        errorListPanel.setVisible(enableFlag);
         frame.pack();
     }
 

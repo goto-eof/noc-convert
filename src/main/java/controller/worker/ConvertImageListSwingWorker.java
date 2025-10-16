@@ -2,6 +2,8 @@ package controller.worker;
 
 import dto.ConvertImageRequestDTO;
 import dto.ImageConversionResultDTO;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import service.ImageConverterFacadeService;
 import service.impl.ImageConverterFacadeServiceImpl;
 
@@ -10,11 +12,14 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class ConvertImageListSwingWorker extends SwingWorker<List<String>, Void> {
+    private static final Logger log = LogManager.getLogger(ConvertImageListSwingWorker.class);
+
     private final ImageConverterFacadeService imageConverterFacadeService;
     private final List<String> fileImageList;
     private final String destinationDirectory;
     private final String imageFormat;
 
+    private final JPanel errorListJPanel;
     private final JList<String> errorListJList;
     private final Consumer<Boolean> enableUI;
     private final JFrame frame;
@@ -25,9 +30,10 @@ public class ConvertImageListSwingWorker extends SwingWorker<List<String>, Void>
         this.fileImageList = convertImageRequestDTO.fileImageList();
         this.destinationDirectory = convertImageRequestDTO.destinationDirectory();
         this.imageFormat = convertImageRequestDTO.imageFormat();
-        this.errorListJList = convertImageRequestDTO.errorListJList();
+        this.errorListJPanel = convertImageRequestDTO.errorListJPanel();
         this.enableUI = convertImageRequestDTO.enableUI();
         this.frame = convertImageRequestDTO.frame();
+        this.errorListJList = convertImageRequestDTO.errorListJList();
     }
 
     @Override
@@ -47,7 +53,7 @@ public class ConvertImageListSwingWorker extends SwingWorker<List<String>, Void>
             String message = String.format("Operation result: %s", failedFilenameList.isEmpty() ? "Success!" : "failure");
 
             if (!failedFilenameList.isEmpty()) {
-                errorListJList.setVisible(true);
+                errorListJPanel.setVisible(true);
                 frame.revalidate();
                 frame.pack();
             }
@@ -63,6 +69,7 @@ public class ConvertImageListSwingWorker extends SwingWorker<List<String>, Void>
             enableUI.accept(true);
 
         } catch (Exception ex) {
+            log.error(ex);
             throw new RuntimeException(ex);
         }
     }

@@ -44,7 +44,12 @@ public class ImageConverterOrchestratorServiceImpl implements ImageConverterOrch
     private Callable<ImageConversionResultDTO> getSinglegetCallable(String destinationPath, String imageFile, String targetExtension) {
         return () -> {
             log.info("Retrieving result...");
-            return imageConverterService.convertImage(imageFile, destinationPath, targetExtension);
+            try {
+                return imageConverterService.convertImage(imageFile, destinationPath, targetExtension);
+            }catch (Exception e) {
+                log.error(e.getMessage(), e);
+                return ImageConversionResultDTO.builder().filename(e.getMessage()).status(false).build();
+            }
         };
     }
 

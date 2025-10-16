@@ -22,9 +22,12 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         String fileName = sourceFile.getName();
         String outputFileString = destinationPath + File.separator + renameFileExtension(fileName, targetExtension);
         File outputFile = new File(outputFileString);
-
-        boolean status = ImageIO.write(convertToOpaqueIfNecessary(image, targetExtension), targetExtension, outputFile);
-        return new ImageConversionResultDTO(sourceFileString, status);
+        try {
+            boolean status = ImageIO.write(convertToOpaqueIfNecessary(image, targetExtension), targetExtension, outputFile);
+            return new ImageConversionResultDTO(sourceFileString, status);
+        } catch (Exception e) {
+            return new ImageConversionResultDTO(sourceFileString + " -> " + e.getMessage(), false);
+        }
     }
 
     private String renameFileExtension(String oldFileName, String newExtension) {

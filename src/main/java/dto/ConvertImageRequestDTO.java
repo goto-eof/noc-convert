@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 public record ConvertImageRequestDTO(List<String> fileImageList,
                                      String destinationDirectory,
                                      String imageFormat,
+                                     JPanel errorListJPanel,
                                      JList<String> errorListJList,
                                      Consumer<Boolean> enableUI,
                                      JFrame frame) {

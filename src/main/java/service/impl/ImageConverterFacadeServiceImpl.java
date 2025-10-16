@@ -30,11 +30,15 @@ public class ImageConverterFacadeServiceImpl implements ImageConverterFacadeServ
 
     @Override
     public List<ImageConversionResultDTO> convertFileListToCustomFormatMultithreaded(List<String> allFiles, String destinationPath, String imageFormat) {
+        createDestinationPath(destinationPath);
+        return imageConverterOrchestratorService.convertMultithreaded(allFiles, destinationPath, imageFormat);
+    }
+
+    private static void createDestinationPath(String destinationPath) {
         try {
             Files.createDirectories(Path.of(destinationPath));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return imageConverterOrchestratorService.convertMultithreaded(allFiles, destinationPath, imageFormat);
     }
 }
