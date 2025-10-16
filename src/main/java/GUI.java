@@ -25,15 +25,15 @@ public class GUI {
     private JComboBox targetFileFormatComboBox;
     private JButton convertButton;
     private JPanel errorListPanel;
-    private JFrame frame;
+    private final JFrame frame;
 
 
     public GUI(JFrame frame) {
         super();
         this.frame = frame;
+        errorListPanel.setVisible(false);
 
         $$$setupUI$$$();
-        errorListPanel.setVisible(false);
 
         List<ImageFormatDTO> imageFormatList = new ArrayList<>();
         Arrays.stream(ImageIO.getWriterFormatNames())
@@ -63,7 +63,6 @@ public class GUI {
                 .build();
         new GuiController(guiControllerInputDTO);
     }
-
 
 
     {
