@@ -27,6 +27,7 @@ public class Main {
             JPanel mainPanel = getMainPanel(frame);
             frame.setContentPane(mainPanel);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.revalidate();
             frame.pack();
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
@@ -34,7 +35,7 @@ public class Main {
     }
 
     private static JPanel getMainPanel(JFrame frame) {
-        return new MainGUI(frame).getMainPanel();
+        return new GUI(frame).getMainPanel();
     }
 
 }
