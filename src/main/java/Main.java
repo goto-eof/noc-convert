@@ -16,7 +16,6 @@ public class Main {
             log.info("Available write format: {}", format);
         }
 
-
         String[] readers = ImageIO.getReaderFormatNames();
         for (String format : readers) {
             log.info("Available read format: {}", format);
