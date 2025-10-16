@@ -39,6 +39,9 @@ public class ConvertImageListSwingWorker extends SwingWorker<List<String>, Void>
     @Override
     protected List<String> doInBackground() {
         enableUI.accept(false);
+        errorListJPanel.setVisible(false);
+        frame.revalidate();
+        frame.pack();
         return imageConverterFacadeService.convertFileListToCustomFormatMultithreaded(fileImageList, destinationDirectory, imageFormat)
                 .stream()
                 .filter(record -> !record.status())

@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import service.ImageConverterOrchestratorService;
 import service.ImageConverterService;
+import util.CustomThreadFactory;
 
 import java.util.List;
 import java.util.Objects;
@@ -25,7 +26,7 @@ public class ImageConverterOrchestratorServiceImpl implements ImageConverterOrch
     public List<ImageConversionResultDTO> convertMultithreaded(List<String> imageFilesList, String destinationPath, String targetExtension) {
         Objects.requireNonNull(imageFilesList);
 
-        try (ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())) {
+        try (ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new CustomThreadFactory())) {
 
             List<Future<ImageConversionResultDTO>> futureList = imageFilesList.stream()
                     .map(imageFile -> executorService.submit(getSinglegetCallable(destinationPath, imageFile, targetExtension)))
@@ -46,7 +47,7 @@ public class ImageConverterOrchestratorServiceImpl implements ImageConverterOrch
             log.info("Retrieving result...");
             try {
                 return imageConverterService.convertImage(imageFile, destinationPath, targetExtension);
-            }catch (Exception e) {
+            } catch (Exception e) {
                 log.error(e.getMessage(), e);
                 return ImageConversionResultDTO.builder().filename(e.getMessage()).status(false).build();
             }
