@@ -4,7 +4,9 @@ import lombok.Builder;
 
 import javax.swing.*;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @Builder
 public record ConvertImageRequestDTO(List<String> fileImageList,
@@ -13,5 +15,9 @@ public record ConvertImageRequestDTO(List<String> fileImageList,
                                      JPanel errorListJPanel,
                                      JList<String> errorListJList,
                                      Consumer<Boolean> enableUI,
-                                     JFrame frame) {
+                                     JFrame frame,
+                                     Supplier<Boolean> isConverting,
+                                     Consumer<Boolean> setConverting,
+                                     JButton convertButton,
+                                     ExecutorService executorService) {
 }

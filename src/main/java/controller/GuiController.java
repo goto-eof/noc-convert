@@ -4,16 +4,21 @@ import controller.worker.ConvertImageListSwingWorker;
 import dto.ConvertImageRequestDTO;
 import dto.GUIControllerComponentsDTO;
 import dto.ImageFormatDTO;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import service.ImageConverterFacadeService;
 import service.impl.ImageConverterFacadeServiceImpl;
+import util.CustomThreadFactory;
 import util.FileSystemSupportGuiUtil;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class GuiController {
     private static final Logger log = LogManager.getLogger(GuiController.class);
@@ -33,6 +38,13 @@ public class GuiController {
 
     private final ImageConverterFacadeService imageConverterFacadeService;
     private final FileSystemSupportGuiUtil fileSystemSupportGuiUtil;
+
+    @Getter
+    @Setter
+    private volatile boolean isConverting = false;
+
+    private volatile ExecutorService conversionExecutorPoolService;
+
 
     public GuiController(GUIControllerComponentsDTO guiControllerComponentsDTO) {
         this.sourceDirectoryTextField = guiControllerComponentsDTO.sourceDirectoryTextField();
@@ -63,60 +75,91 @@ public class GuiController {
 
     private void addConvertButtonActionListener() {
         convertButton.addActionListener(e -> {
-            try {
-                SwingUtilities.invokeLater(() -> {
-                    DefaultListModel<String> model = new DefaultListModel<>();
-                    sourceDirectoryFilesList.setModel(model);
-                    errorsJList.setModel(model);
-                });
-
-                String sourcePath = sourceDirectoryTextField.getText();
-                List<String> fileImageListToConvert = imageConverterFacadeService.getAllFilesDirectoryByExtension(sourcePath,
-                        Arrays.stream(ImageIO.getReaderFormatNames())
-                                .map(String::toLowerCase)
-                                .distinct()
-                                .sorted()
-                                .toList()
-                );
-
-                SwingUtilities.invokeLater(() -> {
-                    DefaultListModel<String> model = new DefaultListModel<>();
-                    fileImageListToConvert.forEach(model::addElement);
-                    sourceDirectoryFilesList.setModel(model);
-                });
-
-                String destinationPath = destinationDirectoryTextField.getText();
-
-
-                if (targetFileFormatComboBox.getSelectedItem() == null || ((ImageFormatDTO) targetFileFormatComboBox.getSelectedItem()).format() == null || ((ImageFormatDTO) targetFileFormatComboBox.getSelectedItem()).format().isEmpty()) {
-                    SwingUtilities.invokeLater(() -> {
-                        JOptionPane.showMessageDialog(null,
-                                "Invalid target file format!",
-                                "Validation Result",
-                                JOptionPane.ERROR_MESSAGE);
-                    });
-                    return;
-                }
-                String targetFormat = ((ImageFormatDTO) targetFileFormatComboBox.getSelectedItem()).format();
-
-                ConvertImageRequestDTO guiControllerInput = ConvertImageRequestDTO.builder()
-                        .fileImageList(fileImageListToConvert)
-                        .destinationDirectory(destinationPath)
-                        .imageFormat(targetFormat)
-                        .errorListJPanel(errorListPanel)
-                        .enableUI(this::enableUI)
-                        .frame(frame)
-                        .errorListJList(errorsJList)
-                        .build();
-
-                new ConvertImageListSwingWorker(guiControllerInput)
-                        .execute();
-
-            } catch (Exception ex) {
-                log.error(ex);
-                throw new RuntimeException(ex);
+            if (isConverting) {
+                stopConversion();
+                return;
             }
+            startConversion();
         });
+    }
+
+    private synchronized void stopConversion() {
+        if (conversionExecutorPoolService != null && !conversionExecutorPoolService.isTerminated()) {
+            conversionExecutorPoolService.shutdownNow();
+            setConverting(false);
+            convertButton.setText("Start");
+            enableUI(true);
+        }
+
+    }
+
+    private synchronized void startConversion() {
+        try {
+
+            setConverting(true);
+
+            SwingUtilities.invokeLater(() -> {
+                DefaultListModel<String> model = new DefaultListModel<>();
+                sourceDirectoryFilesList.setModel(model);
+                errorsJList.setModel(model);
+            });
+
+            String sourcePath = sourceDirectoryTextField.getText();
+            List<String> fileImageListToConvert = imageConverterFacadeService.getAllFilesDirectoryByExtension(sourcePath,
+                    Arrays.stream(ImageIO.getReaderFormatNames())
+                            .map(String::toLowerCase)
+                            .distinct()
+                            .sorted()
+                            .toList()
+            );
+
+            SwingUtilities.invokeLater(() -> {
+                DefaultListModel<String> model = new DefaultListModel<>();
+                fileImageListToConvert.forEach(model::addElement);
+                sourceDirectoryFilesList.setModel(model);
+            });
+
+            String destinationPath = destinationDirectoryTextField.getText();
+
+
+            if (targetFileFormatComboBox.getSelectedItem() == null || ((ImageFormatDTO) targetFileFormatComboBox.getSelectedItem()).format() == null || ((ImageFormatDTO) targetFileFormatComboBox.getSelectedItem()).format().isEmpty()) {
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(null,
+                            "Invalid target file format!",
+                            "Validation Result",
+                            JOptionPane.ERROR_MESSAGE);
+                });
+                return;
+            }
+            String targetFormat = ((ImageFormatDTO) targetFileFormatComboBox.getSelectedItem()).format();
+
+
+            if (conversionExecutorPoolService == null || conversionExecutorPoolService.isTerminated()) {
+                conversionExecutorPoolService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new CustomThreadFactory());
+            }
+
+
+            ConvertImageRequestDTO guiControllerInput = ConvertImageRequestDTO.builder()
+                    .fileImageList(fileImageListToConvert)
+                    .destinationDirectory(destinationPath)
+                    .imageFormat(targetFormat)
+                    .errorListJPanel(errorListPanel)
+                    .enableUI(this::enableUI)
+                    .frame(frame)
+                    .errorListJList(errorsJList)
+                    .isConverting((this::isConverting))
+                    .setConverting(this::setConverting)
+                    .convertButton(convertButton)
+                    .executorService(conversionExecutorPoolService)
+                    .build();
+
+            new ConvertImageListSwingWorker(guiControllerInput)
+                    .execute();
+
+        } catch (Exception ex) {
+            log.error(ex);
+            throw new RuntimeException(ex);
+        }
     }
 
     private void enableUI(boolean enableFlag) {
@@ -124,7 +167,7 @@ public class GuiController {
         sourceDirectoryTextField.setEnabled(enableFlag);
         chooseDestinationDirectoryButton.setEnabled(enableFlag);
         chooseSourceDirectoryButton.setEnabled(enableFlag);
-        convertButton.setEnabled(enableFlag);
+        // convertButton.setEnabled(enableFlag);
         targetFileFormatComboBox.setEnabled(enableFlag);
 
         frame.pack();

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 public class ImageConverterFacadeServiceImpl implements ImageConverterFacadeService {
     private final FileSystemService fileSystemService;
@@ -29,9 +30,9 @@ public class ImageConverterFacadeServiceImpl implements ImageConverterFacadeServ
     }
 
     @Override
-    public List<ImageConversionResultDTO> convertFileListToCustomFormatMultithreaded(List<String> allFiles, String destinationPath, String imageFormat) {
+    public List<ImageConversionResultDTO> convertFileListToCustomFormatMultithreaded(ExecutorService executorService, List<String> allFiles, String destinationPath, String imageFormat) {
         createDestinationPath(destinationPath);
-        return imageConverterOrchestratorService.convertMultithreaded(allFiles, destinationPath, imageFormat);
+        return imageConverterOrchestratorService.convertMultithreaded(executorService, allFiles, destinationPath, imageFormat);
     }
 
     private static void createDestinationPath(String destinationPath) {

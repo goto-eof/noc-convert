@@ -5,7 +5,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import service.ImageConverterOrchestratorService;
 import service.ImageConverterService;
-import util.CustomThreadFactory;
 
 import java.util.List;
 import java.util.Objects;
@@ -23,11 +22,10 @@ public class ImageConverterOrchestratorServiceImpl implements ImageConverterOrch
 
 
     @Override
-    public List<ImageConversionResultDTO> convertMultithreaded(List<String> imageFilesList, String destinationPath, String targetExtension) {
+    public List<ImageConversionResultDTO> convertMultithreaded(ExecutorService executorService, List<String> imageFilesList, String destinationPath, String targetExtension) {
         Objects.requireNonNull(imageFilesList);
 
-        try (ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new CustomThreadFactory())) {
-
+        try {
             List<Future<ImageConversionResultDTO>> futureList = imageFilesList.stream()
                     .map(imageFile -> executorService.submit(getSinglegetCallable(destinationPath, imageFile, targetExtension)))
                     .toList();
@@ -35,8 +33,8 @@ public class ImageConverterOrchestratorServiceImpl implements ImageConverterOrch
             return futureList.stream()
                     .map(getFutureResultFunction())
                     .toList();
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
+        } catch (RejectedExecutionException e) {
+            log.error(e.getMessage());
             throw new RuntimeException(e);
         }
 
@@ -58,10 +56,17 @@ public class ImageConverterOrchestratorServiceImpl implements ImageConverterOrch
         return future -> {
             try {
                 return future.get();
-            } catch (ExecutionException | InterruptedException e) {
+            } catch (ExecutionException e) {
                 log.error(e.getMessage(), e);
                 return ImageConversionResultDTO.builder()
                         .filename("fatal error")
+                        .status(false)
+                        .build();
+            } catch (InterruptedException e) {
+                log.error(e.getMessage(), e);
+                Thread.currentThread().interrupt();
+                return ImageConversionResultDTO.builder()
+                        .filename("error: user interruption")
                         .status(false)
                         .build();
             }
