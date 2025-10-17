@@ -76,8 +76,7 @@ jobs:
             --icon "$ICON_PATH" \
             --type pkg \
             --java-options "-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true" \
-            --module-path "$INPUT_PATH/lib" \
-            --add-modules java.base,java.desktop,java.net.http,java.naming,java.sql,java.management,java.security.jgss,java.xml,java.logging,jdk.crypto.ec,java.security.sasl \
+            --add-modules java.base,java.desktop \
             --verbose
 
       - name: Zip PKG file
