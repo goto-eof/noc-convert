@@ -1,0 +1,75 @@
+name: Create Windows AMD64 MSI file
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build_jar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configura JDK (Linux)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Build JAR with Maven
+        run: mvn clean package
+
+      - name: Load Artifact (JAR and resources)
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-files
+          path: |
+            target/noc-convert.jar
+            resources/
+
+  create_msi:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    needs: build_jar
+    steps:
+      - uses: actions/checkout@v4
+      - name: Define release version
+        id: set_version
+        shell: pwsh
+        run: |
+          Write-Host "Files:"
+          Get-ChildItem -Recurse
+          echo "RELEASE_TAG=${{ github.ref_name }}" >> $env:GITHUB_ENV
+          Write-Host "Release Tag set on: ${{ github.ref_name }}"
+      - name: Download Artifact (JAR and resources)
+        uses: actions/download-artifact@v4
+        with:
+          name: application-files
+          path: downloaded-files
+
+      - name: Configure JDK for Windows
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Create MSI file with jpackage
+        run: |
+          $InputPath = "downloaded-files\target"
+          $OutputPath = "executable"
+          $MainJar = "noc-convert.jar"
+          $IconPath = "downloaded-files\resources\icon-windows.ico"
+          jpackage.exe --input $InputPath --dest $OutputPath --name "NoCloud Bulk Image Converter" --vendor "Andrei Dodu" --app-version "$env:RELEASE_TAG" --main-jar "noc-convert.jar" --main-class com.andreidodu.nocconvert.Main --icon $IconPath --type msi --win-shortcut --win-menu --java-options "-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true" --add-modules java.base,java.desktop,java.net.http,java.naming,java.sql,java.management,java.security.jgss,java.xml,java.logging,jdk.crypto.ec,java.security.sasl --verbose
+
+      - name: Zip MSI file
+        shell: pwsh
+        run: |
+          $SourcePath = "executable\NoCloud Bulk Image Converter-$env:RELEASE_TAG.msi" 
+          $DestinationName = "${{ github.event.repository.name }}-Windows-${{ github.ref_name }}-amd64-Installer.zip"
+          Compress-Archive -Path $SourcePath -DestinationPath $DestinationName
+      - name: Release on Github
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ${{github.event.repository.name}}-Windows-${{ github.ref_name }}-amd64-Installer.zip

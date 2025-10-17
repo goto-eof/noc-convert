@@ -109,7 +109,9 @@ parts:
       END_TIME=$(date +%s)
       echo "Total time: $((${END_TIME} - ${START_TIME})) seconds"
     stage-packages:
+      - libgtk-3-0
       - xdg-utils
+      - libcanberra-gtk3-module
     override-prime: |
       snapcraftctl prime
 

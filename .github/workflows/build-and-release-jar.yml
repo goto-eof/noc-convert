@@ -1,0 +1,31 @@
+name: Create JAR file
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: code checkout
+        uses: actions/checkout@v4
+
+      - name: JDK setup
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: create jar
+        run: mvn clean package
+
+      - name: Release on GitHub
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: target/*.jar
