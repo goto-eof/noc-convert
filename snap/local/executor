@@ -7,8 +7,6 @@ exec $SNAP/usr/lib/jvm/custom-jre/bin/java \
     -Duser.home=$SNAP_USER_DATA \
     -Dawt.useSystemAAFontSettings=on \
     -Dswing.aatext=true \
-    -Dswing.defaultlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel \
     -Djava.desktop.appName=$SNAP/meta/gui/noc-convert.desktop \
-    -Dswing.crossplatformlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel \
     -Djdk.gtk.version=3  \
     -jar $SNAP/jar/noc-convert.jar "$@"
