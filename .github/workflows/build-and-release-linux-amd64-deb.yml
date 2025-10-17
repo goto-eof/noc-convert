@@ -85,7 +85,7 @@ jobs:
 
       - name: Zip DEB file
         run: |
-          DEB_FILE="executable/NoCloud Bulk Image Converter_${RELEASE_TAG}_amd64.deb"
+          DEB_FILE=$(ls executable/*.deb | head -n 1)
           ZIP_NAME="${{ github.event.repository.name }}-Linux-${{ github.ref_name }}-amd64-Installer.zip"
           zip -j "$ZIP_NAME" "$DEB_FILE"
 
