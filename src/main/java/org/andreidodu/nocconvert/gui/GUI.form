@@ -34,7 +34,7 @@
           <text value="Choose"/>
         </properties>
       </component>
-      <grid id="539f0" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="539f0" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="3" column="0" row-span="1" col-span="5" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -133,6 +133,11 @@
               </scrollpane>
             </children>
           </grid>
+          <vspacer id="52009">
+            <constraints>
+              <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+            </constraints>
+          </vspacer>
         </children>
       </grid>
       <component id="e796c" class="javax.swing.JLabel">
@@ -176,7 +181,7 @@
         </constraints>
         <properties>
           <foreground color="-8289660"/>
-          <text value="noc-convert v.1.0.10, by Andrei Dodu"/>
+          <text value="noc-convert v.1.0.11, by Andrei Dodu"/>
         </properties>
       </component>
       <hspacer id="ea0c5">
