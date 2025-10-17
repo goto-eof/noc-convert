@@ -35,19 +35,7 @@ public class GUI {
         $$$setupUI$$$();
         errorListPanel.setVisible(false);
 
-        List<ImageFormatDTO> imageFormatList = new ArrayList<>();
-        Arrays.stream(ImageIO.getWriterFormatNames())
-                .map(String::toLowerCase)
-                .distinct()
-                .sorted()
-                .forEach(format -> imageFormatList.add(new ImageFormatDTO(format, format)));
-
-        DefaultComboBoxModel<ImageFormatDTO> model = new DefaultComboBoxModel<>();
-        model.addAll(imageFormatList);
-        model.setSelectedItem(imageFormatList.get(0));
-        SwingUtilities.invokeLater(() -> {
-            targetFileFormatComboBox.setModel(model);
-        });
+        setModelForTargetFileFormat();
 
         GUIControllerComponentsDTO guiControllerInputDTO = GUIControllerComponentsDTO.builder()
                 .frame(frame)
@@ -63,6 +51,22 @@ public class GUI {
                 .fileFormatsJLabel(fileFormatsJLabel)
                 .build();
         new GuiController(guiControllerInputDTO);
+    }
+
+    private void setModelForTargetFileFormat() {
+        List<ImageFormatDTO> imageFormatList = new ArrayList<>();
+        Arrays.stream(ImageIO.getWriterFormatNames())
+                .map(String::toLowerCase)
+                .distinct()
+                .sorted()
+                .forEach(format -> imageFormatList.add(new ImageFormatDTO(format, format)));
+
+        DefaultComboBoxModel<ImageFormatDTO> model = new DefaultComboBoxModel<>();
+        model.addAll(imageFormatList);
+        model.setSelectedItem(imageFormatList.get(0));
+        SwingUtilities.invokeLater(() -> {
+            targetFileFormatComboBox.setModel(model);
+        });
     }
 
 
@@ -117,7 +121,7 @@ public class GUI {
         errorsJList = new JList();
         scrollPane2.setViewportView(errorsJList);
         final JLabel label5 = new JLabel();
-        label5.setText("Target File Format");
+        label5.setText("Target File Format (plugins)");
         mainPanel.add(label5, new GridConstraints(4, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         targetFileFormatComboBox = new JComboBox();
         mainPanel.add(targetFileFormatComboBox, new GridConstraints(4, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));

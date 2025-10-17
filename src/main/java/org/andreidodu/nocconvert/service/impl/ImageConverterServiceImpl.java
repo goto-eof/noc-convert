@@ -2,6 +2,7 @@ package org.andreidodu.nocconvert.service.impl;
 
 import org.andreidodu.nocconvert.dto.ImageConversionResultDTO;
 import org.andreidodu.nocconvert.service.ImageConverterService;
+import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -14,25 +15,25 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     public static final String PNG_FORMAT = "png";
 
     @Override
-    public ImageConversionResultDTO convertImage(String sourceFileString, String destinationPath, String targetExtension) throws IOException {
+    public ImageConversionResultDTO convertImage(String sourceFileString, String destinationPath, String newFileFormat) throws IOException {
         File sourceFile = new File(sourceFileString);
 
         BufferedImage image = ImageIO.read(sourceFile);
 
         String fileName = sourceFile.getName();
-        String outputFileString = destinationPath + File.separator + renameFileExtension(fileName, targetExtension);
+        String outputFileString = destinationPath + File.separator + renameFileExtension(fileName, newFileFormat);
         File outputFile = new File(outputFileString);
         try {
-            boolean status = ImageIO.write(convertToOpaqueIfNecessary(image, targetExtension), targetExtension, outputFile);
+            boolean status = ImageIO.write(convertToOpaqueIfNecessary(image, newFileFormat), newFileFormat, outputFile);
             return new ImageConversionResultDTO(sourceFileString, status);
         } catch (Exception e) {
             return new ImageConversionResultDTO(sourceFileString + " -> " + e.getMessage(), false);
         }
     }
 
-    private String renameFileExtension(String oldFileName, String newExtension) {
+    private String renameFileExtension(String oldFileName, String newFileFormat) {
         int lastIndexOf = oldFileName.lastIndexOf(".");
-        return oldFileName.substring(0, lastIndexOf) + "." + newExtension;
+        return oldFileName.substring(0, lastIndexOf) + "." + FormatExtensionMapper.getExtension(newFileFormat);
     }
 
     public static BufferedImage convertToOpaqueIfNecessary(BufferedImage originalImage, String targetExtension) {

@@ -91,7 +91,7 @@ public class GuiController {
 
         int i = 1;
         for (String fileFormat : fileFormatStream) {
-            if (i % 25 == 0) {
+            if (i % 23 == 0) {
                 i = 1;
                 filteredFileFormatList.add("<br/>");
             }
@@ -99,7 +99,7 @@ public class GuiController {
             i++;
         }
 
-        Optional.of("<html>valid formats: " + String.join(" ",
+        Optional.of("<html>accepted formats: " + String.join(" ",
                         filteredFileFormatList
                 ) + "</html>")
                 .ifPresent(fileFormats -> fileFormatsJLabel.setText(fileFormats));
