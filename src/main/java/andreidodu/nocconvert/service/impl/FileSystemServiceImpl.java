@@ -1,6 +1,6 @@
-package service.impl;
+package andreidodu.nocconvert.service.impl;
 
-import service.FileSystemService;
+import andreidodu.nocconvert.service.FileSystemService;
 
 import java.io.File;
 import java.io.IOException;

@@ -1,10 +1,10 @@
-package service.impl;
+package andreidodu.nocconvert.service.impl;
 
-import dto.ImageConversionResultDTO;
+import andreidodu.nocconvert.dto.ImageConversionResultDTO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import service.ImageConverterOrchestratorService;
-import service.ImageConverterService;
+import andreidodu.nocconvert.service.ImageConverterOrchestratorService;
+import andreidodu.nocconvert.service.ImageConverterService;
 
 import java.util.List;
 import java.util.Objects;

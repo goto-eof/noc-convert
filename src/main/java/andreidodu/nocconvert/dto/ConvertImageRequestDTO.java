@@ -1,4 +1,4 @@
-package dto;
+package andreidodu.nocconvert.dto;
 
 import lombok.Builder;
 

@@ -58,7 +58,7 @@ parts:
       
       set -eux
       JLINK_JDK_PATH="/usr/lib/jvm/java-21-openjdk-$(dpkg-architecture -q DEB_BUILD_MULTIARCH)"
-      REQUIRED_MODULES="java.base,java.desktop,java.net.http,java.management,java.security.jgss,java.xml,java.logging,jdk.crypto.ec,java.security.sasl"
+      REQUIRED_MODULES="java.base,java.desktop,java.net.http,java.naming,java.sql,java.management,java.security.jgss,java.xml,java.logging,jdk.crypto.ec,java.security.sasl"
       
       echo "Creating custom JRE runtime with the following modules: $REQUIRED_MODULES"
       
@@ -87,7 +87,7 @@ parts:
       
       mvn clean install -DskipTests
       
-      APP_JAR_NAME="fromgtog.jar" 
+      APP_JAR_NAME="noc-convert.jar" 
       APP_JAR_PATH="$SNAPCRAFT_PART_BUILD/target/$APP_JAR_NAME"
       
       if [ ! -f "$APP_JAR_PATH" ]; then
@@ -105,7 +105,7 @@ parts:
       rm -rf "$JLINK_JDK_PATH"
       echo "temporary JDK removed."
       
-      echo "Finished building FromGtoG at $(date)"
+      echo "Finished building NoCloud Bulk Image Converter at $(date)"
       END_TIME=$(date +%s)
       echo "Total time: $((${END_TIME} - ${START_TIME})) seconds"
     stage-packages:

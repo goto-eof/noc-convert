@@ -1,4 +1,4 @@
-package util;
+package andreidodu.nocconvert.util;
 
 import java.util.concurrent.ThreadFactory;
 
