@@ -24,9 +24,9 @@ without compromising privacy.
 
 | Platform    | AMD 64-bit                                                                                                                  | ARM 64-bit                                                                                                                |
 |:------------|:----------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------|
-| **Linux**   | [zip (.deb)](https://github.com/goto-eof/noc-convert/releases/download/1.0.9/noc-convert-Linux-1.0.9-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                         |
-| **Windows** | [zip (.msi)](https://github.com/goto-eof/noc-convert/releases/download/1.0.9/noc-convert-Windows-1.0.9-amd64-Installer.zip) | N/A                                                                                                                       |
-| **macOS**   | [zip (.pkg)](https://github.com/goto-eof/noc-convert/releases/download/1.0.9/noc-convert-MacOS-1.0.9-amd64-Installer.zip)   | [zip (.pkg)](https://github.com/goto-eof/noc-convert/releases/download/1.0.9/noc-convert-MacOS-1.0.9-arm64-Installer.zip) |
+| **Linux**   | [zip (.deb)](https://github.com/goto-eof/noc-convert/releases/download/1.0.10/noc-convert-Linux-1.0.10-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                         |
+| **Windows** | [zip (.msi)](https://github.com/goto-eof/noc-convert/releases/download/1.0.10/noc-convert-Windows-1.0.10-amd64-Installer.zip) | N/A                                                                                                                       |
+| **macOS**   | [zip (.pkg)](https://github.com/goto-eof/noc-convert/releases/download/1.0.10/noc-convert-MacOS-1.0.10-amd64-Installer.zip)   | [zip (.pkg)](https://github.com/goto-eof/noc-convert/releases/download/1.0.10/noc-convert-MacOS-1.0.10-arm64-Installer.zip) |
 
 ## Installation and Usage
 
