@@ -2,10 +2,14 @@
 #
 # Script is a wrapper which runs application in a bash script with the needed options
 #
+LIB_PATH="$SNAP/jar/lib"
+ALL_JARS=$(find "$LIB_PATH" -name "*.jar" | tr '\n' ':')
+MAIN_CLASS="org.andreidodu.nocconvert.Main"
 exec $SNAP/usr/lib/jvm/custom-jre/bin/java \
+    -cp "$ALL_JARS:$SNAP/jar/noc-convert.jar" \
     -Djava.util.prefs.userRoot="$SNAP_USER_DATA" \
     -Duser.home=$SNAP_USER_DATA \
     -Dawt.useSystemAAFontSettings=on \
     -Dswing.aatext=true \
     -Djava.desktop.appName=$SNAP/meta/gui/noc-convert.desktop \
-    -jar $SNAP/jar/noc-convert.jar "$@"
+    "$MAIN_CLASS" "$@"

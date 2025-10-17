@@ -1,5 +1,5 @@
 name: noc-convert
-version: '1.0.3'
+version: '1.0.4'
 summary: Fast, no-cloud bulk image converter.
 description: |
   Bulk Image Converter (NoCloud). The easy way to batch convert all your images.
@@ -88,6 +88,10 @@ parts:
       export MAVEN_OPTS="$http $https"
       
       mvn clean install -DskipTests
+      
+      mkdir -p "$SNAPCRAFT_PART_INSTALL"/jar/lib
+      echo "Copia delle dipendenze Maven nella directory lib..."
+      mvn dependency:copy-dependencies -DoutputDirectory="$SNAPCRAFT_PART_INSTALL"/jar/lib
       
       APP_JAR_NAME="noc-convert.jar" 
       APP_JAR_PATH="$SNAPCRAFT_PART_BUILD/target/$APP_JAR_NAME"
