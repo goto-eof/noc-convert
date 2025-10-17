@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.andreidodu</groupId>
     <artifactId>bulk-image-converter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.3</version>
     <name>Archetype - bulk-image-converter</name>
     <url>http://maven.apache.org</url>
 

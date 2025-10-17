@@ -176,7 +176,7 @@
         </constraints>
         <properties>
           <foreground color="-8289660"/>
-          <text value="noc-conver v.1.0.0, by Andrei Dodu"/>
+          <text value="noc-conver v.1.0.3, by Andrei Dodu"/>
         </properties>
       </component>
       <hspacer id="ea0c5">

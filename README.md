@@ -20,6 +20,14 @@ without compromising privacy.
 
 ---
 
+## 💾 Download
+
+| Platform    | AMD 64-bit                                                                                                                  | ARM 64-bit                                                                                                                |
+|:------------|:----------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------|
+| **Linux**   | [zip (.deb)](https://github.com/goto-eof/noc-convert/releases/download/1.0.3/noc-convert-Linux-1.0.3-amd64-Installer.zip)   | ([App Center (amd64/arm64)](https://snapcraft.io/noc-convert))                                                            |
+| **Windows** | [zip (.msi)](https://github.com/goto-eof/noc-convert/releases/download/1.0.3/noc-convert-Windows-1.0.3-amd64-Installer.zip) | N/A                                                                                                                       |
+| **macOS**   | [zip (.pkg)](https://github.com/goto-eof/noc-convert/releases/download/1.0.3/noc-convert-MacOS-1.0.3-amd64-Installer.zip)   | [zip (.pkg)](https://github.com/goto-eof/noc-convert/releases/download/1.0.3/noc-convert-MacOS-1.0.3-arm64-Installer.zip) |
+
 ## Installation and Usage
 
 ### Ubuntu Installation (Snap)
@@ -49,7 +57,8 @@ noc-convert
 
 If you find a bug, have a suggestion, or want to contribute code, your help is welcome!
 
-* **Bug Reports:** Please report any issues via the [GitHub Issues page](https://github.com/goto-eof/noc-convert/issues).
+* **Bug Reports:** Please report any issues via
+  the [GitHub Issues page](https://github.com/goto-eof/noc-convert/issues).
 
 ### Donations
 
