@@ -58,7 +58,7 @@ parts:
       
       set -eux
       JLINK_JDK_PATH="/usr/lib/jvm/java-21-openjdk-$(dpkg-architecture -q DEB_BUILD_MULTIARCH)"
-      REQUIRED_MODULES="java.base,java.desktop,java.net.http,java.naming,java.sql,java.management,java.security.jgss,java.xml,java.logging,jdk.crypto.ec,java.security.sasl"
+      REQUIRED_MODULES="java.base,java.desktop,java.management,java.xml,java.logging"
       
       echo "Creating custom JRE runtime with the following modules: $REQUIRED_MODULES"
       
