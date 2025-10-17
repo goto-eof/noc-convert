@@ -1,4 +1,4 @@
-package andreidodu.nocconvert.util;
+package org.nocconvert.util;
 
 import javax.swing.*;
 import java.io.File;

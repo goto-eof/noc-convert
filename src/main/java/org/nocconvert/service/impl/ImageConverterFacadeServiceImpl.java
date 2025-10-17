@@ -1,9 +1,9 @@
-package andreidodu.nocconvert.service.impl;
+package org.nocconvert.service.impl;
 
-import andreidodu.nocconvert.dto.ImageConversionResultDTO;
-import andreidodu.nocconvert.service.FileSystemService;
-import andreidodu.nocconvert.service.ImageConverterFacadeService;
-import andreidodu.nocconvert.service.ImageConverterOrchestratorService;
+import org.nocconvert.dto.ImageConversionResultDTO;
+import org.nocconvert.service.FileSystemService;
+import org.nocconvert.service.ImageConverterFacadeService;
+import org.nocconvert.service.ImageConverterOrchestratorService;
 
 import java.io.IOException;
 import java.nio.file.Files;

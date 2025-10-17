@@ -1,4 +1,4 @@
-package andreidodu.nocconvert.dto;
+package org.nocconvert.dto;
 
 public record ImageFormatDTO(String description, String format) {
 

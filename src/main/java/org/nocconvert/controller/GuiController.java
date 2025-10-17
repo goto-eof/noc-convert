@@ -1,19 +1,19 @@
-package andreidodu.nocconvert.controller;
+package org.nocconvert.controller;
 
-import andreidodu.nocconvert.controller.worker.ConvertImageListSwingWorker;
-import andreidodu.nocconvert.dto.ConvertImageRequestDTO;
-import andreidodu.nocconvert.dto.GUIControllerComponentsDTO;
-import andreidodu.nocconvert.dto.ImageFormatDTO;
+import org.nocconvert.controller.worker.ConvertImageListSwingWorker;
+import org.nocconvert.dto.ConvertImageRequestDTO;
+import org.nocconvert.dto.GUIControllerComponentsDTO;
+import org.nocconvert.dto.ImageFormatDTO;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import andreidodu.nocconvert.service.FileSystemService;
-import andreidodu.nocconvert.service.ImageConverterFacadeService;
-import andreidodu.nocconvert.service.impl.FileSystemServiceImpl;
-import andreidodu.nocconvert.service.impl.ImageConverterFacadeServiceImpl;
-import andreidodu.nocconvert.util.CustomThreadFactory;
-import andreidodu.nocconvert.util.FileSystemSupportGuiUtil;
+import org.nocconvert.service.FileSystemService;
+import org.nocconvert.service.ImageConverterFacadeService;
+import org.nocconvert.service.impl.FileSystemServiceImpl;
+import org.nocconvert.service.impl.ImageConverterFacadeServiceImpl;
+import org.nocconvert.util.CustomThreadFactory;
+import org.nocconvert.util.FileSystemSupportGuiUtil;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;

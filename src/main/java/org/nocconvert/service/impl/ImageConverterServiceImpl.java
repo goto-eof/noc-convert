@@ -1,7 +1,7 @@
-package andreidodu.nocconvert.service.impl;
+package org.nocconvert.service.impl;
 
-import andreidodu.nocconvert.dto.ImageConversionResultDTO;
-import andreidodu.nocconvert.service.ImageConverterService;
+import org.nocconvert.dto.ImageConversionResultDTO;
+import org.nocconvert.service.ImageConverterService;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;

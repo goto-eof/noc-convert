@@ -1,4 +1,4 @@
-package andreidodu.nocconvert.service;
+package org.nocconvert.service;
 
 import java.io.IOException;
 import java.util.List;

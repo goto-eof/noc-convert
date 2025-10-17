@@ -1,6 +1,6 @@
-package andreidodu.nocconvert.service;
+package org.nocconvert.service;
 
-import andreidodu.nocconvert.dto.ImageConversionResultDTO;
+import org.nocconvert.dto.ImageConversionResultDTO;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;

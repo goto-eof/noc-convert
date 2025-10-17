@@ -1,6 +1,6 @@
-package andreidodu.nocconvert;
+package org.nocconvert;
 
-import andreidodu.nocconvert.gui.GUI;
+import org.nocconvert.gui.GUI;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
