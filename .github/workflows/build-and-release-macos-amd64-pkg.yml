@@ -27,6 +27,7 @@ jobs:
           name: application-files
           path: |
             target/noc-convert.jar
+            target/lib/
             resources/
 
   create_pkg:
