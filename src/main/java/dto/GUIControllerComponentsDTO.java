@@ -14,5 +14,6 @@ public record GUIControllerComponentsDTO(JFrame frame,
                                          JButton convertButton,
                                          JList<String> errorsJList,
                                          JComboBox<ImageFormatDTO> targetFileFormatComboBox,
-                                         JPanel errorListPanel) {
+                                         JPanel errorListPanel,
+                                         JLabel fileFormatsJLabel) {
 }

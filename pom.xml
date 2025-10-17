@@ -61,17 +61,72 @@
         </dependency>
         <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-pict</artifactId>
-            <version>3.12.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
             <artifactId>imageio-psd</artifactId>
             <version>3.12.0</version>
         </dependency>
         <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
             <artifactId>imageio-xwd</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-pdf</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-pnm</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-tga</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-iff</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-sgi</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-pict</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-pcx</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-pdf</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-hdr</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-thumbsdb</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-clippath</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-dds</artifactId>
             <version>3.12.0</version>
         </dependency>
         <dependency>

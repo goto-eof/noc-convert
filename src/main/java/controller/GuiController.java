@@ -17,10 +17,13 @@ import util.FileSystemSupportGuiUtil;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Stream;
 
 public class GuiController {
     private static final Logger log = LogManager.getLogger(GuiController.class);
@@ -37,6 +40,7 @@ public class GuiController {
     private final JComboBox<ImageFormatDTO> targetFileFormatComboBox;
     private final JFrame frame;
     private final JPanel errorListPanel;
+    private JLabel fileFormatsJLabel;
 
     private final ImageConverterFacadeService imageConverterFacadeService;
     private final FileSystemSupportGuiUtil fileSystemSupportGuiUtil;
@@ -62,6 +66,7 @@ public class GuiController {
         this.targetFileFormatComboBox = guiControllerComponentsDTO.targetFileFormatComboBox();
         this.frame = guiControllerComponentsDTO.frame();
         this.errorListPanel = guiControllerComponentsDTO.errorListPanel();
+        this.fileFormatsJLabel = guiControllerComponentsDTO.fileFormatsJLabel();
 
         this.imageConverterFacadeService = new ImageConverterFacadeServiceImpl();
         this.fileSystemSupportGuiUtil = new FileSystemSupportGuiUtil();
@@ -74,6 +79,29 @@ public class GuiController {
         addSourceDirectoryChooseButtonEventListener();
         addDestinationDirectoryChooseButtonEventListener();
         addConvertButtonActionListener();
+
+        String[] readerFormatNames = ImageIO.getReaderFormatNames();
+        List<String> fileFormatStream = Stream.of(readerFormatNames)
+                .map(String::toLowerCase)
+                .distinct()
+                .sorted()
+                .toList();
+        List<String> finalList = new ArrayList<>();
+
+        int i = 1;
+        for (String fileFormat : fileFormatStream) {
+            if (i % 25 == 0) {
+                i = 1;
+                finalList.add("<br/>");
+            }
+            finalList.add(fileFormat);
+            i++;
+        }
+
+        Optional.of("<html>valid formats: " + String.join(" ",
+                        finalList
+                ) + "</html>")
+                .ifPresent(fileFormats -> fileFormatsJLabel.setText(fileFormats));
 
     }
 
