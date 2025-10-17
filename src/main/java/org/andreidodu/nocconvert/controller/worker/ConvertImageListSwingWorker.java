@@ -1,11 +1,11 @@
-package org.nocconvert.controller.worker;
+package org.andreidodu.nocconvert.controller.worker;
 
-import org.nocconvert.dto.ConvertImageRequestDTO;
-import org.nocconvert.dto.ImageConversionResultDTO;
+import org.andreidodu.nocconvert.dto.ConvertImageRequestDTO;
+import org.andreidodu.nocconvert.dto.ImageConversionResultDTO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nocconvert.service.ImageConverterFacadeService;
-import org.nocconvert.service.impl.ImageConverterFacadeServiceImpl;
+import org.andreidodu.nocconvert.service.ImageConverterFacadeService;
+import org.andreidodu.nocconvert.service.impl.ImageConverterFacadeServiceImpl;
 
 import javax.swing.*;
 import java.util.List;

@@ -1,11 +1,11 @@
-package org.nocconvert.gui;
+package org.andreidodu.nocconvert.gui;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
-import org.nocconvert.controller.GuiController;
-import org.nocconvert.dto.GUIControllerComponentsDTO;
-import org.nocconvert.dto.ImageFormatDTO;
+import org.andreidodu.nocconvert.controller.GuiController;
+import org.andreidodu.nocconvert.dto.GUIControllerComponentsDTO;
+import org.andreidodu.nocconvert.dto.ImageFormatDTO;
 import lombok.Getter;
 
 import javax.imageio.ImageIO;
