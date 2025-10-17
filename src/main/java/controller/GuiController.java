@@ -8,7 +8,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import service.FileSystemService;
 import service.ImageConverterFacadeService;
+import service.impl.FileSystemServiceImpl;
 import service.impl.ImageConverterFacadeServiceImpl;
 import util.CustomThreadFactory;
 import util.FileSystemSupportGuiUtil;
@@ -38,6 +40,7 @@ public class GuiController {
 
     private final ImageConverterFacadeService imageConverterFacadeService;
     private final FileSystemSupportGuiUtil fileSystemSupportGuiUtil;
+    private final FileSystemService fileSystemService;
 
     @Getter
     @Setter
@@ -62,6 +65,7 @@ public class GuiController {
 
         this.imageConverterFacadeService = new ImageConverterFacadeServiceImpl();
         this.fileSystemSupportGuiUtil = new FileSystemSupportGuiUtil();
+        this.fileSystemService = new FileSystemServiceImpl();
 
         // TODO remove me
         sourceDirectoryTextField.setText("/home/andrei/Pictures");
@@ -175,7 +179,17 @@ public class GuiController {
 
     private void addDestinationDirectoryChooseButtonEventListener() {
         chooseDestinationDirectoryButton.addActionListener(e -> fileSystemSupportGuiUtil.selectDirectory()
-                .ifPresent(destinationDirectoryTextField::setText));
+                .ifPresent(directory -> {
+                    destinationDirectoryTextField.setText(directory);
+                    if (fileSystemService.containsAtLeaseOneFile(directory)) {
+                        SwingUtilities.invokeLater(() -> {
+                            JOptionPane.showMessageDialog(null,
+                                    "The destination directory contains at least one file. All files in the destination directory will be override!",
+                                    "WARNING!",
+                                    JOptionPane.WARNING_MESSAGE);
+                        });
+                    }
+                }));
     }
 
     private void addSourceDirectoryChooseButtonEventListener() {

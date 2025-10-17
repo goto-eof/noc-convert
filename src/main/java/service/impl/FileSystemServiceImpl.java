@@ -2,10 +2,12 @@ package service.impl;
 
 import service.FileSystemService;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,5 +30,18 @@ public class FileSystemServiceImpl implements FileSystemService {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public boolean containsAtLeaseOneFile(String directoryPath) {
+        File file = new File(directoryPath);
+        File[] files = file.listFiles();
+
+        if (files == null || files.length == 0) {
+            return false;
+        }
+
+        return Arrays.stream(files)
+                .anyMatch(File::isFile);
     }
 }
