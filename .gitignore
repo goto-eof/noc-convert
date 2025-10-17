@@ -21,7 +21,7 @@ logs/
 .settings
 .springBeans
 .sts4-cache
-
+noc-convert_*_*.snap
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
