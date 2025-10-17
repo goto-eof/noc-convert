@@ -80,29 +80,33 @@ public class GuiController {
         addDestinationDirectoryChooseButtonEventListener();
         addConvertButtonActionListener();
 
+        updateFileFormatJLabel();
+
+    }
+
+    private void updateFileFormatJLabel() {
         String[] readerFormatNames = ImageIO.getReaderFormatNames();
         List<String> fileFormatStream = Stream.of(readerFormatNames)
                 .map(String::toLowerCase)
                 .distinct()
                 .sorted()
                 .toList();
-        List<String> finalList = new ArrayList<>();
+        List<String> filteredFileFormatList = new ArrayList<>();
 
         int i = 1;
         for (String fileFormat : fileFormatStream) {
             if (i % 25 == 0) {
                 i = 1;
-                finalList.add("<br/>");
+                filteredFileFormatList.add("<br/>");
             }
-            finalList.add(fileFormat);
+            filteredFileFormatList.add(fileFormat);
             i++;
         }
 
         Optional.of("<html>valid formats: " + String.join(" ",
-                        finalList
+                        filteredFileFormatList
                 ) + "</html>")
                 .ifPresent(fileFormats -> fileFormatsJLabel.setText(fileFormats));
-
     }
 
     private void addConvertButtonActionListener() {
