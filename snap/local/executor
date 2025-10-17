@@ -8,5 +8,4 @@ exec $SNAP/usr/lib/jvm/custom-jre/bin/java \
     -Dawt.useSystemAAFontSettings=on \
     -Dswing.aatext=true \
     -Djava.desktop.appName=$SNAP/meta/gui/noc-convert.desktop \
-    -Djdk.gtk.version=3  \
     -jar $SNAP/jar/noc-convert.jar "$@"
