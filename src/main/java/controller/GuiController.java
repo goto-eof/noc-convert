@@ -72,10 +72,6 @@ public class GuiController {
         this.fileSystemSupportGuiUtil = new FileSystemSupportGuiUtil();
         this.fileSystemService = new FileSystemServiceImpl();
 
-        // TODO remove me
-        sourceDirectoryTextField.setText("/home/andrei/Pictures");
-        destinationDirectoryTextField.setText("/home/andrei/Desktop/test");
-
         addSourceDirectoryChooseButtonEventListener();
         addDestinationDirectoryChooseButtonEventListener();
         addConvertButtonActionListener();
@@ -115,7 +111,32 @@ public class GuiController {
                 stopConversion();
                 return;
             }
+
+            if (!validateInput()) {
+                return;
+            }
             startConversion();
+        });
+    }
+
+    private boolean validateInput() {
+        if (sourceDirectoryTextField.getText().isEmpty()) {
+            showError("Please choose a Source directory");
+            return false;
+        }
+        if (destinationDirectoryTextField.getText().isEmpty()) {
+            showError("Please choose a Destination directory");
+            return false;
+        }
+        return true;
+    }
+
+    private void showError(String message) {
+        SwingUtilities.invokeLater(() -> {
+            JOptionPane.showMessageDialog(null,
+                    message,
+                    "Validation Result",
+                    JOptionPane.ERROR_MESSAGE);
         });
     }
 
