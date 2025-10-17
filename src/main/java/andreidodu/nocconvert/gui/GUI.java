@@ -1,4 +1,4 @@
-package andreidodu.nocconvert;
+package andreidodu.nocconvert.gui;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
