@@ -53,7 +53,7 @@ noc-convert
 
 ---
 
-<img src="https://andre-i.eu/api/v1/ipResource/custom.png?host=https://github.com/goto-eof/fromgtog" onerror="this.style.display='none'" />
+<img src="https://andre-i.eu/api/v1/ipResource/custom.png?host=https://github.com/goto-eof/noc-convert" onerror="this.style.display='none'" />
 
 ## Contributing and Support
 
