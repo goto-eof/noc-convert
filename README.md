@@ -21,7 +21,9 @@ without compromising privacy.
 ---
 
 ## Download
+
 <div id="download">v.1.0.11</div>
+
 | Platform    | AMD 64-bit                                                                                                                  | ARM 64-bit                                                                                                                |
 |:------------|:----------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------|
 | **Linux**   | [zip (.deb)](https://github.com/goto-eof/noc-convert/releases/download/1.0.11/noc-convert-Linux-1.0.11-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                         |
