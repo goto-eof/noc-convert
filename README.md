@@ -1,5 +1,7 @@
 # NoCloud Bulk Image Converter
 
+<div id="introduction"> </div>
+
 **A fast, secure, and privacy-focused image converter designed to handle large-scale bulk conversions.**
 
 ---
@@ -25,6 +27,8 @@ without compromising privacy.
 ![screenshot NoCloud Bulk Image Converter](docs/images/noc-convert.webp)
 
 ## Download
+
+<div id="download">v.1.0.11</div>
 
 | Platform    | AMD 64-bit                                                                                                                  | ARM 64-bit                                                                                                                |
 |:------------|:----------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------|
