@@ -5,9 +5,11 @@ import org.andreidodu.nocconvert.service.FileSystemService;
 import org.andreidodu.nocconvert.service.ImageConverterFacadeService;
 import org.andreidodu.nocconvert.service.ImageConverterOrchestratorService;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -22,6 +24,9 @@ public class ImageConverterFacadeServiceImpl implements ImageConverterFacadeServ
 
     @Override
     public List<String> getAllFilesDirectoryByExtension(String sourcePath, List<String> strings) {
+        if (!new File(sourcePath).exists()) {
+            return new ArrayList<>();
+        }
         try {
             return fileSystemService.getAllFiles(sourcePath, strings);
         } catch (Exception e) {

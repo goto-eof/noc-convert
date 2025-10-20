@@ -24,6 +24,14 @@ public class Main {
             log.info("Available read format: {}", format);
         }
 
+
+        try {
+            UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatDarculaLaf());
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+
+
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("NoCloud Bulk Image Converter");
             JPanel mainPanel = getMainPanel(frame);
