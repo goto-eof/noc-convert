@@ -12,9 +12,11 @@ jobs:
       contents: write
     steps:
       - name: code checkout
+        id: code_checkout
         uses: actions/checkout@v4
 
       - name: JDK setup
+        id: jdk_setup
         uses: actions/setup-java@v4
         with:
           java-version: '21'
@@ -22,10 +24,26 @@ jobs:
           cache: 'maven'
 
       - name: create jar
+        id: create_jar
         run: mvn clean package
+
+      - name: Rename JAR with Tag Version
+        id: rename_jar
+        run: |
+          TAG_VERSION=${{ github.ref_name }}
+          OLD_NAME="target/noc-convert.jar"
+          NEW_NAME="target/noc-convert-${TAG_VERSION}.jar"
+          
+          if [ -f "$OLD_NAME" ]; then
+          mv "$OLD_NAME" "$NEW_NAME"
+          echo "RENAMED_FILE=$NEW_NAME" >> $GITHUB_OUTPUT
+          else
+          echo "Error: noc-convert.jar not found."
+          exit 1
+          fi
 
       - name: Release on GitHub
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: target/*.jar
+          files: ${{ steps.rename_jar.outputs.RENAMED_FILE }}

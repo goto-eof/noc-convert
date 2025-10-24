@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.io.File;
 
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class);
@@ -19,16 +20,16 @@ public class Main {
 
         ImageIO.scanForPlugins();
 
-
-        String[] writers = ImageIO.getWriterFormatNames();
-        for (String format : writers) {
-            log.info("Available write format: {}", format);
-        }
-
+        log.info("==========================[ START READERS ]=============================");
         String[] readers = ImageIO.getReaderFormatNames();
-        for (String format : readers) {
-            log.info("Available read format: {}", format);
-        }
+        log.info("{}", String.join(", ", readers));
+        log.info("==========================[ END READERS ]=============================");
+
+        log.info("==========================[ START WRITERS ]=============================");
+        String[] writers = ImageIO.getWriterFormatNames();
+        log.info("{}", String.join(", ", writers));
+        log.info("==========================[ END WRITERS ]=============================");
+
 
         try {
             UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatDarculaLaf());
@@ -46,6 +47,13 @@ public class Main {
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
+
+        deleteLogFileOnExit();
+    }
+
+    private static void deleteLogFileOnExit() {
+        File logFile = new File("logs/application.log");
+        logFile.deleteOnExit();
     }
 
     private static JPanel getMainPanel(JFrame frame) {

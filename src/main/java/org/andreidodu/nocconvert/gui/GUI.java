@@ -64,9 +64,7 @@ public class GUI {
         DefaultComboBoxModel<ImageFormatDTO> model = new DefaultComboBoxModel<>();
         model.addAll(imageFormatList);
         model.setSelectedItem(imageFormatList.get(0));
-        SwingUtilities.invokeLater(() -> {
-            targetFileFormatComboBox.setModel(model);
-        });
+        SwingUtilities.invokeLater(() -> targetFileFormatComboBox.setModel(model));
     }
 
 
