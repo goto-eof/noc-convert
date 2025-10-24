@@ -76,7 +76,7 @@ public class GUI {
     private void $$$setupUI$$$() {
         mainPanel = new JPanel();
         mainPanel.setLayout(new GridLayoutManager(5, 5, new Insets(10, 10, 10, 10), -1, -1));
-        mainPanel.setPreferredSize(new Dimension(850, 450));
+        mainPanel.setPreferredSize(new Dimension(830, 600));
         final JLabel label1 = new JLabel();
         label1.setText("Source Directory - which contains the images to convert");
         mainPanel.add(label1, new GridConstraints(0, 0, 1, 3, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
