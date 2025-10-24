@@ -4,7 +4,7 @@
   <groupId>org.andreidodu</groupId>
   <artifactId>bulk-image-converter</artifactId>
   <name>Archetype - bulk-image-converter</name>
-  <version>1.0.14</version>
+  <version>1.0.15</version>
   <url>http://maven.apache.org</url>
   <build>
     <plugins>
