@@ -49,5 +49,3 @@ parts:
     stage-packages:
       - openjdk-21-jre
       - xdg-utils
-#      - libgtk-3-0
-#      - libcanberra-gtk3-module
