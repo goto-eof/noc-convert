@@ -12,7 +12,13 @@ public class Main {
 
     public static void main(String[] args) {
         log.info("Application is starting");
+
+//        IIORegistry registry = IIORegistry.getDefaultInstance();
+//        registry.registerServiceProvider(new PDFImageReaderSpi());
+//        registry.registerServiceProvider(new PDFImageWriterSpi());
+
         ImageIO.scanForPlugins();
+
 
         String[] writers = ImageIO.getWriterFormatNames();
         for (String format : writers) {
@@ -24,13 +30,11 @@ public class Main {
             log.info("Available read format: {}", format);
         }
 
-
         try {
             UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatDarculaLaf());
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
-
 
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("NoCloud Bulk Image Converter");

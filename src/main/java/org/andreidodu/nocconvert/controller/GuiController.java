@@ -1,19 +1,19 @@
 package org.andreidodu.nocconvert.controller;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.andreidodu.nocconvert.controller.worker.ConvertImageListSwingWorker;
 import org.andreidodu.nocconvert.dto.ConvertImageRequestDTO;
 import org.andreidodu.nocconvert.dto.GUIControllerComponentsDTO;
 import org.andreidodu.nocconvert.dto.ImageFormatDTO;
-import lombok.Getter;
-import lombok.Setter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.andreidodu.nocconvert.service.FileSystemService;
 import org.andreidodu.nocconvert.service.ImageConverterFacadeService;
 import org.andreidodu.nocconvert.service.impl.FileSystemServiceImpl;
 import org.andreidodu.nocconvert.service.impl.ImageConverterFacadeServiceImpl;
 import org.andreidodu.nocconvert.util.CustomThreadFactory;
 import org.andreidodu.nocconvert.util.FileSystemSupportGuiUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -40,7 +40,7 @@ public class GuiController {
     private final JComboBox<ImageFormatDTO> targetFileFormatComboBox;
     private final JFrame frame;
     private final JPanel errorListPanel;
-    private JLabel fileFormatsJLabel;
+    private final JLabel fileFormatsJLabel;
 
     private final ImageConverterFacadeService imageConverterFacadeService;
     private final FileSystemSupportGuiUtil fileSystemSupportGuiUtil;
@@ -75,6 +75,8 @@ public class GuiController {
         addSourceDirectoryChooseButtonEventListener();
         addDestinationDirectoryChooseButtonEventListener();
         addConvertButtonActionListener();
+
+        this.destinationDirectoryTextField.setText(System.getProperty("user.home") + "/noc-convert");
 
         updateFileFormatJLabel();
 

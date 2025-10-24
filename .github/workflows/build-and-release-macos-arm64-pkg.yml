@@ -78,7 +78,7 @@ jobs:
             --main-class org.andreidodu.nocconvert.Main \
             --icon "$ICON_PATH" \
             --type pkg \
-            --java-options "-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true" \
+            --java-options "--add-opens java.desktop/javax.imageio.spi=ALL-UNNAMED -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true" \
             --add-modules java.base,java.desktop \
             --verbose
 

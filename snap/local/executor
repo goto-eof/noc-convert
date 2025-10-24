@@ -4,7 +4,9 @@ LIB_PATH="$SNAP/jar/lib"
 ALL_JARS=$(find "$LIB_PATH" -name "*.jar" | tr '\n' ':')
 MAIN_CLASS="org.andreidodu.nocconvert.Main"
 exec $SNAP/bin/java \
+    --add-opens java.desktop/javax.imageio.spi=ALL-UNNAMED \
     -cp "$ALL_JARS:$SNAP/jar/noc-convert.jar" \
+    -Djava.io.tmpdir=$SNAP_USER_DATA/tmp \
     -Djava.util.prefs.userRoot="$SNAP_USER_DATA" \
     -Duser.home=$SNAP_USER_DATA \
     -Dawt.useSystemAAFontSettings=on \
