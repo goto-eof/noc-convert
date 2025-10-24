@@ -3,6 +3,7 @@ package org.andreidodu.nocconvert.mapper;
 import org.andreidodu.nocconvert.dto.FormatExtensionDTO;
 
 import java.util.List;
+import java.util.function.Function;
 
 public class FormatExtensionMapper {
 
@@ -41,12 +42,27 @@ public class FormatExtensionMapper {
     );
 
     public static String getExtension(String format) {
+        return getFieldValueByFormat(FormatExtensionDTO::getExtension, format);
+    }
+
+    public static String getDescription(String format) {
+        return getFieldValueByFormat(FormatExtensionDTO::getDescription, format);
+    }
+
+    public static String getCustomDescriptionFragment(String format) {
+        return getFieldValueByFormat(FormatExtensionDTO::getDescription, format);
+    }
+
+    private static String getFieldValueByFormat(Function<FormatExtensionDTO, String> fieldFunction, String format) {
         return formatExtensionSTOList.stream()
-                .filter(dto -> dto.format().equalsIgnoreCase(format))
+                .filter(dto -> dto.getFormat().equalsIgnoreCase(format))
                 .findFirst()
-                .map(FormatExtensionDTO::extension)
+                .map(fieldFunction)
                 .orElseGet(() -> format);
     }
 
 
+    public static String getToString(String format) {
+        return getFieldValueByFormat(FormatExtensionDTO::toString, format);
+    }
 }

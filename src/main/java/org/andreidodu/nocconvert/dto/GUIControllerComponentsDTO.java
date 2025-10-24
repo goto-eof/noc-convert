@@ -1,6 +1,7 @@
 package org.andreidodu.nocconvert.dto;
 
 import lombok.Builder;
+import org.andreidodu.nocconvert.gui.components.ModernSplitButton;
 
 import javax.swing.*;
 
@@ -13,7 +14,7 @@ public record GUIControllerComponentsDTO(JFrame frame,
                                          JButton chooseDestinationDirectoryButton,
                                          JButton convertButton,
                                          JList<String> errorsJList,
-                                         JComboBox<ImageFormatDTO> targetFileFormatComboBox,
+                                        ModernSplitButton targetFileFormatComboBox,
                                          JPanel errorListPanel,
                                          JLabel fileFormatsJLabel) {
 }

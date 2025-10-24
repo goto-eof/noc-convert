@@ -4,8 +4,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.andreidodu.nocconvert.controller.worker.ConvertImageListSwingWorker;
 import org.andreidodu.nocconvert.dto.ConvertImageRequestDTO;
+import org.andreidodu.nocconvert.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.dto.GUIControllerComponentsDTO;
-import org.andreidodu.nocconvert.dto.ImageFormatDTO;
+import org.andreidodu.nocconvert.gui.components.ModernSplitButton;
 import org.andreidodu.nocconvert.service.FileSystemService;
 import org.andreidodu.nocconvert.service.ImageConverterFacadeService;
 import org.andreidodu.nocconvert.service.impl.FileSystemServiceImpl;
@@ -37,7 +38,7 @@ public class GuiController {
 
     private final JButton convertButton;
     private final JList<String> errorsJList;
-    private final JComboBox<ImageFormatDTO> targetFileFormatComboBox;
+    private final ModernSplitButton targetFileFormatComboBox;
     private final JFrame frame;
     private final JPanel errorListPanel;
     private final JLabel fileFormatsJLabel;
@@ -74,7 +75,7 @@ public class GuiController {
 
         addSourceDirectoryChooseButtonEventListener();
         addDestinationDirectoryChooseButtonEventListener();
-        addConvertButtonActionListener();
+//        addConvertButtonActionListener();
 
         this.sourceDirectoryTextField.setText(System.getProperty("user.home") + "/Pictures");
         this.destinationDirectoryTextField.setText(System.getProperty("user.home") + "/Desktop/noc-convert");
@@ -147,7 +148,7 @@ public class GuiController {
         if (conversionExecutorPoolService != null && !conversionExecutorPoolService.isTerminated()) {
             conversionExecutorPoolService.shutdownNow();
             setConverting(false);
-            convertButton.setText("Start");
+//            convertButton.setText("Start");
             enableUI(true);
         }
 
@@ -182,7 +183,7 @@ public class GuiController {
             String destinationPath = destinationDirectoryTextField.getText();
 
 
-            if (targetFileFormatComboBox.getSelectedItem() == null || ((ImageFormatDTO) targetFileFormatComboBox.getSelectedItem()).format() == null || ((ImageFormatDTO) targetFileFormatComboBox.getSelectedItem()).format().isEmpty()) {
+            if (targetFileFormatComboBox.getSelectedItem() == null || ((FormatExtensionDTO) targetFileFormatComboBox.getSelectedItem()).getFormat() == null || ((FormatExtensionDTO) targetFileFormatComboBox.getSelectedItem()).getFormat().isEmpty()) {
                 SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(null,
                             "Invalid target file format!",
@@ -191,7 +192,7 @@ public class GuiController {
                 });
                 return;
             }
-            String targetFormat = ((ImageFormatDTO) targetFileFormatComboBox.getSelectedItem()).format();
+            String targetFormat = ((FormatExtensionDTO) targetFileFormatComboBox.getSelectedItem()).getFormat();
 
 
             if (conversionExecutorPoolService == null || conversionExecutorPoolService.isTerminated()) {
