@@ -44,4 +44,6 @@ public interface Colors {
 
 
     Color TEXT_LIGHT = new Color(255, 255, 255);
+
+    Color LIST_BG3 = new Color(41, 43, 46);
 }

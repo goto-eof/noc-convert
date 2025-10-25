@@ -37,27 +37,14 @@ public class Main {
             log.error(e.getMessage(), e);
         }
 
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("NoCloud Bulk Image Converter");
-            JPanel mainPanel = getMainPanel(frame);
-            frame.setContentPane(mainPanel);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.revalidate();
-            frame.pack();
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-        });
-
         deleteLogFileOnExit();
+
+        new GUI();
     }
 
     private static void deleteLogFileOnExit() {
         File logFile = new File("logs/application.log");
         logFile.deleteOnExit();
-    }
-
-    private static JPanel getMainPanel(JFrame frame) {
-        return new GUI(frame).getMainPanel();
     }
 
 }

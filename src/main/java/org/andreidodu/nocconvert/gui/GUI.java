@@ -4,15 +4,14 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import lombok.Getter;
-import org.andreidodu.nocconvert.controller.GuiController;
-import org.andreidodu.nocconvert.dto.ConversionItemDTO;
-import org.andreidodu.nocconvert.dto.ConversionStatus;
-import org.andreidodu.nocconvert.dto.FormatExtensionDTO;
-import org.andreidodu.nocconvert.dto.GUIControllerComponentsDTO;
-import org.andreidodu.nocconvert.gui.constants.Colors;
+import org.andreidodu.nocconvert.controller.ConversionController;
+import org.andreidodu.nocconvert.controller.PathSelectionController;
+import org.andreidodu.nocconvert.controller.ProcessingStatusController;
+import org.andreidodu.nocconvert.dto.*;
 import org.andreidodu.nocconvert.gui.components.ConversionItemRenderer;
 import org.andreidodu.nocconvert.gui.components.ModernInputButtonPanel;
 import org.andreidodu.nocconvert.gui.components.ModernSplitButton;
+import org.andreidodu.nocconvert.gui.constants.Colors;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 
 import javax.imageio.ImageIO;
@@ -25,21 +24,14 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class GUI {
+public class GUI extends JFrame {
     private static final float ARC_SIZE = 20;
-    @Getter
-    private final JFrame mainFrame;
     @Getter
     private JPanel mainPanel;
     private ModernInputButtonPanel sourceDirectoryTextField;
-    private JButton chooseSourceDirectoryButton;
     private JList<ConversionItemDTO> conversionFileList;
     private ModernInputButtonPanel destinationDirectoryTextField;
-    private JButton chooseDestinationDirectoryButton;
-    private JList<String> errorsJList;
     private ModernSplitButton targetFileFormatComboBox;
-    private JButton convertButton;
-    private JPanel errorListPanel;
     private JLabel fileFormatsJLabel;
     private JPanel sourcePanel;
     private JPanel destinationPanel;
@@ -51,36 +43,57 @@ public class GUI {
     private JPanel footerPanel;
     private JPanel scrollPanePanel;
     private JLabel welcomeLabel;
-    private static final Color DARK_ACCENT_BLUE = new Color(0, 120, 212, 189);
-    private static final Color LIST_BG = new Color(41, 43, 46);
 
-    public GUI(JFrame frame) {
+    private final PathSelectionController pathSelectionController;
+    private final ProcessingStatusController processingStatusController;
+    private final ConversionController conversionController;
+
+
+    public GUI() {
         super();
-        this.mainFrame = frame;
 
         $$$setupUI$$$();
 
         buildModelForTargetFileFormat();
 
+        // TODO move somewhere else
+        welcomeLabel.setVisible(true);
         progressBar1.setForeground(Colors.LIME_DARK);
 
-        GUIControllerComponentsDTO guiControllerInputDTO = GUIControllerComponentsDTO.builder()
-                .frame(frame)
-                .sourceDirectoryTextField(sourceDirectoryTextField)
-                .chooseSourceDirectoryButton(chooseSourceDirectoryButton)
-                .sourceDirectoryFilesList(conversionFileList)
-                .destinationDirectoryTextField(destinationDirectoryTextField)
-                .chooseDestinationDirectoryButton(chooseDestinationDirectoryButton)
-                .convertButton(convertButton)
-                .errorsJList(errorsJList)
-                .targetFileFormatComboBox(targetFileFormatComboBox)
-                .errorListPanel(errorListPanel)
-                .fileFormatsJLabel(fileFormatsJLabel)
-                .build();
-        new GuiController(guiControllerInputDTO);
 
-        welcomeLabel.setVisible(true);
+        pathSelectionController = initializePathSelectionController();
+        processingStatusController = initializeProcessingStatusController();
+        conversionController = initializeConversionController();
+        initializeWindow();
+    }
 
+
+    private PathSelectionController initializePathSelectionController() {
+        PathSelectionDTO pathSelectionDTO = new PathSelectionDTO();
+        return new PathSelectionController(pathSelectionDTO);
+    }
+
+
+    private ProcessingStatusController initializeProcessingStatusController() {
+        ProcessingStatusDTO processingStatusDTO = new ProcessingStatusDTO();
+        return new ProcessingStatusController(processingStatusDTO);
+    }
+
+
+    private ConversionController initializeConversionController() {
+        ConversionDTO conversionDTO = new ConversionDTO();
+        return new ConversionController(conversionDTO);
+    }
+
+
+    private void initializeWindow() {
+        setTitle("NoCloud Bulk Image Converter");
+        setContentPane(mainPanel);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        revalidate();
+        pack();
+        setLocationRelativeTo(null);
+        setVisible(true);
     }
 
     private ModernSplitButton buildModelForTargetFileFormat() {
@@ -97,7 +110,7 @@ public class GUI {
         DefaultComboBoxModel<FormatExtensionDTO> model = new DefaultComboBoxModel<>();
         model.addAll(imageFormatList);
         model.setSelectedItem(imageFormatList.get(0));
-        ModernSplitButton splitButton1 = new ModernSplitButton(mainFrame, "CONVERT to PNG",
+        ModernSplitButton splitButton1 = new ModernSplitButton(this, "CONVERT to PNG",
                 imageFormatList.toArray(FormatExtensionDTO[]::new));
         splitButton1.setMainActionLabel("CONVERT to PNG");
         splitButton1.getMainActionButton().addActionListener(e -> {
@@ -125,7 +138,7 @@ public class GUI {
 
         conversionFileList = new JList<>(modelProgress);
         conversionFileList.setCellRenderer(renderer);
-        conversionFileList.setBorder(BorderFactory.createLineBorder(LIST_BG, 1));
+//        conversionFileList.setBorder(BorderFactory.createLineBorder(LIST_BG, 1));
 
 
         return splitButton1;
