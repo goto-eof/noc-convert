@@ -8,9 +8,9 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.geom.GeneralPath;
 
-import static org.andreidodu.nocconvert.gui.components.Colors.*;
-import static org.andreidodu.nocconvert.gui.components.ShapeUtil.getRoundedEastPath;
-import static org.andreidodu.nocconvert.gui.components.ShapeUtil.getRoundedWestPath;
+import static org.andreidodu.nocconvert.gui.constants.Colors.*;
+import static org.andreidodu.nocconvert.gui.util.ShapeUtil.getRoundedEastPath;
+import static org.andreidodu.nocconvert.gui.util.ShapeUtil.getRoundedWestPath;
 
 public class ModernSplitButton extends JPanel {
 
@@ -24,8 +24,6 @@ public class ModernSplitButton extends JPanel {
     private FormatExtensionDTO format;
 
 
-    private static final Color BORDER_DARK = new Color(60, 60, 60);
-    private static final Color TEXT_LIGHT = new Color(255, 255, 255);
 
     public ModernSplitButton(JFrame parent, String mainLabel, FormatExtensionDTO[] formats) {
         setLayout(new BorderLayout(0, 0));

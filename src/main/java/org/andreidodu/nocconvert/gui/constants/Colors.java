@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.gui.components;
+package org.andreidodu.nocconvert.gui.constants;
 
 import java.awt.*;
 
@@ -24,4 +24,24 @@ public interface Colors {
     Color GRAY_SUPER_DARK = new Color(32, 30, 30);
     Color GRAY_DARK = new Color(36, 38, 41);
     Color GRAY_LIGHT = new Color(40, 40, 40);
+
+    Color LIST_BG = new Color(57, 60, 64);
+    Color LIST_BG_LIGHTER = new Color(67, 70, 74);
+    Color LIST_BG2 = new Color(68, 71, 76);
+    Color BUTTON_BG = new Color(47, 50, 57);
+    Color BORDER_DARK = new Color(60, 60, 60);
+
+    Color TEXT_LIGHT2 = new Color(227, 227, 227);
+    Color TEXT_DARK = new Color(27, 34, 0);
+
+    Color DARK_ACCENT_BLUE = new Color(0, 120, 212, 189);
+
+    Color DARK_ACCENT_GREEN = new Color(102, 212, 0, 87);
+    Color DARK_ACCENT_GRAY = new Color(30, 30, 30);
+    Color SELECTED_DARK_ACCENT_BLUE = new Color(0, 120, 212, 124);
+    Color ACCENT_GREEN = new Color(102, 212, 0);
+    Color ACCENT_GRAY = new Color(205, 203, 203);
+
+
+    Color TEXT_LIGHT = new Color(255, 255, 255);
 }

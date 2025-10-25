@@ -8,8 +8,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.GeneralPath;
 
-import static org.andreidodu.nocconvert.gui.components.Colors.*;
-import static org.andreidodu.nocconvert.gui.components.ShapeUtil.*;
+import static org.andreidodu.nocconvert.gui.constants.Colors.*;
+import static org.andreidodu.nocconvert.gui.util.ShapeUtil.*;
 
 public class ConversionItemRenderer extends JPanel implements ListCellRenderer<ConversionItemDTO> {
 
@@ -21,14 +21,7 @@ public class ConversionItemRenderer extends JPanel implements ListCellRenderer<C
     private final JProgressBar progressBar;
     private final JPanel contentPanel;
     private final JPanel topPanel;
-    private static final Color DARK_ACCENT_BLUE = new Color(0, 120, 212, 189);
 
-    private static final Color DARK_ACCENT_GREEN = new Color(102, 212, 0, 87);
-    private static final Color DARK_ACCENT_GRAY = new Color(30, 30, 30);
-    private static final Color SELECTED_DARK_ACCENT_BLUE = new Color(0, 120, 212, 124);
-    private static final Color ACCENT_BLUE = new Color(0, 120, 212);
-    private static final Color ACCENT_GREEN = new Color(102, 212, 0);
-    private static final Color ACCENT_GRAY = new Color(205, 203, 203);
     int pari = 0;
 
     public ConversionItemRenderer() {

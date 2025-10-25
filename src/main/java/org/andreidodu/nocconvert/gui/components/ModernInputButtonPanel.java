@@ -1,5 +1,7 @@
 package org.andreidodu.nocconvert.gui.components;
 
+import org.andreidodu.nocconvert.gui.constants.Colors;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -8,7 +10,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.RoundRectangle2D;
 
-import static org.andreidodu.nocconvert.gui.components.ShapeUtil.getRoundedWestPath;
+import static org.andreidodu.nocconvert.gui.util.ShapeUtil.getRoundedWestPath;
 
 public class ModernInputButtonPanel extends JPanel implements Colors {
 
@@ -16,24 +18,11 @@ public class ModernInputButtonPanel extends JPanel implements Colors {
     private static final float ARC_SIZE_BTN = 10;
     private final JTextField textField;
     private final JButton browseButton;
-    private final boolean browseButtonHover = false;
-    private static final Color LIST_BG = new Color(57, 60, 64);
-    private static final Color LIST_BG_LIGHTER = new Color(67, 70, 74);
-    private static final Color LIST_BG2 = new Color(68, 71, 76);
-    private static final Color BUTTON_BG = new Color(47, 50, 57);
-    private static final Color BORDER_DARK = new Color(60, 60, 60);
-
-    private static final Color TEXT_LIGHT = new Color(212, 212, 212);
-    private static final Color TEXT_LIGHT2 = new Color(227, 227, 227);
-    private static final Color TEXT_DARK = new Color(27, 34, 0);
-    private static final int BORDER_RADIUS = 6;
-    private final String initialText = "";
 
 
     public ModernInputButtonPanel() {
-        textField = new JTextField(initialText);
+        textField = new JTextField("");
         browseButton = createBrowseButton();
-
     }
 
     public ModernInputButtonPanel(String initialText, String labelText) {
@@ -87,7 +76,7 @@ public class ModernInputButtonPanel extends JPanel implements Colors {
         old.setBorder(new EmptyBorder(10, 10, 10, 10));
         old.setOpaque(false);
 
-        JPanel onlyLabel = new JPanel(new BorderLayout(0, 0)){
+        JPanel onlyLabel = new JPanel(new BorderLayout(0, 0)) {
 
             {
 
@@ -96,6 +85,7 @@ public class ModernInputButtonPanel extends JPanel implements Colors {
                 setOpaque(false);
                 setFont(new Font("Arial", Font.BOLD, 14));
             }
+
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -105,7 +95,7 @@ public class ModernInputButtonPanel extends JPanel implements Colors {
                 int width = getWidth();
                 int height = getHeight();
 
-                GeneralPath path = getRoundedWestPath(width-1, height-1);
+                GeneralPath path = getRoundedWestPath(width - 1, height - 1);
 
 
                 g2.setColor(LIST_BG_LIGHTER);

@@ -1,10 +1,21 @@
-package org.andreidodu.nocconvert.gui.components;
+package org.andreidodu.nocconvert.gui.util;
 
 import java.awt.geom.GeneralPath;
 
 public class ShapeUtil {
-    private static final float ARC_SIZE = 10;
+    private static final float DEFAULT_ARC_SIZE = 10;
 
+    public static GeneralPath getRoundedWestPath(int width, int height) {
+        return getRoundedWestPath(width, height, DEFAULT_ARC_SIZE);
+    }
+
+    public static GeneralPath getRoundedEastPath(int width, int height) {
+        return getRoundedEastPath(width, height, DEFAULT_ARC_SIZE);
+    }
+
+    public static GeneralPath getRoundedPath(int width, int height) {
+        return getRoundedPath(width, height, DEFAULT_ARC_SIZE);
+    }
     public static GeneralPath getRoundedWestPath(int width, int height, float arcSize) {
         GeneralPath path = new GeneralPath();
         path.moveTo(arcSize, 0);
@@ -16,18 +27,6 @@ public class ShapeUtil {
         path.quadTo(0, 0, arcSize, 0);
         path.closePath();
         return path;
-    }
-
-    public static GeneralPath getRoundedWestPath(int width, int height) {
-        return getRoundedWestPath(width, height, ARC_SIZE);
-    }
-
-    public static GeneralPath getRoundedEastPath(int width, int height) {
-        return getRoundedEastPath(width, height, ARC_SIZE);
-    }
-
-    public static GeneralPath getRoundedPath(int width, int height) {
-        return getRoundedPath(width, height, ARC_SIZE);
     }
 
     public static GeneralPath getRoundedEastPath(int width, int height, float arcSize) {

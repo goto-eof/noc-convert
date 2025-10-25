@@ -9,7 +9,7 @@ import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.dto.GUIControllerComponentsDTO;
-import org.andreidodu.nocconvert.gui.components.Colors;
+import org.andreidodu.nocconvert.gui.constants.Colors;
 import org.andreidodu.nocconvert.gui.components.ConversionItemRenderer;
 import org.andreidodu.nocconvert.gui.components.ModernInputButtonPanel;
 import org.andreidodu.nocconvert.gui.components.ModernSplitButton;
