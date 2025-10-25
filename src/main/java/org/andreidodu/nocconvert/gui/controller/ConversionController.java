@@ -5,7 +5,7 @@ import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 public class ConversionController {
 
 
-    public  ConversionController(ConversionDTO conversionDTO) {
+    public ConversionController(ConversionDTO conversionDTO) {
     }
 
 }
