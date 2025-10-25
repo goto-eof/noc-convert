@@ -6,4 +6,7 @@ public class ConvertionStatusController {
 
     public ConvertionStatusController(ConvertionStatusDTO convertionStatusDTO) {
     }
+
+    public void switchToViewListMode() {
+    }
 }
