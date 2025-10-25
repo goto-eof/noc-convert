@@ -27,6 +27,8 @@ public class SplitButtonComponent extends JPanel {
     private final GUIOrchestrator orchestrator;
 
     public SplitButtonComponent(GUIOrchestrator orchestrator) {
+        Objects.requireNonNull(orchestrator);
+
         this.orchestrator = orchestrator;
         setLayout(new BorderLayout(0, 0));
         setOpaque(false);
@@ -54,14 +56,16 @@ public class SplitButtonComponent extends JPanel {
             item.setForeground(TEXT_LIGHT);
 
             item.addActionListener(e -> {
-                setMainActionLabel("CONVERT to " + fileFormat.getDescription().toUpperCase());
+                setMainActionLabel("CONVERT to " + fileFormat.getDescription());
                 this.selectedItem = fileFormat;
                 orchestrator.pack();
             });
 
             popupMenu.add(item);
         }
-        setMainActionLabel("CONVERT to " + imageFormatList.get(0).getDescription());
+        FormatExtensionDTO selectedDefault = imageFormatList.getFirst();
+        this.selectedItem = selectedDefault;
+        setMainActionLabel("CONVERT to " + selectedDefault.getDescription());
         return popupMenu;
     }
 
@@ -179,6 +183,8 @@ public class SplitButtonComponent extends JPanel {
 
 
     public void setMainActionLabel(String label) {
+        Objects.requireNonNull(label);
+
         mainActionButton.setText(label);
     }
 
