@@ -15,7 +15,7 @@ import org.andreidodu.nocconvert.gui.constants.Colors;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
-import org.andreidodu.nocconvert.gui.dto.ProcessingStatusDTO;
+import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 
 import javax.imageio.ImageIO;
@@ -84,8 +84,8 @@ public class GUIOrchestrator extends JFrame {
 
 
     private ConvertionStatusController initializeProcessingStatusController() {
-        ProcessingStatusDTO processingStatusDTO = new ProcessingStatusDTO();
-        return new ConvertionStatusController(processingStatusDTO);
+        ConvertionStatusDTO convertionStatusDTO = new ConvertionStatusDTO();
+        return new ConvertionStatusController(convertionStatusDTO);
     }
 
 

@@ -3,5 +3,5 @@ package org.andreidodu.nocconvert.gui.dto;
 import lombok.Builder;
 
 @Builder
-public record ProcessingStatusDTO() {
+public record ConvertionStatusDTO() {
 }
