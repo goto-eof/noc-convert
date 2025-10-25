@@ -6,7 +6,7 @@ public interface Colors {
     Color LIME = new Color(124, 179, 66);
     Color LIME_DARK = new Color(124, 179, 66, 157);
     Color LIME_SUPER_DARK = new Color(82, 117, 43, 157);
-    Color LIME_SUPER_SUPER_DARK = new Color(53, 76, 28, 157);
+    Color LIME_SUPER_SUPER_DARK = new Color(53, 76, 28, 255);
     Color LIME_SUPER_SUPER_SUPER_DARK = new Color(14, 33, 41, 255);
 
     Color YELLOW = new Color(212, 177, 0);

@@ -50,6 +50,7 @@ public class GUI {
     private JPanel headerPanel;
     private JPanel footerPanel;
     private JPanel scrollPanePanel;
+    private JLabel welcomeLabel;
     private static final Color DARK_ACCENT_BLUE = new Color(0, 120, 212, 189);
     private static final Color LIST_BG = new Color(41, 43, 46);
 
@@ -77,6 +78,9 @@ public class GUI {
                 .fileFormatsJLabel(fileFormatsJLabel)
                 .build();
         new GuiController(guiControllerInputDTO);
+
+        welcomeLabel.setVisible(false);
+
     }
 
     private ModernSplitButton buildModelForTargetFileFormat() {
@@ -206,18 +210,24 @@ public class GUI {
         panel6.setLayout(new GridLayoutManager(1, 1, new Insets(10, 10, 10, 10), -1, -1));
         panel6.setBackground(new Color(-14079186));
         mainPanel.add(panel6, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        scrollPanePanel.setLayout(new GridLayoutManager(1, 1, new Insets(10, 10, 10, 10), -1, -1));
+        scrollPanePanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        scrollPanePanel.setBackground(new Color(-13026240));
+        scrollPanePanel.setEnabled(true);
         scrollPanePanel.setOpaque(false);
         panel6.add(scrollPanePanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-
+        scrollPane1.setBackground(new Color(-14079186));
+        scrollPane1.setForeground(new Color(-2038305));
         scrollPane1.setOpaque(false);
-        scrollPanePanel.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        scrollPanePanel.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         conversionFileList.setBackground(new Color(-14079186));
         conversionFileList.setOpaque(true);
         conversionFileList.setRequestFocusEnabled(false);
         conversionFileList.setSelectionBackground(new Color(-16756358));
         conversionFileList.setSelectionForeground(new Color(-8026747));
         scrollPane1.setViewportView(conversionFileList);
+        welcomeLabel = new JLabel();
+        welcomeLabel.setText("Please select the Source and the Destination Directories in order to be able to start the image conversion.");
+        scrollPanePanel.add(welcomeLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel7 = new JPanel();
         panel7.setLayout(new GridLayoutManager(1, 2, new Insets(10, 20, 10, 20), -1, -1));
         panel7.setBackground(new Color(-14079186));
@@ -285,18 +295,19 @@ public class GUI {
         headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, headerBorderColor));
 
 
-        footerPanel = new JPanel();
+        footerPanel = new JPanel(new BorderLayout(0, 0));
         footerPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, headerBorderColor));
 
         scrollPane1 = new JScrollPane();
-//        scrollPane1.setBackground(new Color(-14079186));
-//        scrollPane1.setForeground(new Color(-2038305));
+        scrollPane1.setVisible(true);
         scrollPane1.setViewportView(conversionFileList);
         scrollPane1.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+
 
         scrollPanePanel = new JPanel() {
             {
                 setOpaque(false);
+
             }
 
             @Override
@@ -316,5 +327,7 @@ public class GUI {
             }
 
         };
+
     }
+
 }

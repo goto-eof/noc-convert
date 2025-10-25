@@ -41,33 +41,6 @@ public class ConversionItemRenderer extends JPanel implements ListCellRenderer<C
                 setForeground(Color.WHITE);
                 setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
             }
-
-//            @Override
-//            protected void paintComponent(Graphics g) {
-//                // Crea una copia dell'oggetto Graphics e lo converte in Graphics2D
-//                Graphics2D g2 = (Graphics2D) g.create();
-//
-//                // PUNTO CRITICO 2: Abilita l'antialiasing per rendere gli angoli lisci e non seghettati
-//                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-//
-//                int width = getWidth();
-//                int height = getHeight();
-//
-//                // 1. Disegna lo sfondo arrotondato
-//                GeneralPath path = getRoundedWestPath(width, height, 7);
-//
-//                g2.setColor( new Color(41, 43, 46)); // Un bel colore viola
-//                g2.fill(path); // Riempie la forma definita
-//
-//                // Imposta il colore per il bordo
-////                g2.setColor(Color.WHITE);
-////                g2.setStroke(new BasicStroke(1));
-////                g2.draw(path); // Disegna il bordo
-//
-//                // Rilascia le risorse Graphics2D
-//                g2.dispose();
-//                super.paintComponent(g);
-//            }
         };
         fileNameLabel.setFont(fileNameLabel.getFont().deriveFont(Font.BOLD, 12f));
         fileNameLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -82,27 +55,17 @@ public class ConversionItemRenderer extends JPanel implements ListCellRenderer<C
 
             @Override
             protected void paintComponent(Graphics g) {
-                // Crea una copia dell'oggetto Graphics e lo converte in Graphics2D
                 Graphics2D g2 = (Graphics2D) g.create();
-
-                // PUNTO CRITICO 2: Abilita l'antialiasing per rendere gli angoli lisci e non seghettati
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
                 int width = getWidth();
                 int height = getHeight();
 
-                // 1. Disegna lo sfondo arrotondato
                 GeneralPath path = getRoundedEastPath(width, height, 7);
 
-                g2.setColor(LIME_DARK); // Un bel colore viola
-                g2.fill(path); // Riempie la forma definita
+                g2.setColor(LIME_DARK);
+                g2.fill(path);
 
-                // Imposta il colore per il bordo
-//                g2.setColor(Color.WHITE);
-//                g2.setStroke(new BasicStroke(1));
-//                g2.draw(path); // Disegna il bordo
-
-                // Rilascia le risorse Graphics2D
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -117,38 +80,22 @@ public class ConversionItemRenderer extends JPanel implements ListCellRenderer<C
 
             @Override
             protected void paintComponent(Graphics g) {
-                // Crea una copia dell'oggetto Graphics e lo converte in Graphics2D
                 Graphics2D g2 = (Graphics2D) g.create();
 
-                // PUNTO CRITICO 2: Abilita l'antialiasing per rendere gli angoli lisci e non seghettati
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
                 int width = getWidth();
                 int height = getHeight();
 
-                // 1. Disegna lo sfondo arrotondato
                 GeneralPath path = getRoundedWestPath(width, height, 7);
 
-                g2.setColor(YELLOW_DARK); // Un bel colore viola
-                g2.fill(path); // Riempie la forma definita
+                g2.setColor(YELLOW_DARK);
+                g2.fill(path);
 
-                // Imposta il colore per il bordo
-//                g2.setColor(Color.WHITE);
-//                g2.setStroke(new BasicStroke(1));
-//                g2.draw(path); // Disegna il bordo
-
-                // Rilascia le risorse Graphics2D
                 g2.dispose();
                 super.paintComponent(g);
             }
         };
-//        targetFormat.setFont(targetFormat.getFont().deriveFont(Font.BOLD, 12f));
-//        targetFormat.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-
-
-//        statusLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-
-
         statusPanel = new JPanel(new BorderLayout(0, 0));
         statusPanel.add(statusLabel, BorderLayout.EAST);
         statusPanel.add(targetFormat, BorderLayout.CENTER);
@@ -168,27 +115,18 @@ public class ConversionItemRenderer extends JPanel implements ListCellRenderer<C
 
             @Override
             protected void paintComponent(Graphics g) {
-                // Crea una copia dell'oggetto Graphics e lo converte in Graphics2D
                 Graphics2D g2 = (Graphics2D) g.create();
 
-                // PUNTO CRITICO 2: Abilita l'antialiasing per rendere gli angoli lisci e non seghettati
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
                 int width = getWidth();
                 int height = getHeight();
 
-                // 1. Disegna lo sfondo arrotondato
                 GeneralPath path = getRoundedPath(width, height, 10);
 
-                g2.setColor(GRAY_SUPER_DARK); // Un bel colore viola
-                g2.fill(path); // Riempie la forma definita
+                g2.setColor(GRAY_SUPER_DARK);
+                g2.fill(path);
 
-                // Imposta il colore per il bordo
-//                g2.setColor(Color.WHITE);
-//                g2.setStroke(new BasicStroke(1));
-//                g2.draw(path); // Disegna il bordo
-
-                // Rilascia le risorse Graphics2D
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -249,47 +187,16 @@ public class ConversionItemRenderer extends JPanel implements ListCellRenderer<C
         targetFormat.setText(value.getTargetFormat());
 
 
-        if (ConversionStatus.QUEUED.equals(status.status()) ||
-                ConversionStatus.COMPLETED.equals(status.status()) ||
-                ConversionStatus.FAILED.equals(status.status())) {
-            progressBar.setVisible(false);
-        } else {
-            progressBar.setVisible(true);
-            progressBar.setString(value.getProgressPercentage() + "%");
-        }
-
-        Color fg = new Color(255, 255, 255, 150);
-
-        Color background = isSelected ? GRAY_SUPER_DARK : list.getBackground();
-        Color foreground = isSelected ? list.getSelectionForeground() : fg;
-
         Color border = pari % 2 == 0 ? GRAY_DARK : list.getBackground();
+        border = isSelected ? LIME_SUPER_SUPER_DARK : border;
 
         setBorder(BorderFactory.createMatteBorder(10, 10, 10, 10, border));
 
         setBackground(border);
-//        contentPanel.setBackground(border);
-//        Color bg = new Color(41, 43, 46);
-//        topPanel.setBackground(bg);
-//        contentPanel.setBackground(bg);
         progressBar.setForeground(LIME_DARK);
 
-//        statusPanel.setBackground(bg);
-//        statusLabel.setBackground(bg);
-//        fileNameLabel.setBackground(bg);
         fileNameLabel.setForeground(Color.WHITE);
-        //statusLabel.setForeground(isSelected ? list.getSelectionForeground() : fg);
 
-
-        // targetFormat.setForeground(isSelected ? list.getSelectionForeground() : fg);
-//
-//        statusLabel.setBackground(DARK_ACCENT_GREEN);
-        //statusLabel.setForeground(ACCENT_GREEN);
-
-
-//        targetFormat.setForeground(ACCENT_GRAY);
-//        targetFormat.setBackground(DARK_ACCENT_GRAY);
-//        targetFormat.setOpaque(true);
 
         setOpaque(true);
         topPanel.setOpaque(false);
