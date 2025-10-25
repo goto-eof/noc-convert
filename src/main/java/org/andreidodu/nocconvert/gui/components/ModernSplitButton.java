@@ -6,6 +6,11 @@ import org.andreidodu.nocconvert.dto.FormatExtensionDTO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.geom.GeneralPath;
+
+import static org.andreidodu.nocconvert.gui.components.Colors.*;
+import static org.andreidodu.nocconvert.gui.components.ShapeUtil.getRoundedEastPath;
+import static org.andreidodu.nocconvert.gui.components.ShapeUtil.getRoundedWestPath;
 
 public class ModernSplitButton extends JPanel {
 
@@ -18,63 +23,148 @@ public class ModernSplitButton extends JPanel {
     @Getter
     private FormatExtensionDTO format;
 
-    private static final Color ACCENT_BLUE = new Color(0, 120, 212);
-    private static final Color ACCENT_BLUE_DARK = new Color(0, 90, 158);
-    private static final Color DROPDOWN_TOGGLE_BG = new Color(0, 90, 158);
-    private static final Color DROPDOWN_TOGGLE_HOVER = new Color(0, 70, 125);
+
     private static final Color BORDER_DARK = new Color(60, 60, 60);
     private static final Color TEXT_LIGHT = new Color(255, 255, 255);
 
     public ModernSplitButton(JFrame parent, String mainLabel, FormatExtensionDTO[] formats) {
         setLayout(new BorderLayout(0, 0));
-        setBorder(BorderFactory.createLineBorder(ACCENT_BLUE, 1));
+//        setBorder(BorderFactory.createLineBorder(LIME_DARK, 1));
+        setOpaque(false);
+        mainActionButton = new JButton(mainLabel) {
+            private boolean isHover;
 
-        mainActionButton = new JButton(mainLabel);
-        mainActionButton.setBackground(ACCENT_BLUE);
-        mainActionButton.setForeground(TEXT_LIGHT);
-        mainActionButton.setFont(mainActionButton.getFont().deriveFont(Font.BOLD, 14f));
-        mainActionButton.setBorder(new EmptyBorder(8, 15, 8, 15));
-        mainActionButton.setFocusPainted(false);
-        mainActionButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            {
+                setContentAreaFilled(false);
+                setBorderPainted(false);
 
-        mainActionButton.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                if (mainActionButton.isEnabled()) {
-                    mainActionButton.setBackground(ACCENT_BLUE_DARK);
-                }
+
+                setForeground(TEXT_LIGHT);
+                setFont(getFont().deriveFont(Font.BOLD, 14f));
+                setBorder(new EmptyBorder(15, 15, 15, 15));
+                setFocusPainted(false);
+                setCursor(new Cursor(Cursor.HAND_CURSOR));
+                setOpaque(false);
+                addMouseListener(new java.awt.event.MouseAdapter() {
+                    @Override
+                    public void mouseEntered(java.awt.event.MouseEvent evt) {
+                        isHover = true;
+                    }
+
+                    @Override
+                    public void mouseExited(java.awt.event.MouseEvent evt) {
+                        isHover = false;
+                    }
+                });
             }
 
             @Override
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                mainActionButton.setBackground(ACCENT_BLUE);
+            protected void paintComponent(Graphics g) {
+                // Crea una copia dell'oggetto Graphics e lo converte in Graphics2D
+                Graphics2D g2 = (Graphics2D) g.create();
+
+                // PUNTO CRITICO 2: Abilita l'antialiasing per rendere gli angoli lisci e non seghettati
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int width = getWidth();
+                int height = getHeight();
+
+                // 1. Disegna lo sfondo arrotondato
+                GeneralPath path = getRoundedWestPath(width, height);
+
+                // --- 2. Riempimento e Disegno ---
+
+                Color color = isHover ? LIME_SUPER_DARK : LIME_DARK;
+
+                g2.setColor(color); // Un bel colore viola
+                g2.fill(path); // Riempie la forma definita
+
+
+                // Imposta il colore per il bordo
+//                g2.setColor(Color.WHITE);
+//                g2.setStroke(new BasicStroke(1));
+//                g2.draw(path); // Disegna il bordo
+
+                // Rilascia le risorse Graphics2D
+                g2.dispose();
+                super.paintComponent(g);
+
             }
-        });
+        };
 
-        dropdownToggleButton = new JButton("▼");
-        dropdownToggleButton.setBackground(DROPDOWN_TOGGLE_BG);
-        dropdownToggleButton.setForeground(TEXT_LIGHT);
 
-        dropdownToggleButton.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 1, 0, 0, new Color(255, 255, 255, 50)),
-                new EmptyBorder(8, 10, 8, 10)
-        ));
-        dropdownToggleButton.setFocusPainted(false);
-        dropdownToggleButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        dropdownToggleButton = new JButton("▼") {
+            private boolean isHover;
 
-        dropdownToggleButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            {
+                setForeground(TEXT_LIGHT);
+                setContentAreaFilled(false);
+                setBorderPainted(true);
+                setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createMatteBorder(0, 1, 0, 0, new Color(255, 255, 255, 50)),
+                        new EmptyBorder(8, 10, 8, 10)
+                ));
+                setFocusPainted(false);
+                setCursor(new Cursor(Cursor.HAND_CURSOR));
+                setOpaque(false);
+                addMouseListener(new java.awt.event.MouseAdapter() {
+                    @Override
+                    public void mouseEntered(java.awt.event.MouseEvent evt) {
+                        isHover = true;
+                    }
+
+                    @Override
+                    public void mouseExited(java.awt.event.MouseEvent evt) {
+                        isHover = false;
+                    }
+                });
+            }
+
             @Override
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                if (dropdownToggleButton.isEnabled()) {
-                    dropdownToggleButton.setBackground(DROPDOWN_TOGGLE_HOVER);
-                }
-            }
+            protected void paintComponent(Graphics g) {
+                // Crea una copia dell'oggetto Graphics e lo converte in Graphics2D
+                Graphics2D g2 = (Graphics2D) g.create();
 
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                dropdownToggleButton.setBackground(DROPDOWN_TOGGLE_BG);
+                // PUNTO CRITICO 2: Abilita l'antialiasing per rendere gli angoli lisci e non seghettati
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int width = getWidth();
+                int height = getHeight();
+
+                // 1. Disegna lo sfondo arrotondato
+                GeneralPath path = getRoundedEastPath(width, height);
+                Color color = isHover ? LIME_SUPER_DARK : LIME_DARK;
+
+                g2.setColor(color); // Un bel colore viola
+                g2.fill(path); // Riempie la forma definita
+
+                // Imposta il colore per il bordo
+//                g2.setColor(Color.WHITE);
+//                g2.setStroke(new BasicStroke(1));
+//                g2.draw(path); // Disegna il bordo
+
+                // Rilascia le risorse Graphics2D
+                g2.dispose();
+                super.paintComponent(g);
             }
-        });
+        };
+        dropdownToggleButton.setBackground(BG_FOOTER);
+        dropdownToggleButton.setOpaque(false);
+
+
+//        dropdownToggleButton.addMouseListener(new java.awt.event.MouseAdapter() {
+//            @Override
+//            public void mouseEntered(java.awt.event.MouseEvent evt) {
+//                if (dropdownToggleButton.isEnabled()) {
+//                    dropdownToggleButton.setBackground(LIME_SUPER_DARK);
+//                }
+//            }
+//
+//            @Override
+//            public void mouseExited(java.awt.event.MouseEvent evt) {
+//                dropdownToggleButton.setBackground(LIME_DARK);
+//            }
+//        });
 
         formatMenu = new JPopupMenu();
         formatMenu.setBorder(BorderFactory.createLineBorder(BORDER_DARK));
@@ -98,29 +188,31 @@ public class ModernSplitButton extends JPanel {
             formatMenu.show(dropdownToggleButton, 0, dropdownToggleButton.getHeight());
         });
 
+
         add(mainActionButton, BorderLayout.CENTER);
         add(dropdownToggleButton, BorderLayout.EAST);
     }
+
 
     public void setMainActionLabel(String label) {
         mainActionButton.setText(label);
     }
 
-    @Override
-    public void setEnabled(boolean enabled) {
-        super.setEnabled(enabled);
-        mainActionButton.setEnabled(enabled);
-        dropdownToggleButton.setEnabled(enabled);
-
-        if (!enabled) {
-            mainActionButton.setBackground(new Color(60, 60, 60));
-            dropdownToggleButton.setBackground(new Color(40, 40, 40));
-            setBorder(BorderFactory.createLineBorder(BORDER_DARK, 1));
-        } else {
-            mainActionButton.setBackground(ACCENT_BLUE);
-            dropdownToggleButton.setBackground(DROPDOWN_TOGGLE_BG);
-            setBorder(BorderFactory.createLineBorder(ACCENT_BLUE, 1));
-        }
-    }
+//    @Override
+//    public void setEnabled(boolean enabled) {
+//        super.setEnabled(enabled);
+//        mainActionButton.setEnabled(enabled);
+//        dropdownToggleButton.setEnabled(enabled);
+//
+//        if (!enabled) {
+//            mainActionButton.setBackground(new Color(60, 60, 60));
+//            dropdownToggleButton.setBackground(new Color(40, 40, 40));
+//            setBorder(BorderFactory.createLineBorder(BORDER_DARK, 1));
+//        } else {
+//            mainActionButton.setBackground(LIME_DARK);
+//            dropdownToggleButton.setBackground(LIME_SUPER_DARK);
+//            setBorder(BorderFactory.createLineBorder(LIME_DARK, 1));
+//        }
+//    }
 }
 

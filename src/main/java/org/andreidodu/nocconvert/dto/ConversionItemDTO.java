@@ -8,6 +8,7 @@ import lombok.Setter;
 public class ConversionItemDTO {
 
     private String fileName;
+    private int fileSize;
     private int progressPercentage;
     private String targetFormat;
     private ConversionStatus status;

@@ -80,8 +80,8 @@ public class GuiController {
 //        addDestinationDirectoryChooseButtonEventListener();
 //        addConvertButtonActionListener();
 
-        this.sourceDirectoryTextField.setText(System.getProperty("user.home") + "/Pictures");
-        this.destinationDirectoryTextField.setText(System.getProperty("user.home") + "/Desktop/noc-convert");
+        this.sourceDirectoryTextField.setText("Pictures");
+        this.destinationDirectoryTextField.setText("noc-convert");
 
         updateFileFormatJLabel();
 

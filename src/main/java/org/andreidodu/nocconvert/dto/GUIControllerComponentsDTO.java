@@ -1,7 +1,7 @@
 package org.andreidodu.nocconvert.dto;
 
 import lombok.Builder;
-import org.andreidodu.nocconvert.gui.components.ConversionItemRenderer;
+import org.andreidodu.nocconvert.gui.components.Colors;
 import org.andreidodu.nocconvert.gui.components.ModernInputButtonPanel;
 import org.andreidodu.nocconvert.gui.components.ModernSplitButton;
 
