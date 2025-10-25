@@ -5,9 +5,7 @@ import lombok.Setter;
 import org.andreidodu.nocconvert.controller.worker.ConvertImageListSwingWorker;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConvertImageRequestDTO;
-import org.andreidodu.nocconvert.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.dto.GUIControllerComponentsDTO;
-import org.andreidodu.nocconvert.gui.components.ConversionItemRenderer;
 import org.andreidodu.nocconvert.gui.components.ModernInputButtonPanel;
 import org.andreidodu.nocconvert.gui.components.ModernSplitButton;
 import org.andreidodu.nocconvert.service.FileSystemService;
@@ -33,7 +31,7 @@ public class GuiController {
     private static final Logger log = LogManager.getLogger(GuiController.class);
 
     private final ModernInputButtonPanel sourceDirectoryTextField;
-//    private final JButton chooseSourceDirectoryButton;
+    //    private final JButton chooseSourceDirectoryButton;
     private final JList<ConversionItemDTO> sourceDirectoryFilesList;
 
     private final ModernInputButtonPanel destinationDirectoryTextField;
@@ -186,7 +184,7 @@ public class GuiController {
             String destinationPath = destinationDirectoryTextField.getText();
 
 
-            if (targetFileFormatComboBox.getFormat() == null || ((FormatExtensionDTO) targetFileFormatComboBox.getFormat()).getFormat() == null || ((FormatExtensionDTO) targetFileFormatComboBox.getFormat()).getFormat().isEmpty()) {
+            if (targetFileFormatComboBox.getFormat() == null || targetFileFormatComboBox.getFormat().getFormat() == null || targetFileFormatComboBox.getFormat().getFormat().isEmpty()) {
                 SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(null,
                             "Invalid target file format!",
@@ -195,7 +193,7 @@ public class GuiController {
                 });
                 return;
             }
-            String targetFormat = ((FormatExtensionDTO) targetFileFormatComboBox.getFormat()).getFormat();
+            String targetFormat = targetFileFormatComboBox.getFormat().getFormat();
 
 
             if (conversionExecutorPoolService == null || conversionExecutorPoolService.isTerminated()) {
