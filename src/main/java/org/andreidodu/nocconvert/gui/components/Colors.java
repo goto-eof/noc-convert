@@ -23,4 +23,5 @@ public interface Colors {
     Color BG_FOOTER = new Color(57, 60, 74);
     Color GRAY_SUPER_DARK = new Color(32, 30, 30);
     Color GRAY_DARK = new Color(36, 38, 41);
+    Color GRAY_LIGHT = new Color(40, 40, 40);
 }

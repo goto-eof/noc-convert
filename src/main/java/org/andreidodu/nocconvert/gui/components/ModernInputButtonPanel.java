@@ -5,7 +5,10 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.GeneralPath;
 import java.awt.geom.RoundRectangle2D;
+
+import static org.andreidodu.nocconvert.gui.components.ShapeUtil.getRoundedWestPath;
 
 public class ModernInputButtonPanel extends JPanel implements Colors {
 
@@ -55,15 +58,14 @@ public class ModernInputButtonPanel extends JPanel implements Colors {
         label.setOpaque(false);
         label.setPreferredSize(new Dimension(100, 20));
 
-        JPanel buttonPanel2 = new JPanel();
-        buttonPanel2.setBackground(LIST_BG);
-        buttonPanel2.setOpaque(false);
+        JPanel labelAndTextFieldPanel = new JPanel();
+        labelAndTextFieldPanel.setBackground(LIST_BG);
+        labelAndTextFieldPanel.setOpaque(false);
 
-        buttonPanel2.add(label, BorderLayout.NORTH);
-        buttonPanel2.add(textField, BorderLayout.CENTER);
-        buttonPanel2.setOpaque(false);
+        labelAndTextFieldPanel.add(label, BorderLayout.NORTH);
+        labelAndTextFieldPanel.add(textField, BorderLayout.CENTER);
+        labelAndTextFieldPanel.setOpaque(false);
 
-        add(buttonPanel2, BorderLayout.WEST);
 
         JPanel buttonPanel = new JPanel(new BorderLayout(0, 0));
         buttonPanel.setBackground(LIST_BG);
@@ -79,10 +81,53 @@ public class ModernInputButtonPanel extends JPanel implements Colors {
         browseButton.setVerticalAlignment(SwingConstants.CENTER);
         browseButton.setHorizontalAlignment(SwingConstants.CENTER);
 
-        add(buttonPanel, BorderLayout.EAST);
+        JPanel old = new JPanel(new BorderLayout(0, 0));
+        old.add(buttonPanel, BorderLayout.EAST);
+        old.setBorder(new EmptyBorder(10, 10, 10, 10));
+        old.setOpaque(false);
+
+        JPanel onlyLabel = new JPanel(new BorderLayout(0, 0)){
+
+            {
+
+                setForeground(Color.WHITE);
+                setCursor(new Cursor(Cursor.HAND_CURSOR));
+                setOpaque(false);
+                setFont(new Font("Arial", Font.BOLD, 14));
+            }
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int width = getWidth();
+                int height = getHeight();
+
+                GeneralPath path = getRoundedWestPath(width-1, height-1);
+
+
+                g2.setColor(Colors.GRAY_DARK);
+                g2.fill(path);
+
+                g2.setColor(Color.DARK_GRAY);
+                g2.setStroke(new BasicStroke(1));
+                g2.draw(path);
+
+                g2.dispose();
+                super.paintComponent(g);
+
+            }
+        };
+        onlyLabel.add(label, BorderLayout.CENTER);
+        onlyLabel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        onlyLabel.setOpaque(false);
+
+        add(old, BorderLayout.EAST);
+        add(textField, BorderLayout.CENTER);
+        add(onlyLabel, BorderLayout.WEST);
 
         setOpaque(false);
-        setBorder(new EmptyBorder(10, 10, 10, 10));
 
         textField.addFocusListener(new java.awt.event.FocusAdapter() {
             @Override

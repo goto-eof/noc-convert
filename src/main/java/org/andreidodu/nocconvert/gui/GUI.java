@@ -79,7 +79,7 @@ public class GUI {
                 .build();
         new GuiController(guiControllerInputDTO);
 
-        welcomeLabel.setVisible(false);
+        welcomeLabel.setVisible(true);
 
     }
 
@@ -299,7 +299,7 @@ public class GUI {
         footerPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, headerBorderColor));
 
         scrollPane1 = new JScrollPane();
-        scrollPane1.setVisible(true);
+        scrollPane1.setVisible(false);
         scrollPane1.setViewportView(conversionFileList);
         scrollPane1.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 
