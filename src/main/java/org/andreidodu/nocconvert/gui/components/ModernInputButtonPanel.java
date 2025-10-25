@@ -18,6 +18,7 @@ public class ModernInputButtonPanel extends JPanel implements Colors {
     private final JButton browseButton;
     private final boolean browseButtonHover = false;
     private static final Color LIST_BG = new Color(57, 60, 64);
+    private static final Color LIST_BG_LIGHTER = new Color(67, 70, 74);
     private static final Color LIST_BG2 = new Color(68, 71, 76);
     private static final Color BUTTON_BG = new Color(47, 50, 57);
     private static final Color BORDER_DARK = new Color(60, 60, 60);
@@ -107,7 +108,7 @@ public class ModernInputButtonPanel extends JPanel implements Colors {
                 GeneralPath path = getRoundedWestPath(width-1, height-1);
 
 
-                g2.setColor(Colors.GRAY_DARK);
+                g2.setColor(LIST_BG_LIGHTER);
                 g2.fill(path);
 
                 g2.setColor(Color.DARK_GRAY);
