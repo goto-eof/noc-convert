@@ -11,7 +11,7 @@ import java.awt.geom.GeneralPath;
 import static org.andreidodu.nocconvert.gui.constants.Colors.*;
 import static org.andreidodu.nocconvert.gui.util.ShapeUtil.*;
 
-public class ConversionItemRenderer extends JPanel implements ListCellRenderer<ConversionItemDTO> {
+public class ListItemComponent extends JPanel implements ListCellRenderer<ConversionItemDTO> {
 
     private final JLabel fileNameLabel;
     private final JLabel fileSize;
@@ -24,7 +24,7 @@ public class ConversionItemRenderer extends JPanel implements ListCellRenderer<C
 
     int pari = 0;
 
-    public ConversionItemRenderer() {
+    public ListItemComponent() {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         fileNameLabel = new JLabel() {

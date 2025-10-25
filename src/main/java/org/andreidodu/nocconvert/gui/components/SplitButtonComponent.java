@@ -12,7 +12,7 @@ import static org.andreidodu.nocconvert.gui.constants.Colors.*;
 import static org.andreidodu.nocconvert.gui.util.ShapeUtil.getRoundedEastPath;
 import static org.andreidodu.nocconvert.gui.util.ShapeUtil.getRoundedWestPath;
 
-public class ModernSplitButton extends JPanel {
+public class SplitButtonComponent extends JPanel {
 
     @Getter
     private final JButton mainActionButton;
@@ -25,7 +25,7 @@ public class ModernSplitButton extends JPanel {
 
 
 
-    public ModernSplitButton(JFrame parent, String mainLabel, FormatExtensionDTO[] formats) {
+    public SplitButtonComponent(JFrame parent, String mainLabel, FormatExtensionDTO[] formats) {
         setLayout(new BorderLayout(0, 0));
         setOpaque(false);
         mainActionButton = new JButton(mainLabel) {

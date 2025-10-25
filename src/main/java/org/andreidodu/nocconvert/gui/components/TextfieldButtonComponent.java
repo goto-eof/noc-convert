@@ -12,7 +12,7 @@ import java.awt.geom.RoundRectangle2D;
 
 import static org.andreidodu.nocconvert.gui.util.ShapeUtil.getRoundedWestPath;
 
-public class ModernInputButtonPanel extends JPanel implements Colors {
+public class TextfieldButtonComponent extends JPanel implements Colors {
 
     public static final float ARC_SIZE = 20;
     private static final float ARC_SIZE_BTN = 10;
@@ -20,12 +20,12 @@ public class ModernInputButtonPanel extends JPanel implements Colors {
     private final JButton browseButton;
 
 
-    public ModernInputButtonPanel() {
+    public TextfieldButtonComponent() {
         textField = new JTextField("");
         browseButton = createBrowseButton();
     }
 
-    public ModernInputButtonPanel(String initialText, String labelText) {
+    public TextfieldButtonComponent(String initialText, String labelText) {
         setLayout(new BorderLayout());
 
 
@@ -81,7 +81,6 @@ public class ModernInputButtonPanel extends JPanel implements Colors {
             {
 
                 setForeground(Color.WHITE);
-                setCursor(new Cursor(Cursor.HAND_CURSOR));
                 setOpaque(false);
                 setFont(new Font("Arial", Font.BOLD, 14));
             }

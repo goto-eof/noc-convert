@@ -1,4 +1,8 @@
 package org.andreidodu.nocconvert.dto;
 
-public record PathSelectionDTO() {
+import lombok.Builder;
+import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
+
+@Builder
+public record PathSelectionDTO(TextfieldButtonComponent sourceComponent, TextfieldButtonComponent destinationComponent) {
 }

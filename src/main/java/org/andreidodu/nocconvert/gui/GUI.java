@@ -8,9 +8,9 @@ import org.andreidodu.nocconvert.controller.ConversionController;
 import org.andreidodu.nocconvert.controller.PathSelectionController;
 import org.andreidodu.nocconvert.controller.ProcessingStatusController;
 import org.andreidodu.nocconvert.dto.*;
-import org.andreidodu.nocconvert.gui.components.ConversionItemRenderer;
-import org.andreidodu.nocconvert.gui.components.ModernInputButtonPanel;
-import org.andreidodu.nocconvert.gui.components.ModernSplitButton;
+import org.andreidodu.nocconvert.gui.components.ListItemComponent;
+import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
+import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.gui.constants.Colors;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 
@@ -28,10 +28,10 @@ public class GUI extends JFrame {
     private static final float ARC_SIZE = 20;
     @Getter
     private JPanel mainPanel;
-    private ModernInputButtonPanel sourceDirectoryTextField;
+    private TextfieldButtonComponent sourceComponent;
     private JList<ConversionItemDTO> conversionFileList;
-    private ModernInputButtonPanel destinationDirectoryTextField;
-    private ModernSplitButton targetFileFormatComboBox;
+    private TextfieldButtonComponent destinationComponent;
+    private SplitButtonComponent targetFileFormatComboBox;
     private JLabel fileFormatsJLabel;
     private JPanel sourcePanel;
     private JPanel destinationPanel;
@@ -54,22 +54,25 @@ public class GUI extends JFrame {
 
         $$$setupUI$$$();
 
-        buildModelForTargetFileFormat();
-
         // TODO move somewhere else
+        buildModelForTargetFileFormat();
+        buildModelForTargetFileFormat();
         welcomeLabel.setVisible(true);
         progressBar1.setForeground(Colors.LIME_DARK);
-
 
         pathSelectionController = initializePathSelectionController();
         processingStatusController = initializeProcessingStatusController();
         conversionController = initializeConversionController();
+
         initializeWindow();
     }
 
 
     private PathSelectionController initializePathSelectionController() {
-        PathSelectionDTO pathSelectionDTO = new PathSelectionDTO();
+        PathSelectionDTO pathSelectionDTO = PathSelectionDTO.builder()
+                .sourceComponent(sourceComponent)
+                .destinationComponent(destinationComponent)
+                .build();
         return new PathSelectionController(pathSelectionDTO);
     }
 
@@ -96,7 +99,7 @@ public class GUI extends JFrame {
         setVisible(true);
     }
 
-    private ModernSplitButton buildModelForTargetFileFormat() {
+    private SplitButtonComponent buildModelForTargetFileFormat() {
         List<FormatExtensionDTO> imageFormatList = new ArrayList<>();
         String[] arrayString = Arrays.stream(ImageIO.getWriterFormatNames())
                 .map(String::toLowerCase)
@@ -110,16 +113,16 @@ public class GUI extends JFrame {
         DefaultComboBoxModel<FormatExtensionDTO> model = new DefaultComboBoxModel<>();
         model.addAll(imageFormatList);
         model.setSelectedItem(imageFormatList.get(0));
-        ModernSplitButton splitButton1 = new ModernSplitButton(this, "CONVERT to PNG",
+        SplitButtonComponent splitButtonComponent1 = new SplitButtonComponent(this, "CONVERT to PNG",
                 imageFormatList.toArray(FormatExtensionDTO[]::new));
-        splitButton1.setMainActionLabel("CONVERT to PNG");
-        splitButton1.getMainActionButton().addActionListener(e -> {
+        splitButtonComponent1.setMainActionLabel("CONVERT to PNG");
+        splitButtonComponent1.getMainActionButton().addActionListener(e -> {
             JOptionPane.showMessageDialog(mainPanel, "Azione principale eseguita: CONVERTI.", "Azione", JOptionPane.INFORMATION_MESSAGE);
         });
 
 
         DefaultListModel<ConversionItemDTO> modelProgress = new DefaultListModel<>();
-        ConversionItemRenderer renderer = new ConversionItemRenderer();
+        ListItemComponent renderer = new ListItemComponent();
 
         Random random = new Random();
         IntStream.range(0, 100).forEach(i -> {
@@ -141,7 +144,7 @@ public class GUI extends JFrame {
 //        conversionFileList.setBorder(BorderFactory.createLineBorder(LIST_BG, 1));
 
 
-        return splitButton1;
+        return splitButtonComponent1;
     }
 
 
@@ -176,7 +179,7 @@ public class GUI extends JFrame {
         panel3.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel3.setBackground(new Color(-14079186));
         sourcePanel.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        panel3.add(sourceDirectoryTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        panel3.add(sourceComponent, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         destinationPanel = new JPanel();
         destinationPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         destinationPanel.setBackground(new Color(-14079186));
@@ -185,7 +188,7 @@ public class GUI extends JFrame {
         panel4.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel4.setBackground(new Color(-14079186));
         destinationPanel.add(panel4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        panel4.add(destinationDirectoryTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        panel4.add(destinationComponent, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         fileFormatsJLabel = new JLabel();
         fileFormatsJLabel.setEnabled(true);
         fileFormatsJLabel.setForeground(new Color(-8289660));
@@ -300,8 +303,8 @@ public class GUI extends JFrame {
 
     private void createUIComponents() {
         targetFileFormatComboBox = buildModelForTargetFileFormat();
-        sourceDirectoryTextField = new ModernInputButtonPanel("", "Source");
-        destinationDirectoryTextField = new ModernInputButtonPanel("", "Destination");
+        sourceComponent = new TextfieldButtonComponent("", "Source");
+        destinationComponent = new TextfieldButtonComponent("", "Destination");
 
         headerPanel = new JPanel();
         Color headerBorderColor = new Color(168, 172, 174, 255);

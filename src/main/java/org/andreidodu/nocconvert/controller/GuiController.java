@@ -6,8 +6,8 @@ import org.andreidodu.nocconvert.controller.worker.ConvertImageListSwingWorker;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConvertImageRequestDTO;
 import org.andreidodu.nocconvert.dto.GUIControllerComponentsDTO;
-import org.andreidodu.nocconvert.gui.components.ModernInputButtonPanel;
-import org.andreidodu.nocconvert.gui.components.ModernSplitButton;
+import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
+import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.service.FileSystemService;
 import org.andreidodu.nocconvert.service.ImageConverterFacadeService;
 import org.andreidodu.nocconvert.service.impl.FileSystemServiceImpl;
@@ -30,16 +30,16 @@ import java.util.stream.Stream;
 public class GuiController {
     private static final Logger log = LogManager.getLogger(GuiController.class);
 
-    private final ModernInputButtonPanel sourceDirectoryTextField;
+    private final TextfieldButtonComponent sourceDirectoryTextField;
     //    private final JButton chooseSourceDirectoryButton;
     private final JList<ConversionItemDTO> sourceDirectoryFilesList;
 
-    private final ModernInputButtonPanel destinationDirectoryTextField;
+    private final TextfieldButtonComponent destinationDirectoryTextField;
 //    private final JButton chooseDestinationDirectoryButton;
 
     private final JButton convertButton;
     private final JList<String> errorsJList;
-    private final ModernSplitButton targetFileFormatComboBox;
+    private final SplitButtonComponent targetFileFormatComboBox;
     private final JFrame frame;
     private final JPanel errorListPanel;
     private final JLabel fileFormatsJLabel;

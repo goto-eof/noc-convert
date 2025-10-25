@@ -1,21 +1,21 @@
 package org.andreidodu.nocconvert.dto;
 
 import lombok.Builder;
-import org.andreidodu.nocconvert.gui.components.ModernInputButtonPanel;
-import org.andreidodu.nocconvert.gui.components.ModernSplitButton;
+import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
+import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 
 import javax.swing.*;
 
 @Builder
 public record GUIControllerComponentsDTO(JFrame frame,
-                                         ModernInputButtonPanel sourceDirectoryTextField,
+                                         TextfieldButtonComponent sourceDirectoryTextField,
                                          JButton chooseSourceDirectoryButton,
                                          JList<ConversionItemDTO> sourceDirectoryFilesList,
-                                         ModernInputButtonPanel destinationDirectoryTextField,
+                                         TextfieldButtonComponent destinationDirectoryTextField,
                                          JButton chooseDestinationDirectoryButton,
                                          JButton convertButton,
                                          JList<String> errorsJList,
-                                        ModernSplitButton targetFileFormatComboBox,
+                                        SplitButtonComponent targetFileFormatComboBox,
                                          JPanel errorListPanel,
                                          JLabel fileFormatsJLabel) {
 }

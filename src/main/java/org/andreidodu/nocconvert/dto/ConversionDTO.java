@@ -1,4 +1,7 @@
 package org.andreidodu.nocconvert.dto;
 
-public class ConversionDTO {
+import lombok.Builder;
+
+@Builder
+public record ConversionDTO() {
 }
