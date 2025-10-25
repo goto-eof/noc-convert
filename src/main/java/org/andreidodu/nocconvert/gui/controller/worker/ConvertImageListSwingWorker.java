@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.controller.worker;
+package org.andreidodu.nocconvert.gui.controller.worker;
 
 import org.andreidodu.nocconvert.dto.ConvertImageRequestDTO;
 import org.andreidodu.nocconvert.dto.ImageConversionResultDTO;

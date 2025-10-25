@@ -1,6 +1,6 @@
 package org.andreidodu.nocconvert;
 
-import org.andreidodu.nocconvert.gui.GUI;
+import org.andreidodu.nocconvert.gui.GUIOrchestrator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,7 +39,7 @@ public class Main {
 
         deleteLogFileOnExit();
 
-        new GUI();
+        new GUIOrchestrator();
     }
 
     private static void deleteLogFileOnExit() {

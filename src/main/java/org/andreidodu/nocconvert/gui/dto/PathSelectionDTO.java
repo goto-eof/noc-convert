@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.dto;
+package org.andreidodu.nocconvert.gui.dto;
 
 import lombok.Builder;
 import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;

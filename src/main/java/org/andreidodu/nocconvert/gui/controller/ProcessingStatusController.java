@@ -1,6 +1,6 @@
-package org.andreidodu.nocconvert.controller;
+package org.andreidodu.nocconvert.gui.controller;
 
-import org.andreidodu.nocconvert.dto.ProcessingStatusDTO;
+import org.andreidodu.nocconvert.gui.dto.ProcessingStatusDTO;
 
 public class ProcessingStatusController {
 

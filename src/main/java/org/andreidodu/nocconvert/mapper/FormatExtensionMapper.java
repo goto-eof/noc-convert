@@ -1,6 +1,6 @@
 package org.andreidodu.nocconvert.mapper;
 
-import org.andreidodu.nocconvert.dto.FormatExtensionDTO;
+import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 
 import java.util.List;
 import java.util.function.Function;

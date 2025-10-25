@@ -1,6 +1,6 @@
-package org.andreidodu.nocconvert.controller;
+package org.andreidodu.nocconvert.gui.controller;
 
-import org.andreidodu.nocconvert.dto.ConversionDTO;
+import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 
 public class ConversionController {
 

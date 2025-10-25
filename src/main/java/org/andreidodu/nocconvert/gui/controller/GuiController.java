@@ -1,8 +1,8 @@
-package org.andreidodu.nocconvert.controller;
+package org.andreidodu.nocconvert.gui.controller;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.andreidodu.nocconvert.controller.worker.ConvertImageListSwingWorker;
+import org.andreidodu.nocconvert.gui.controller.worker.ConvertImageListSwingWorker;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConvertImageRequestDTO;
 import org.andreidodu.nocconvert.dto.GUIControllerComponentsDTO;

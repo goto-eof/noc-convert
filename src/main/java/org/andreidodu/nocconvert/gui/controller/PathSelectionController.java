@@ -1,8 +1,8 @@
-package org.andreidodu.nocconvert.controller;
+package org.andreidodu.nocconvert.gui.controller;
 
 import lombok.Getter;
-import org.andreidodu.nocconvert.dto.PathSelectionDTO;
-import org.andreidodu.nocconvert.dto.PathSelectionRawDTO;
+import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
+import org.andreidodu.nocconvert.gui.dto.PathSelectionRawDTO;
 import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
 import org.andreidodu.nocconvert.util.FileSystemSupportGuiUtil;
 

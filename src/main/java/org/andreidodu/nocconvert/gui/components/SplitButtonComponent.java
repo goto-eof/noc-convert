@@ -1,7 +1,7 @@
 package org.andreidodu.nocconvert.gui.components;
 
 import lombok.Getter;
-import org.andreidodu.nocconvert.dto.FormatExtensionDTO;
+import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
