@@ -15,18 +15,15 @@ import org.andreidodu.nocconvert.gui.controller.ConvertionStatusController;
 import org.andreidodu.nocconvert.gui.controller.PathSelectionController;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
-import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
-import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
-import java.util.*;
-import java.util.List;
+import java.util.Locale;
+import java.util.Random;
 import java.util.stream.IntStream;
 
 public class GUIOrchestrator extends JFrame {
@@ -36,7 +33,7 @@ public class GUIOrchestrator extends JFrame {
     private TextfieldButtonComponent sourceComponent;
     private JList<ConversionItemDTO> conversionFileList;
     private TextfieldButtonComponent destinationComponent;
-    private SplitButtonComponent targetFileFormatComboBox;
+    private SplitButtonComponent convertComponent;
     private JLabel fileFormatsJLabel;
     private JPanel sourcePanel;
     private JPanel destinationPanel;
@@ -57,11 +54,10 @@ public class GUIOrchestrator extends JFrame {
 
     public GUIOrchestrator() {
         super();
-
+        customInitialization();
         $$$setupUI$$$();
 
         // TODO move somewhere else
-        buildModelForTargetFileFormat();
         buildModelForTargetFileFormat();
         welcomeLabel.setVisible(true);
         progressBar1.setForeground(Colors.LIME_DARK);
@@ -74,6 +70,9 @@ public class GUIOrchestrator extends JFrame {
         initializeWindow();
     }
 
+    private void customInitialization() {
+        convertComponent = new SplitButtonComponent(this);
+    }
 
     private PathSelectionController initializePathSelectionController() {
         PathSelectionDTO pathSelectionDTO = PathSelectionDTO.builder()
@@ -92,8 +91,11 @@ public class GUIOrchestrator extends JFrame {
 
 
     private ConversionController initializeConversionController() {
+
+
         ConversionDTO conversionDTO = ConversionDTO.builder()
                 .guiOrchestrator(this)
+                .convertComponent(convertComponent)
                 .build();
         return new ConversionController(conversionDTO);
     }
@@ -109,26 +111,11 @@ public class GUIOrchestrator extends JFrame {
         setVisible(true);
     }
 
-    private SplitButtonComponent buildModelForTargetFileFormat() {
-        List<FormatExtensionDTO> imageFormatList = new ArrayList<>();
-        String[] arrayString = Arrays.stream(ImageIO.getWriterFormatNames())
-                .map(String::toLowerCase)
-                .distinct()
-                .sorted()
-                .toArray(String[]::new);
-        for (String format : arrayString) {
-            imageFormatList.add(new FormatExtensionDTO(format, FormatExtensionMapper.getExtension(format)));
-        }
+    /*==========================================================================================*/
+    // START of Old code that should be refactored
+    /*==========================================================================================*/
 
-        DefaultComboBoxModel<FormatExtensionDTO> model = new DefaultComboBoxModel<>();
-        model.addAll(imageFormatList);
-        model.setSelectedItem(imageFormatList.get(0));
-        SplitButtonComponent splitButtonComponent1 = new SplitButtonComponent(this, "CONVERT to PNG",
-                imageFormatList.toArray(FormatExtensionDTO[]::new));
-        splitButtonComponent1.setMainActionLabel("CONVERT to PNG");
-        splitButtonComponent1.getMainActionButton().addActionListener(e -> {
-            JOptionPane.showMessageDialog(mainPanel, "Azione principale eseguita: CONVERTI.", "Azione", JOptionPane.INFORMATION_MESSAGE);
-        });
+    private SplitButtonComponent buildModelForTargetFileFormat() {
 
 
         DefaultListModel<ConversionItemDTO> modelProgress = new DefaultListModel<>();
@@ -154,7 +141,7 @@ public class GUIOrchestrator extends JFrame {
 //        conversionFileList.setBorder(BorderFactory.createLineBorder(LIST_BG, 1));
 
 
-        return splitButtonComponent1;
+        return convertComponent;
     }
 
 
@@ -213,9 +200,9 @@ public class GUIOrchestrator extends JFrame {
         mainPanel.add(footerPanel, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
         footerPanel.add(spacer1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        targetFileFormatComboBox.setBackground(new Color(-13026240));
-        targetFileFormatComboBox.setOpaque(false);
-        footerPanel.add(targetFileFormatComboBox, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        convertComponent.setBackground(new Color(-13026240));
+        convertComponent.setOpaque(false);
+        footerPanel.add(convertComponent, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel5.setBackground(new Color(-13026240));
@@ -312,7 +299,7 @@ public class GUIOrchestrator extends JFrame {
 
 
     private void createUIComponents() {
-        targetFileFormatComboBox = buildModelForTargetFileFormat();
+        convertComponent = buildModelForTargetFileFormat();
         sourceComponent = new TextfieldButtonComponent("", "Source");
         destinationComponent = new TextfieldButtonComponent("", "Destination");
 

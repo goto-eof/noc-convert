@@ -1,13 +1,16 @@
 package org.andreidodu.nocconvert.service.impl;
 
 import org.andreidodu.nocconvert.dto.ImageConversionResultDTO;
-import org.andreidodu.nocconvert.service.ImageConverterService;
+import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
+import org.andreidodu.nocconvert.service.ImageConverterService;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ImageConverterServiceImpl implements ImageConverterService {
@@ -56,6 +59,21 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         g2d.dispose();
 
         return newImage;
+    }
+
+
+    @Override
+    public List<FormatExtensionDTO> getAvailableFormatExtensionList() {
+        List<FormatExtensionDTO> imageFormatList = new ArrayList<>();
+        String[] arrayString = Arrays.stream(ImageIO.getWriterFormatNames())
+                .map(String::toLowerCase)
+                .distinct()
+                .sorted()
+                .toArray(String[]::new);
+        for (String format : arrayString) {
+            imageFormatList.add(new FormatExtensionDTO(format, FormatExtensionMapper.getExtension(format)));
+        }
+        return imageFormatList;
     }
 
 

@@ -184,7 +184,7 @@ public class GuiController {
             String destinationPath = destinationDirectoryTextField.getText();
 
 
-            if (targetFileFormatComboBox.getFormat() == null || targetFileFormatComboBox.getFormat().getFormat() == null || targetFileFormatComboBox.getFormat().getFormat().isEmpty()) {
+            if (targetFileFormatComboBox.getSelectedItem() == null || targetFileFormatComboBox.getSelectedItem().getFormat() == null || targetFileFormatComboBox.getSelectedItem().getFormat().isEmpty()) {
                 SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(null,
                             "Invalid target file format!",
@@ -193,7 +193,7 @@ public class GuiController {
                 });
                 return;
             }
-            String targetFormat = targetFileFormatComboBox.getFormat().getFormat();
+            String targetFormat = targetFileFormatComboBox.getSelectedItem().getFormat();
 
 
             if (conversionExecutorPoolService == null || conversionExecutorPoolService.isTerminated()) {
