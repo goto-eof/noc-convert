@@ -13,6 +13,7 @@ public class FormatExtensionDTO {
     public FormatExtensionDTO(String format, String extension) {
         this.format = format;
         this.extension = extension;
+        this.description = buildDescriptionExt();
     }
 
     public FormatExtensionDTO(String description, String format, String extension) {
@@ -25,9 +26,6 @@ public class FormatExtensionDTO {
     }
 
     private String buildDescriptionExt() {
-        if (description != null) {
-            return description + " image";
-        }
         return Optional.ofNullable(description)
                 .orElseGet(() -> String.format("%s image", extension.toUpperCase()));
     }

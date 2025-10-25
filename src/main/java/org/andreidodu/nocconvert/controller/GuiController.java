@@ -3,9 +3,12 @@ package org.andreidodu.nocconvert.controller;
 import lombok.Getter;
 import lombok.Setter;
 import org.andreidodu.nocconvert.controller.worker.ConvertImageListSwingWorker;
+import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConvertImageRequestDTO;
 import org.andreidodu.nocconvert.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.dto.GUIControllerComponentsDTO;
+import org.andreidodu.nocconvert.gui.components.ConversionItemRenderer;
+import org.andreidodu.nocconvert.gui.components.ModernInputButtonPanel;
 import org.andreidodu.nocconvert.gui.components.ModernSplitButton;
 import org.andreidodu.nocconvert.service.FileSystemService;
 import org.andreidodu.nocconvert.service.ImageConverterFacadeService;
@@ -29,12 +32,12 @@ import java.util.stream.Stream;
 public class GuiController {
     private static final Logger log = LogManager.getLogger(GuiController.class);
 
-    private final JTextField sourceDirectoryTextField;
-    private final JButton chooseSourceDirectoryButton;
-    private final JList<String> sourceDirectoryFilesList;
+    private final ModernInputButtonPanel sourceDirectoryTextField;
+//    private final JButton chooseSourceDirectoryButton;
+    private final JList<ConversionItemDTO> sourceDirectoryFilesList;
 
-    private final JTextField destinationDirectoryTextField;
-    private final JButton chooseDestinationDirectoryButton;
+    private final ModernInputButtonPanel destinationDirectoryTextField;
+//    private final JButton chooseDestinationDirectoryButton;
 
     private final JButton convertButton;
     private final JList<String> errorsJList;
@@ -56,11 +59,11 @@ public class GuiController {
 
     public GuiController(GUIControllerComponentsDTO guiControllerComponentsDTO) {
         this.sourceDirectoryTextField = guiControllerComponentsDTO.sourceDirectoryTextField();
-        this.chooseSourceDirectoryButton = guiControllerComponentsDTO.chooseSourceDirectoryButton();
+//        this.chooseSourceDirectoryButton = guiControllerComponentsDTO.chooseSourceDirectoryButton();
         this.sourceDirectoryFilesList = guiControllerComponentsDTO.sourceDirectoryFilesList();
 
         this.destinationDirectoryTextField = guiControllerComponentsDTO.destinationDirectoryTextField();
-        this.chooseDestinationDirectoryButton = guiControllerComponentsDTO.chooseDestinationDirectoryButton();
+//        this.chooseDestinationDirectoryButton = guiControllerComponentsDTO.chooseDestinationDirectoryButton();
 
         this.convertButton = guiControllerComponentsDTO.convertButton();
         this.errorsJList = guiControllerComponentsDTO.errorsJList();
@@ -73,8 +76,8 @@ public class GuiController {
         this.fileSystemSupportGuiUtil = new FileSystemSupportGuiUtil();
         this.fileSystemService = new FileSystemServiceImpl();
 
-        addSourceDirectoryChooseButtonEventListener();
-        addDestinationDirectoryChooseButtonEventListener();
+//        addSourceDirectoryChooseButtonEventListener();
+//        addDestinationDirectoryChooseButtonEventListener();
 //        addConvertButtonActionListener();
 
         this.sourceDirectoryTextField.setText(System.getProperty("user.home") + "/Pictures");
@@ -106,7 +109,7 @@ public class GuiController {
         Optional.of("<html>accepted formats: " + String.join(" ",
                         filteredFileFormatList
                 ) + "</html>")
-                .ifPresent(fileFormats -> fileFormatsJLabel.setText(fileFormats));
+                .ifPresent(fileFormatsJLabel::setText);
     }
 
     private void addConvertButtonActionListener() {
@@ -161,7 +164,7 @@ public class GuiController {
 
             SwingUtilities.invokeLater(() -> {
                 DefaultListModel<String> model = new DefaultListModel<>();
-                sourceDirectoryFilesList.setModel(model);
+//                sourceDirectoryFilesList.setModel(model);
                 errorsJList.setModel(model);
             });
 
@@ -177,13 +180,13 @@ public class GuiController {
             SwingUtilities.invokeLater(() -> {
                 DefaultListModel<String> model = new DefaultListModel<>();
                 fileImageListToConvert.forEach(model::addElement);
-                sourceDirectoryFilesList.setModel(model);
+//                sourceDirectoryFilesList.setModel(model);
             });
 
             String destinationPath = destinationDirectoryTextField.getText();
 
 
-            if (targetFileFormatComboBox.getSelectedItem() == null || ((FormatExtensionDTO) targetFileFormatComboBox.getSelectedItem()).getFormat() == null || ((FormatExtensionDTO) targetFileFormatComboBox.getSelectedItem()).getFormat().isEmpty()) {
+            if (targetFileFormatComboBox.getFormat() == null || ((FormatExtensionDTO) targetFileFormatComboBox.getFormat()).getFormat() == null || ((FormatExtensionDTO) targetFileFormatComboBox.getFormat()).getFormat().isEmpty()) {
                 SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(null,
                             "Invalid target file format!",
@@ -192,7 +195,7 @@ public class GuiController {
                 });
                 return;
             }
-            String targetFormat = ((FormatExtensionDTO) targetFileFormatComboBox.getSelectedItem()).getFormat();
+            String targetFormat = ((FormatExtensionDTO) targetFileFormatComboBox.getFormat()).getFormat();
 
 
             if (conversionExecutorPoolService == null || conversionExecutorPoolService.isTerminated()) {
@@ -226,34 +229,34 @@ public class GuiController {
     private void enableUI(boolean enableFlag) {
         destinationDirectoryTextField.setEnabled(enableFlag);
         sourceDirectoryTextField.setEnabled(enableFlag);
-        chooseDestinationDirectoryButton.setEnabled(enableFlag);
-        chooseSourceDirectoryButton.setEnabled(enableFlag);
+//        chooseDestinationDirectoryButton.setEnabled(enableFlag);
+//        chooseSourceDirectoryButton.setEnabled(enableFlag);
         // convertButton.setEnabled(enableFlag);
         targetFileFormatComboBox.setEnabled(enableFlag);
 
         frame.pack();
     }
 
-    private void addDestinationDirectoryChooseButtonEventListener() {
-        chooseDestinationDirectoryButton.addActionListener(e -> fileSystemSupportGuiUtil.selectDirectory()
-                .ifPresent(directory -> {
-                    destinationDirectoryTextField.setText(directory);
-                    if (fileSystemService.containsAtLeaseOneFile(directory)) {
-                        SwingUtilities.invokeLater(() -> {
-                            JOptionPane.showMessageDialog(null,
-                                    "The destination directory contains at least one file. All files in the destination directory will be override!",
-                                    "WARNING!",
-                                    JOptionPane.WARNING_MESSAGE);
-                        });
-                    }
-                }));
-    }
-
-    private void addSourceDirectoryChooseButtonEventListener() {
-        chooseSourceDirectoryButton.addActionListener(e -> fileSystemSupportGuiUtil.selectDirectory()
-                .ifPresent(sourceDirectoryTextField::setText)
-        );
-    }
+//    private void addDestinationDirectoryChooseButtonEventListener() {
+//        chooseDestinationDirectoryButton.addActionListener(e -> fileSystemSupportGuiUtil.selectDirectory()
+//                .ifPresent(directory -> {
+//                    destinationDirectoryTextField.setText(directory);
+//                    if (fileSystemService.containsAtLeaseOneFile(directory)) {
+//                        SwingUtilities.invokeLater(() -> {
+//                            JOptionPane.showMessageDialog(null,
+//                                    "The destination directory contains at least one file. All files in the destination directory will be override!",
+//                                    "WARNING!",
+//                                    JOptionPane.WARNING_MESSAGE);
+//                        });
+//                    }
+//                }));
+//    }
+//
+//    private void addSourceDirectoryChooseButtonEventListener() {
+//        chooseSourceDirectoryButton.addActionListener(e -> fileSystemSupportGuiUtil.selectDirectory()
+//                .ifPresent(sourceDirectoryTextField::setText)
+//        );
+//    }
 
 
 }
