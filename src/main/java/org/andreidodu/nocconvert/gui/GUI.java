@@ -43,6 +43,7 @@ public class GUI extends JFrame {
     private JPanel footerPanel;
     private JPanel scrollPanePanel;
     private JLabel welcomeLabel;
+    private JPanel progressBarPanel;
 
     private final PathSelectionController pathSelectionController;
     private final ProcessingStatusController processingStatusController;
@@ -59,6 +60,7 @@ public class GUI extends JFrame {
         buildModelForTargetFileFormat();
         welcomeLabel.setVisible(true);
         progressBar1.setForeground(Colors.LIME_DARK);
+        progressBarPanel.setVisible(false);
 
         pathSelectionController = initializePathSelectionController();
         processingStatusController = initializeProcessingStatusController();
@@ -244,16 +246,16 @@ public class GUI extends JFrame {
         welcomeLabel = new JLabel();
         welcomeLabel.setText("Please select the Source and the Destination Directories in order to be able to start the image conversion.");
         scrollPanePanel.add(welcomeLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel7 = new JPanel();
-        panel7.setLayout(new GridLayoutManager(1, 2, new Insets(10, 20, 10, 20), -1, -1));
-        panel7.setBackground(new Color(-14079186));
-        mainPanel.add(panel7, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        progressBarPanel = new JPanel();
+        progressBarPanel.setLayout(new GridLayoutManager(1, 2, new Insets(10, 20, 10, 20), -1, -1));
+        progressBarPanel.setBackground(new Color(-14079186));
+        mainPanel.add(progressBarPanel, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label3 = new JLabel();
         label3.setText("Total Progress");
-        panel7.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        progressBarPanel.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         progressBar1 = new JProgressBar();
         progressBar1.setValue(55);
-        panel7.add(progressBar1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        progressBarPanel.add(progressBar1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         headerPanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 5, 0, 5), -1, -1));
         headerPanel.setBackground(new Color(-13026240));
         mainPanel.add(headerPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
