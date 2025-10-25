@@ -4,18 +4,19 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import lombok.Getter;
-import org.andreidodu.nocconvert.gui.controller.ConversionController;
-import org.andreidodu.nocconvert.gui.controller.PathSelectionController;
-import org.andreidodu.nocconvert.gui.controller.ConvertionStatusController;
-import org.andreidodu.nocconvert.dto.*;
+import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.gui.components.ListItemComponent;
-import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
+import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
 import org.andreidodu.nocconvert.gui.constants.Colors;
+import org.andreidodu.nocconvert.gui.controller.ConversionController;
+import org.andreidodu.nocconvert.gui.controller.ConvertionStatusController;
+import org.andreidodu.nocconvert.gui.controller.PathSelectionController;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
+import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
-import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 
 import javax.imageio.ImageIO;
@@ -76,6 +77,7 @@ public class GUIOrchestrator extends JFrame {
 
     private PathSelectionController initializePathSelectionController() {
         PathSelectionDTO pathSelectionDTO = PathSelectionDTO.builder()
+                .guiOrchestrator(this)
                 .sourceComponent(sourceComponent)
                 .destinationComponent(destinationComponent)
                 .build();
@@ -90,7 +92,9 @@ public class GUIOrchestrator extends JFrame {
 
 
     private ConversionController initializeConversionController() {
-        ConversionDTO conversionDTO = new ConversionDTO();
+        ConversionDTO conversionDTO = ConversionDTO.builder()
+                .guiOrchestrator(this)
+                .build();
         return new ConversionController(conversionDTO);
     }
 
