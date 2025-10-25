@@ -2,8 +2,8 @@ package org.andreidodu.nocconvert.gui.controller;
 
 import org.andreidodu.nocconvert.gui.dto.ProcessingStatusDTO;
 
-public class ProcessingStatusController {
+public class ConvertionStatusController {
 
-    public ProcessingStatusController(ProcessingStatusDTO processingStatusDTO) {
+    public ConvertionStatusController(ProcessingStatusDTO processingStatusDTO) {
     }
 }

@@ -6,7 +6,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import lombok.Getter;
 import org.andreidodu.nocconvert.gui.controller.ConversionController;
 import org.andreidodu.nocconvert.gui.controller.PathSelectionController;
-import org.andreidodu.nocconvert.gui.controller.ProcessingStatusController;
+import org.andreidodu.nocconvert.gui.controller.ConvertionStatusController;
 import org.andreidodu.nocconvert.dto.*;
 import org.andreidodu.nocconvert.gui.components.ListItemComponent;
 import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
@@ -50,7 +50,7 @@ public class GUIOrchestrator extends JFrame {
     private JPanel progressBarPanel;
 
     private final PathSelectionController pathSelectionController;
-    private final ProcessingStatusController processingStatusController;
+    private final ConvertionStatusController convertionStatusController;
     private final ConversionController conversionController;
 
 
@@ -67,7 +67,7 @@ public class GUIOrchestrator extends JFrame {
         progressBarPanel.setVisible(false);
 
         pathSelectionController = initializePathSelectionController();
-        processingStatusController = initializeProcessingStatusController();
+        convertionStatusController = initializeProcessingStatusController();
         conversionController = initializeConversionController();
 
         initializeWindow();
@@ -83,9 +83,9 @@ public class GUIOrchestrator extends JFrame {
     }
 
 
-    private ProcessingStatusController initializeProcessingStatusController() {
+    private ConvertionStatusController initializeProcessingStatusController() {
         ProcessingStatusDTO processingStatusDTO = new ProcessingStatusDTO();
-        return new ProcessingStatusController(processingStatusDTO);
+        return new ConvertionStatusController(processingStatusDTO);
     }
 
 
