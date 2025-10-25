@@ -1,5 +1,6 @@
 package org.andreidodu.nocconvert.gui.components;
 
+import lombok.Getter;
 import org.andreidodu.nocconvert.gui.constants.Colors;
 
 import javax.swing.*;
@@ -16,13 +17,15 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
 
     public static final float ARC_SIZE = 20;
     private static final float ARC_SIZE_BTN = 10;
+    @Getter
     private final JTextField textField;
-    private final JButton browseButton;
+    @Getter
+    private final JButton button;
 
 
     public TextfieldButtonComponent() {
         textField = new JTextField("");
-        browseButton = createBrowseButton();
+        button = createBrowseButton();
     }
 
     public TextfieldButtonComponent(String initialText, String labelText) {
@@ -38,8 +41,8 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
         textField.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 0));
 
         textField.setFocusable(false);
-        browseButton = createBrowseButton();
-        browseButton.setOpaque(false);
+        button = createBrowseButton();
+        button.setOpaque(false);
 
         JLabel label = new JLabel(labelText + ":");
         label.setBackground(LIST_BG2);
@@ -67,9 +70,9 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
         separator.setMaximumSize(new Dimension(1, Integer.MAX_VALUE));
         separator.setPreferredSize(new Dimension(1, Integer.MAX_VALUE));
         buttonPanel.add(separator, BorderLayout.CENTER);
-        buttonPanel.add(browseButton, BorderLayout.EAST);
-        browseButton.setVerticalAlignment(SwingConstants.CENTER);
-        browseButton.setHorizontalAlignment(SwingConstants.CENTER);
+        buttonPanel.add(button, BorderLayout.EAST);
+        button.setVerticalAlignment(SwingConstants.CENTER);
+        button.setHorizontalAlignment(SwingConstants.CENTER);
 
         JPanel old = new JPanel(new BorderLayout(0, 0));
         old.add(buttonPanel, BorderLayout.EAST);
@@ -202,11 +205,11 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
         textField.setEnabled(enabled);
-        browseButton.setEnabled(enabled);
+        button.setEnabled(enabled);
 
         Color disabledColor = enabled ? Color.WHITE : new Color(150, 150, 150);
         textField.setForeground(TEXT_LIGHT);
-        browseButton.setForeground(disabledColor);
+        button.setForeground(disabledColor);
 
         if (!enabled) {
             setBorder(BorderFactory.createLineBorder(BORDER_DARK, 1));
