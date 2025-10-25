@@ -35,7 +35,7 @@ public class PathSelectionController {
 
     private void addEventListenersForDestinationComponent() {
         TextfieldButtonComponent destinationComponent = pathSelectionDTO.destinationComponent();
-        addBrowseDirectoryEventListener(destinationComponent, , pathSelectionRawDTO::setDestinationDirectory);
+        addBrowseDirectoryEventListener(destinationComponent, pathSelectionRawDTO::setDestinationDirectory);
     }
 
     private void addBrowseDirectoryEventListener(TextfieldButtonComponent component, Consumer<Path> pathConsumer) {
