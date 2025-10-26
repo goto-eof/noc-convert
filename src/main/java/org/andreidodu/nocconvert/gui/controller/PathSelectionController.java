@@ -13,13 +13,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -56,9 +52,7 @@ public class PathSelectionController {
     private boolean isValidPath(Path path) {
         boolean isValidPath = validationService.isValidaDirectory(path);
         if (!isValidPath) {
-            SwingUtilities.invokeLater(() -> {
-                JOptionPane.showMessageDialog(pathSelectionDTO.guiOrchestrator(), "Invalid Source path", "ERROR", JOptionPane.ERROR_MESSAGE);
-            });
+            JOptionPane.showMessageDialog(pathSelectionDTO.guiOrchestrator(), "Invalid Source path", "ERROR", JOptionPane.ERROR_MESSAGE);
         }
         return isValidPath;
     }
@@ -72,31 +66,16 @@ public class PathSelectionController {
         if (!fileSystemService.containsAtLeaseOneFile(path)) {
             return true;
         }
-        FutureTask<Boolean> futureTask = askUserIfWantsToContinueAndGetFutureTask();
-
-        try {
-            SwingUtilities.invokeAndWait(futureTask);
-            return futureTask.get();
-        } catch (InterruptedException | InvocationTargetException | ExecutionException e) {
-            log.error(e.getMessage(), e);
-            Throwable rootCause = e.getCause() != null ? e.getCause() : e;
-            String errorMessage = "Unable to obtain response from EDT. Error: " + rootCause.getMessage();
-            JOptionPane.showMessageDialog(pathSelectionDTO.guiOrchestrator(), errorMessage, "ERROR", JOptionPane.ERROR_MESSAGE);
-        }
-        return false;
+        return isUserWantToContinue();
     }
 
-    private FutureTask<Boolean> askUserIfWantsToContinueAndGetFutureTask() {
-        Callable<Boolean> callable = () -> {
-            int response = JOptionPane.showConfirmDialog(pathSelectionDTO.guiOrchestrator(),
-                    "The destination directory contains at least one file. Some files or all files in the destination directory could be override.\nDo you want to continue?",
-                    "WARNING!",
-                    JOptionPane.YES_NO_OPTION);
+    private Boolean isUserWantToContinue() {
+        int response = JOptionPane.showConfirmDialog(pathSelectionDTO.guiOrchestrator(),
+                "The destination directory contains at least one file. Some files or all files in the destination directory could be override.\nDo you want to continue?",
+                "WARNING!",
+                JOptionPane.YES_NO_OPTION);
 
-            return response == JOptionPane.YES_OPTION;
-        };
-
-        return new FutureTask<>(callable);
+        return response == JOptionPane.YES_OPTION;
     }
 
     private void addBrowseDirectoryEventListener(TextfieldButtonComponent component, Consumer<Path> pathConsumer, Predicate<Path> isAllowOverrideIfNecessary) {
