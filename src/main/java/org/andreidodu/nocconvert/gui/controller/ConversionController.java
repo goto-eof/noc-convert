@@ -57,14 +57,7 @@ public class ConversionController {
     }
 
     public void startSearchForImagesStep() {
-        conversionDTO.guiOrchestrator().setEnableSearchStepComponents(false);
-        SwingUtilities.invokeLater(() -> {
-            conversionDTO.convertComponent().setEnabled(false);
-            String message = "Looking for images in the Source directory...";
-            applicationStatusLabel.setText(message);
-            secondaryApplicationStatusLabel.setText("Searching...");
 
-        });
     }
 
     public void endSearchForImagesStep(List<Path> paths) {
