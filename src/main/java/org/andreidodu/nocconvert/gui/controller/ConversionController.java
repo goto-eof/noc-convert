@@ -1,5 +1,6 @@
 package org.andreidodu.nocconvert.gui.controller;
 
+import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.gui.controller.worker.ImageSearcherSwingWorker;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
@@ -82,4 +83,6 @@ public class ConversionController {
         });
     }
 
+    public void startConversion(List<ConversionItemDTO> list) {
+    }
 }

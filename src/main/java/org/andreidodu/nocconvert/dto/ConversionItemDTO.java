@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.andreidodu.nocconvert.gui.components.ListItemRenderer;
 
 import javax.swing.*;
+import java.nio.file.Path;
 
 @Getter
 @Setter
@@ -17,6 +18,7 @@ public class ConversionItemDTO {
     private float progressPercentage;
     private String targetFormat;
     private ConversionStatus status;
+    private Path path;
 
     private JList<ListItemRenderer> conversionFileList;
 }

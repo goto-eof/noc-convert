@@ -375,4 +375,7 @@ public class GUIOrchestrator extends JFrame {
         convertionStatusController.onSearchStepFinish(targetFormat, paths);
     }
 
+    public void onRenderingDone(List<ConversionItemDTO> list) {
+        conversionController.startConversion(list);
+    }
 }
