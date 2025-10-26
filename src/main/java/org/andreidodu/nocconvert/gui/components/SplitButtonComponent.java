@@ -110,6 +110,16 @@ public class SplitButtonComponent extends JPanel {
             }
 
             @Override
+            public void setEnabled(boolean b) {
+                super.setEnabled(b);
+                if (!b) {
+                    isHover = false;
+                    repaint();
+                }
+            }
+
+
+            @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
 
@@ -157,6 +167,15 @@ public class SplitButtonComponent extends JPanel {
                         isHover = false;
                     }
                 });
+            }
+
+            @Override
+            public void setEnabled(boolean b) {
+                super.setEnabled(b);
+                if (!b) {
+                    isHover = false;
+                    repaint();
+                }
             }
 
             @Override

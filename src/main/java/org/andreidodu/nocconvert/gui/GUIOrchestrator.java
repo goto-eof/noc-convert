@@ -47,8 +47,9 @@ public class GUIOrchestrator extends JFrame {
     private JPanel footerPanel;
     private JPanel scrollPanePanel;
     private JLabel applicationStatusLabel;
-    private JPanel progressBarPanel;
+    private JPanel progressBarAndStatusPanel;
     private JLabel secondaryApplicationStatusLabel;
+    private JPanel progressBarPanel;
 
     private final PathSelectionController pathSelectionController;
     private final ConvertionStatusController convertionStatusController;
@@ -64,7 +65,7 @@ public class GUIOrchestrator extends JFrame {
         buildModelForTargetFileFormat();
         applicationStatusLabel.setVisible(true);
         progressBar1.setForeground(Colors.LIME_DARK);
-        progressBarPanel.setVisible(true);
+        progressBarAndStatusPanel.setVisible(true);
         // END TODO move somewhere else
 
         pathSelectionController = initializePathSelectionController();
@@ -261,24 +262,16 @@ public class GUIOrchestrator extends JFrame {
         applicationStatusLabel = new JLabel();
         applicationStatusLabel.setText("Please select the Source and the Destination Directories and press on the Convert button.");
         scrollPanePanel.add(applicationStatusLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        progressBarPanel = new JPanel();
-        progressBarPanel.setLayout(new GridLayoutManager(2, 2, new Insets(10, 20, 10, 20), -1, -1));
-        progressBarPanel.setBackground(new Color(-14079186));
-        mainPanel.add(progressBarPanel, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JLabel label3 = new JLabel();
-        Font label3Font = this.$$$getFont$$$(null, Font.BOLD, -1, label3.getFont());
-        if (label3Font != null) label3.setFont(label3Font);
-        label3.setText("Total Progress");
-        progressBarPanel.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        progressBar1 = new JProgressBar();
-        progressBar1.setValue(55);
-        progressBarPanel.add(progressBar1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        progressBarAndStatusPanel = new JPanel();
+        progressBarAndStatusPanel.setLayout(new GridLayoutManager(2, 2, new Insets(10, 20, 10, 20), -1, -1));
+        progressBarAndStatusPanel.setBackground(new Color(-14079186));
+        mainPanel.add(progressBarAndStatusPanel, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JPanel panel7 = new JPanel();
         panel7.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
         Font panel7Font = this.$$$getFont$$$(null, Font.BOLD, 9, panel7.getFont());
         if (panel7Font != null) panel7.setFont(panel7Font);
         panel7.setOpaque(false);
-        progressBarPanel.add(panel7, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        progressBarAndStatusPanel.add(panel7, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         secondaryApplicationStatusLabel = new JLabel();
         secondaryApplicationStatusLabel.setBackground(new Color(-14079186));
         Font secondaryApplicationStatusLabelFont = this.$$$getFont$$$(null, Font.BOLD, 12, secondaryApplicationStatusLabel.getFont());
@@ -288,6 +281,18 @@ public class GUIOrchestrator extends JFrame {
         panel7.add(secondaryApplicationStatusLabel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel7.add(spacer2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        progressBarPanel = new JPanel();
+        progressBarPanel.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        progressBarPanel.setVisible(false);
+        progressBarAndStatusPanel.add(progressBarPanel, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JLabel label3 = new JLabel();
+        Font label3Font = this.$$$getFont$$$(null, Font.BOLD, -1, label3.getFont());
+        if (label3Font != null) label3.setFont(label3Font);
+        label3.setText("Total Progress");
+        progressBarPanel.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        progressBar1 = new JProgressBar();
+        progressBar1.setValue(55);
+        progressBarPanel.add(progressBar1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         headerPanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 5, 0, 5), -1, -1));
         headerPanel.setBackground(new Color(-13026240));
         mainPanel.add(headerPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
