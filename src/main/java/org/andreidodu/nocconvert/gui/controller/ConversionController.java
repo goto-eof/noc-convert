@@ -52,7 +52,7 @@ public class ConversionController {
     }
 
     private void onSearchComplete(List<Path> paths) {
-        endSearchForImagesStep(paths.size());
+        endSearchForImagesStep(paths);
     }
 
     public void startSearchForImagesStep() {
@@ -66,13 +66,13 @@ public class ConversionController {
         });
     }
 
-    public void endSearchForImagesStep(int size) {
-        conversionDTO.guiOrchestrator().setEnableSearchStepComponents(true);
+    public void endSearchForImagesStep(List<Path> paths) {
+        conversionDTO.guiOrchestrator().onSearchStepFinish(conversionDTO.convertComponent().getSelectedItem().getExtension(), paths);
         SwingUtilities.invokeLater(() -> {
-            conversionDTO.convertComponent().setEnabled(true);
-            String message = String.format("Search step done! %s processable images found.", size);
+            String message = String.format("Search step done! %s processable images found.", paths.size());
             applicationStatusLabel.setText(message);
-            secondaryApplicationStatusLabel.setText("Search done: " + size + " image(s) found");
+            secondaryApplicationStatusLabel.setText("Search done: " + paths.size() + " image(s) found");
+            applicationStatusLabel.setVisible(true);
         });
     }
 

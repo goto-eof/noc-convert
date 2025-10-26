@@ -4,22 +4,31 @@ import org.andreidodu.nocconvert.dto.ImageConversionResultDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 import org.andreidodu.nocconvert.service.ImageConverterService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriter;
+import javax.imageio.event.IIOWriteProgressListener;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ImageConverterServiceImpl implements ImageConverterService {
+    private static final Logger log = LogManager.getLogger(ImageConverterServiceImpl.class);
 
     public static final String PNG_FORMAT = "png";
 
     @Override
-    public ImageConversionResultDTO convertImage(Path sourceFile, Path destinationPath, String newFileFormat) throws IOException {
+    public void convertImage(Path sourceFile, Path destinationPath, String newFileFormat, Consumer<Float> onProgress, Runnable onStart, Runnable onComplete) throws IOException {
 
         BufferedImage image = ImageIO.read(sourceFile.toFile());
 
@@ -29,10 +38,69 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         String outputFileString = outputFilePath.toString();
         File outputFile = new File(outputFileString);
         try {
-            boolean status = ImageIO.write(convertToOpaqueIfNecessary(image, newFileFormat), newFileFormat, outputFile);
-            return new ImageConversionResultDTO(fileName, status);
+            BufferedImage preProcessedImage = convertToOpaqueIfNecessary(image, newFileFormat);
+            boolean status = false;
+
+            Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(newFileFormat);
+            if (!writers.hasNext()) {
+                throw new IllegalStateException("No writer found for format: " + newFileFormat);
+            }
+
+            ImageWriter writer = writers.next();
+
+            // Create output stream
+            try (ImageOutputStream ios = ImageIO.createImageOutputStream(outputFile)) {
+                writer.setOutput(ios);
+
+                // Add progress listener
+                writer.addIIOWriteProgressListener(new IIOWriteProgressListener() {
+                    @Override
+                    public void imageStarted(ImageWriter source, int imageIndex) {
+                        onStart.run();
+                    }
+
+                    @Override
+                    public void imageProgress(ImageWriter source, float percentageDone) {
+                        onProgress.accept(percentageDone);
+                    }
+
+                    @Override
+                    public void imageComplete(ImageWriter source) {
+                        onComplete.run();
+                    }
+
+                    @Override
+                    public void thumbnailStarted(ImageWriter source, int imageIndex, int thumbnailIndex) {
+                    }
+
+                    @Override
+                    public void thumbnailProgress(ImageWriter source, float percentageDone) {
+                    }
+
+                    @Override
+                    public void thumbnailComplete(ImageWriter source) {
+                    }
+
+                    @Override
+                    public void writeAborted(ImageWriter source) {
+                        log.error("Operation aborted");
+                        throw new RuntimeException("Operation aborted");
+                    }
+                });
+
+                // Perform the actual write
+                writer.write(null, new IIOImage(image, null, null), writer.getDefaultWriteParam());
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
+            } finally {
+                writer.dispose();
+            }
+
+
         } catch (Exception e) {
-            return new ImageConversionResultDTO(fileName + " -> " + e.getMessage(), false);
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 

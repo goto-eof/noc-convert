@@ -11,7 +11,7 @@ import java.awt.geom.GeneralPath;
 import static org.andreidodu.nocconvert.gui.constants.Colors.*;
 import static org.andreidodu.nocconvert.gui.util.ShapeUtil.*;
 
-public class ListItemComponent extends JPanel implements ListCellRenderer<ConversionItemDTO> {
+public class ListItemRenderer extends JPanel implements ListCellRenderer<ConversionItemDTO> {
 
     private final JLabel fileNameLabel;
     private final JLabel fileSize;
@@ -24,7 +24,7 @@ public class ListItemComponent extends JPanel implements ListCellRenderer<Conver
 
     int pari = 0;
 
-    public ListItemComponent() {
+    public ListItemRenderer() {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         fileNameLabel = new JLabel() {
@@ -171,8 +171,8 @@ public class ListItemComponent extends JPanel implements ListCellRenderer<Conver
                                                   boolean isSelected,
                                                   boolean cellHasFocus) {
         fileNameLabel.setText(value.getFileName());
-        progressBar.setValue(value.getProgressPercentage());
-        fileSize.setText(value.getFileSize() + "Kb");
+        progressBar.setValue((int) value.getProgressPercentage());
+        fileSize.setText(value.getFileSize());
 
         ConversionStatus status = value.getStatus();
 

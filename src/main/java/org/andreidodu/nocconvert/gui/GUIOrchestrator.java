@@ -5,8 +5,6 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import lombok.Getter;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
-import org.andreidodu.nocconvert.dto.ConversionStatus;
-import org.andreidodu.nocconvert.gui.components.ListItemComponent;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
 import org.andreidodu.nocconvert.gui.constants.Colors;
@@ -25,8 +23,6 @@ import java.awt.geom.RoundRectangle2D;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
-import java.util.Random;
-import java.util.stream.IntStream;
 
 public class GUIOrchestrator extends JFrame {
     private static final float ARC_SIZE = 20;
@@ -42,7 +38,7 @@ public class GUIOrchestrator extends JFrame {
     private JPanel directoriesPanel;
     private JProgressBar progressBar1;
     private JButton button1;
-    private JScrollPane scrollPane1;
+    private JScrollPane conversionFileListScrollPane;
     private JPanel headerPanel;
     private JPanel footerPanel;
     private JPanel scrollPanePanel;
@@ -94,7 +90,11 @@ public class GUIOrchestrator extends JFrame {
 
 
     private ConvertionStatusController initializeProcessingStatusController() {
-        ConvertionStatusDTO convertionStatusDTO = new ConvertionStatusDTO();
+        ConvertionStatusDTO convertionStatusDTO = ConvertionStatusDTO.builder()
+                .guiOrchestrator(this)
+                .conversionFileListScrollPane(conversionFileListScrollPane)
+                .conversionFileList(conversionFileList)
+                .build();
         return new ConvertionStatusController(convertionStatusDTO);
     }
 
@@ -113,6 +113,7 @@ public class GUIOrchestrator extends JFrame {
                 .convertComponent(convertComponent)
                 .applicationStatusLabel(applicationStatusLabel)
                 .secondaryApplicationStatusLabel(secondaryApplicationStatusLabel)
+                .conversionFileList(conversionFileList)
                 .build();
         return new ConversionController(conversionDTO);
     }
@@ -139,26 +140,6 @@ public class GUIOrchestrator extends JFrame {
     private SplitButtonComponent buildModelForTargetFileFormat() {
 
 
-        DefaultListModel<ConversionItemDTO> modelProgress = new DefaultListModel<>();
-        ListItemComponent renderer = new ListItemComponent();
-
-        Random random = new Random();
-        IntStream.range(0, 100).forEach(i -> {
-            ConversionItemDTO conversionItemDTO = new ConversionItemDTO();
-            conversionItemDTO.setTargetFormat("PNG");
-            int num = random.nextInt(100000000);
-            conversionItemDTO.setFileName("file" + num + ".png");
-            conversionItemDTO.setStatus(new ConversionStatus("PROCESSING", Color.GREEN, "BOOM"));
-            int percentage = random.nextInt(100);
-            conversionItemDTO.setProgressPercentage(percentage);
-            int size = random.nextInt(2048);
-            conversionItemDTO.setFileSize(size);
-            modelProgress.addElement(conversionItemDTO);
-        });
-
-
-        conversionFileList = new JList<>(modelProgress);
-        conversionFileList.setCellRenderer(renderer);
 //        conversionFileList.setBorder(BorderFactory.createLineBorder(LIST_BG, 1));
 
 
@@ -249,16 +230,16 @@ public class GUIOrchestrator extends JFrame {
         scrollPanePanel.setEnabled(true);
         scrollPanePanel.setOpaque(false);
         panel6.add(scrollPanePanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        scrollPane1.setBackground(new Color(-14079186));
-        scrollPane1.setForeground(new Color(-2038305));
-        scrollPane1.setOpaque(false);
-        scrollPanePanel.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        conversionFileListScrollPane.setBackground(new Color(-14079186));
+        conversionFileListScrollPane.setForeground(new Color(-2038305));
+        conversionFileListScrollPane.setOpaque(false);
+        scrollPanePanel.add(conversionFileListScrollPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         conversionFileList.setBackground(new Color(-14079186));
         conversionFileList.setOpaque(true);
         conversionFileList.setRequestFocusEnabled(false);
         conversionFileList.setSelectionBackground(new Color(-16756358));
         conversionFileList.setSelectionForeground(new Color(-8026747));
-        scrollPane1.setViewportView(conversionFileList);
+        conversionFileListScrollPane.setViewportView(conversionFileList);
         applicationStatusLabel = new JLabel();
         applicationStatusLabel.setText("Please select the Source and the Destination Directories and press on the Convert button.");
         scrollPanePanel.add(applicationStatusLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -349,14 +330,15 @@ public class GUIOrchestrator extends JFrame {
         Color headerBorderColor = new Color(168, 172, 174, 255);
         headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, headerBorderColor));
 
+        conversionFileList = new JList<>();
 
         footerPanel = new JPanel(new BorderLayout(0, 0));
         footerPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, headerBorderColor));
 
-        scrollPane1 = new JScrollPane();
-        scrollPane1.setVisible(false);
-        scrollPane1.setViewportView(conversionFileList);
-        scrollPane1.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+        conversionFileListScrollPane = new JScrollPane();
+        conversionFileListScrollPane.setVisible(false);
+        conversionFileListScrollPane.setViewportView(conversionFileList);
+        conversionFileListScrollPane.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 
 
         scrollPanePanel = new JPanel() {
@@ -388,4 +370,9 @@ public class GUIOrchestrator extends JFrame {
     public void setEnableSearchStepComponents(boolean bool) {
         pathSelectionController.setEnableComponents(bool);
     }
+
+    public void onSearchStepFinish(String targetFormat, List<Path> paths) {
+        convertionStatusController.onSearchStepFinish(targetFormat, paths);
+    }
+
 }

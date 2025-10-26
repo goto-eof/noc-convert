@@ -20,5 +20,6 @@ public record ConvertImageRequestDTO(List<Path> fileImageList,
                                      Supplier<Boolean> isConverting,
                                      Consumer<Boolean> setConverting,
                                      JButton convertButton,
-                                     ExecutorService executorService) {
+                                     ExecutorService executorService,
+                                     JList<ConversionItemDTO> conversionFileList) {
 }

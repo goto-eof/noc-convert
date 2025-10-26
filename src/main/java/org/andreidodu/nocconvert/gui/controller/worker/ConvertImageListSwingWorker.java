@@ -1,73 +1,57 @@
 package org.andreidodu.nocconvert.gui.controller.worker;
 
 import org.andreidodu.nocconvert.dto.ConvertImageRequestDTO;
-import org.andreidodu.nocconvert.dto.ImageConversionResultDTO;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.andreidodu.nocconvert.service.ImageConverterFacadeService;
 import org.andreidodu.nocconvert.service.impl.ImageConverterFacadeServiceImpl;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
-import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class ConvertImageListSwingWorker extends SwingWorker<List<String>, Void> {
     private static final Logger log = LogManager.getLogger(ConvertImageListSwingWorker.class);
-
     private final ImageConverterFacadeService imageConverterFacadeService;
-    private final List<Path> fileImageList;
-    private final Path destinationDirectory;
-    private final String imageFormat;
-
-    private final JPanel errorListJPanel;
-    private final JList<String> errorListJList;
-    private final Consumer<Boolean> enableUI;
-    private final JFrame frame;
-    private final Supplier<Boolean> isConverting;
-    private final Consumer<Boolean> setConverting;
-    private final JButton convertButton;
-    private final ExecutorService executorService;
+    private final ConvertImageRequestDTO convertImageRequestDTO;
 
     public ConvertImageListSwingWorker(ConvertImageRequestDTO convertImageRequestDTO) {
         super();
         this.imageConverterFacadeService = new ImageConverterFacadeServiceImpl();
-        this.fileImageList = convertImageRequestDTO.fileImageList();
-        this.destinationDirectory = convertImageRequestDTO.destinationDirectory();
-        this.imageFormat = convertImageRequestDTO.imageFormat();
-        this.errorListJPanel = convertImageRequestDTO.errorListJPanel();
-        this.enableUI = convertImageRequestDTO.enableUI();
-        this.frame = convertImageRequestDTO.frame();
-        this.errorListJList = convertImageRequestDTO.errorListJList();
-        this.isConverting = convertImageRequestDTO.isConverting();
-        this.setConverting = convertImageRequestDTO.setConverting();
-        this.convertButton = convertImageRequestDTO.convertButton();
-        this.executorService = convertImageRequestDTO.executorService();
+        this.convertImageRequestDTO = convertImageRequestDTO;
     }
 
     @Override
     protected List<String> doInBackground() {
         SwingUtilities.invokeLater(() -> {
-            setConverting.accept(true);
-            convertButton.setText("Stop");
-            enableUI.accept(false);
-            errorListJPanel.setVisible(false);
-            frame.revalidate();
-            frame.pack();
+            convertImageRequestDTO.setConverting().accept(true);
+            convertImageRequestDTO.convertButton().setText("Stop");
+            convertImageRequestDTO.enableUI().accept(false);
+            convertImageRequestDTO.errorListJPanel().setVisible(false);
+            convertImageRequestDTO.frame().revalidate();
+            convertImageRequestDTO.frame().pack();
         });
 
         try {
-            return imageConverterFacadeService.convertFileListToCustomFormatMultithreaded(executorService, fileImageList, destinationDirectory, imageFormat)
-                    .stream()
-                    .filter(record -> !record.status())
-                    .map(ImageConversionResultDTO::filename)
-                    .toList();
+            imageConverterFacadeService.convertFileListToCustomFormatMultithreaded(convertImageRequestDTO.executorService(), convertImageRequestDTO.fileImageList(), convertImageRequestDTO.destinationDirectory(), convertImageRequestDTO.imageFormat(), this::onProgress, this::onStart, this::onComplete);
+            return List.of();
         } catch (Exception e) {
             log.error(e.getMessage());
             return List.of("premature interruption made by the user");
         }
+    }
+
+    public void onProgress(float progress) {
+
+    }
+
+    public void onStart() {
+        SwingUtilities.invokeLater(() -> {
+        });
+    }
+
+    public void onComplete() {
+        SwingUtilities.invokeLater(() -> {
+        });
     }
 
     @Override
@@ -77,23 +61,23 @@ public class ConvertImageListSwingWorker extends SwingWorker<List<String>, Void>
             String message = String.format("Operation result: %s", failedFilenameList.isEmpty() ? "Success!" : "failure");
 
             if (!failedFilenameList.isEmpty()) {
-                errorListJPanel.setVisible(true);
-                frame.revalidate();
-                frame.pack();
+                convertImageRequestDTO.errorListJPanel().setVisible(true);
+                convertImageRequestDTO.frame().revalidate();
+                convertImageRequestDTO.frame().pack();
             }
 
             DefaultListModel<String> model = new DefaultListModel<>();
             failedFilenameList.forEach(model::addElement);
-            errorListJList.setModel(model);
+            convertImageRequestDTO.errorListJList().setModel(model);
 
             JOptionPane.showMessageDialog(null,
                     message,
                     "Operation Result",
                     JOptionPane.INFORMATION_MESSAGE);
 
-            setConverting.accept(false);
-            convertButton.setText("Start");
-            enableUI.accept(true);
+            convertImageRequestDTO.setConverting().accept(false);
+            convertImageRequestDTO.convertButton().setText("Start");
+            convertImageRequestDTO.enableUI().accept(true);
 
         } catch (Exception ex) {
             log.error(ex);
