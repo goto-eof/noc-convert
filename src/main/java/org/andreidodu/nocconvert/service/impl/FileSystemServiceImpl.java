@@ -33,8 +33,8 @@ public class FileSystemServiceImpl implements FileSystemService {
     }
 
     @Override
-    public boolean containsAtLeaseOneFile(String directoryPath) {
-        File file = new File(directoryPath);
+    public boolean containsAtLeaseOneFile(Path directoryPath) {
+        File file = directoryPath.toFile();
         File[] files = file.listFiles();
 
         if (files == null || files.length == 0) {

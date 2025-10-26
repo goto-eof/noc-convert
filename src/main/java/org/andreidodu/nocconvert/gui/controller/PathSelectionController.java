@@ -4,19 +4,32 @@ import lombok.Getter;
 import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionRawDTO;
+import org.andreidodu.nocconvert.service.FileSystemService;
 import org.andreidodu.nocconvert.service.ValidationService;
+import org.andreidodu.nocconvert.service.impl.FileSystemServiceImpl;
 import org.andreidodu.nocconvert.service.impl.ValidationServiceImpl;
 import org.andreidodu.nocconvert.util.FileSystemSupportGuiUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import javax.swing.*;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class PathSelectionController {
+    private static final Logger log = LogManager.getLogger(PathSelectionController.class);
+
     private final PathSelectionDTO pathSelectionDTO;
     private final FileSystemSupportGuiUtil fileSystemSupportGuiUtil;
     private final ValidationService validationService;
+    private final FileSystemService fileSystemService;
 
     @Getter
     private final PathSelectionRawDTO pathSelectionRawDTO = PathSelectionRawDTO.builder().build();
@@ -25,6 +38,7 @@ public class PathSelectionController {
         this.pathSelectionDTO = pathSelectionDTO;
         fileSystemSupportGuiUtil = new FileSystemSupportGuiUtil();
         validationService = new ValidationServiceImpl();
+        fileSystemService = new FileSystemServiceImpl();
 
         addEventListeners();
     }
@@ -36,19 +50,63 @@ public class PathSelectionController {
 
     private void addEventListenersForSourceComponent() {
         TextfieldButtonComponent sourceComponent = pathSelectionDTO.sourceComponent();
-        addBrowseDirectoryEventListener(sourceComponent, pathSelectionRawDTO::setSourceDirectory);
+        addBrowseDirectoryEventListener(sourceComponent, pathSelectionRawDTO::setSourceDirectory, this::isValidPath);
+    }
+
+    private boolean isValidPath(Path path) {
+        boolean isValidPath = validationService.isValidaDirectory(path);
+        if (!isValidPath) {
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(pathSelectionDTO.guiOrchestrator(), "Invalid Source path", "ERROR", JOptionPane.ERROR_MESSAGE);
+            });
+        }
+        return isValidPath;
     }
 
     private void addEventListenersForDestinationComponent() {
         TextfieldButtonComponent destinationComponent = pathSelectionDTO.destinationComponent();
-        addBrowseDirectoryEventListener(destinationComponent, pathSelectionRawDTO::setDestinationDirectory);
+        addBrowseDirectoryEventListener(destinationComponent, pathSelectionRawDTO::setDestinationDirectory, this::isAllowOverrideIfNecessary);
     }
 
-    private void addBrowseDirectoryEventListener(TextfieldButtonComponent component, Consumer<Path> pathConsumer) {
+    private boolean isAllowOverrideIfNecessary(Path path) {
+        if (!fileSystemService.containsAtLeaseOneFile(path)) {
+            return true;
+        }
+        FutureTask<Boolean> futureTask = askUserIfWantsToContinueAndGetFutureTask();
+
+        try {
+            SwingUtilities.invokeAndWait(futureTask);
+            return futureTask.get();
+        } catch (InterruptedException | InvocationTargetException | ExecutionException e) {
+            log.error(e.getMessage(), e);
+            Throwable rootCause = e.getCause() != null ? e.getCause() : e;
+            String errorMessage = "Unable to obtain response from EDT. Error: " + rootCause.getMessage();
+            JOptionPane.showMessageDialog(pathSelectionDTO.guiOrchestrator(), errorMessage, "ERROR", JOptionPane.ERROR_MESSAGE);
+        }
+        return false;
+    }
+
+    private FutureTask<Boolean> askUserIfWantsToContinueAndGetFutureTask() {
+        Callable<Boolean> callable = () -> {
+            int response = JOptionPane.showConfirmDialog(pathSelectionDTO.guiOrchestrator(),
+                    "The destination directory contains at least one file. Some files or all files in the destination directory could be override.\nDo you want to continue?",
+                    "WARNING!",
+                    JOptionPane.YES_NO_OPTION);
+
+            return response == JOptionPane.YES_OPTION;
+        };
+
+        return new FutureTask<>(callable);
+    }
+
+    private void addBrowseDirectoryEventListener(TextfieldButtonComponent component, Consumer<Path> pathConsumer, Predicate<Path> isAllowOverrideIfNecessary) {
         component.getButton()
                 .addActionListener(e -> fileSystemSupportGuiUtil.selectDirectory()
                         .ifPresent(text -> {
                             Path path = Path.of(text);
+                            if (!isAllowOverrideIfNecessary.test(path)) {
+                                return;
+                            }
                             pathConsumer.accept(path);
                             component.getTextField().setText(path.getFileName().toString());
                         })

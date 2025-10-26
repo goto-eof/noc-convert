@@ -5,4 +5,6 @@ import java.util.Optional;
 
 public interface ValidationService {
     Optional<String> isValidatePath(Path path);
+
+    boolean isValidaDirectory(Path path);
 }

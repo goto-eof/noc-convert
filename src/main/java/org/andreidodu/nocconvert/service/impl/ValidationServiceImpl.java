@@ -17,7 +17,8 @@ public class ValidationServiceImpl implements ValidationService {
     }
 
 
-    private boolean isValidaDirectory(Path path) {
+    @Override
+    public boolean isValidaDirectory(Path path) {
         if (path == null) {
             return false;
         }
