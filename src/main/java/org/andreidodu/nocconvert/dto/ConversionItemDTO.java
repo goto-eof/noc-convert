@@ -3,9 +3,7 @@ package org.andreidodu.nocconvert.dto;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import org.andreidodu.nocconvert.gui.components.ListItemRenderer;
 
-import javax.swing.*;
 import java.nio.file.Path;
 
 @Getter
@@ -23,6 +21,4 @@ public class ConversionItemDTO {
     private Path sourceFile;
     private Path destinationDirectory;
     private int index;
-
-    private JList<ListItemRenderer> conversionFileList;
 }

@@ -1,27 +1,33 @@
 package org.andreidodu.nocconvert.gui.controller;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.gui.controller.worker.ConversionWorker;
 import org.andreidodu.nocconvert.gui.controller.worker.ImageSearcherSwingWorker;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.service.ImageConverterService;
 import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.nio.file.Path;
 import java.util.List;
 
 public class ConversionController {
+    private static final Logger log = LogManager.getLogger(ConversionController.class);
     private final ConversionDTO conversionDTO;
     private final ImageConverterService imageConverterService;
     private final JLabel applicationStatusLabel;
     private final JLabel secondaryApplicationStatusLabel;
+    private final JList<ConversionItemDTO> conversionItemList;
 
     public ConversionController(ConversionDTO conversionDTO) {
         this.conversionDTO = conversionDTO;
         this.imageConverterService = new ImageConverterServiceImpl();
         this.applicationStatusLabel = conversionDTO.applicationStatusLabel();
         this.secondaryApplicationStatusLabel = conversionDTO.secondaryApplicationStatusLabel();
+        this.conversionItemList = conversionDTO.conversionFileList();
         initializeConvertComponent();
     }
 
@@ -46,7 +52,6 @@ public class ConversionController {
                     }
 
                     ImageSearcherSwingWorker worker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), this::updateApplicationStatus, this::onSearchComplete);
-                    this.startSearchForImagesStep();
                     worker.execute();
 
                 });
@@ -77,5 +82,11 @@ public class ConversionController {
     }
 
     public void startConversion(List<ConversionItemDTO> list) {
+        log.info(list);
+        new ConversionWorker(list, this::updateList).execute();
+    }
+
+    private void updateList(List<ConversionItemDTO> list) {
+        conversionDTO.guiOrchestrator().updateList(list);
     }
 }

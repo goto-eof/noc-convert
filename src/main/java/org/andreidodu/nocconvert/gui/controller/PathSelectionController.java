@@ -22,6 +22,7 @@ import java.util.function.Predicate;
 public class PathSelectionController {
     private static final Logger log = LogManager.getLogger(PathSelectionController.class);
 
+    @Getter
     private final PathSelectionDTO pathSelectionDTO;
     private final FileSystemSupportGuiUtil fileSystemSupportGuiUtil;
     private final ValidationService validationService;

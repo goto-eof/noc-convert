@@ -30,6 +30,10 @@ public class ListRendererWorker extends SwingWorker<List<ConversionItemDTO>, Voi
 
     @Override
     protected void done() {
+        populateListGradually();
+    }
+
+    private void populateListGradually() {
         timer = new Timer(DELAY, e -> {
             long startTime = System.nanoTime();
             List<ConversionItemDTO> chunk = formatExtensionList.subList(pos, Integer.min(pos + BATCH_SIZE, formatExtensionList.size()));
@@ -45,12 +49,11 @@ public class ListRendererWorker extends SwingWorker<List<ConversionItemDTO>, Voi
 
             pos += BATCH_SIZE;
             if (timer != null && pos >= formatExtensionList.size()) {
-                timer.stop();
                 onFinish.run();
+                timer.stop();
             }
         });
 
         timer.start();
-
     }
 }

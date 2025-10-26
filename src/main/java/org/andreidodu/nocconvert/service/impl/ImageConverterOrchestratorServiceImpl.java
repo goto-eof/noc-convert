@@ -54,7 +54,7 @@ public class ImageConverterOrchestratorServiceImpl implements ImageConverterOrch
         };
     }
 
-    private static Function<Future<ImageConversionResultDTO>, ImageConversionResultDTO> getFutureResultFunction() {
+    public static Function<Future<ImageConversionResultDTO>, ImageConversionResultDTO> getFutureResultFunction() {
 
         return future -> {
             try {

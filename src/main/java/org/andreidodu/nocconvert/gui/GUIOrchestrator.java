@@ -5,6 +5,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import lombok.Getter;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.gui.components.ListItemRenderer;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
 import org.andreidodu.nocconvert.gui.constants.Colors;
@@ -73,6 +74,10 @@ public class GUIOrchestrator extends JFrame {
 
     private void postInitialization() {
         initializeWindow();
+        pathSelectionController.getPathSelectionRawDTO().setDestinationDirectory(Path.of("/home/andrei/Desktop/new/out"));
+        pathSelectionController.getPathSelectionRawDTO().setSourceDirectory(Path.of("/home/andrei/Desktop/new/in"));
+        destinationComponent.getTextField().setText("/home/andrei/Desktop/new");
+        sourceComponent.getTextField().setText("/home/andrei/Pictures");
     }
 
     private void preInitialization() {
@@ -331,6 +336,7 @@ public class GUIOrchestrator extends JFrame {
         headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, headerBorderColor));
 
         conversionFileList = new JList<>();
+        conversionFileList.setCellRenderer(new ListItemRenderer());
 
         footerPanel = new JPanel(new BorderLayout(0, 0));
         footerPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, headerBorderColor));
@@ -372,10 +378,15 @@ public class GUIOrchestrator extends JFrame {
     }
 
     public void onSearchStepFinish(String targetFormat, List<Path> paths) {
-        convertionStatusController.onSearchStepFinish(targetFormat, paths);
+        Path destinationDirectory = pathSelectionController.getPathSelectionRawDTO().getDestinationDirectory();
+        convertionStatusController.onSearchStepFinish(destinationDirectory, targetFormat, paths);
     }
 
     public void onRenderingDone(List<ConversionItemDTO> list) {
         conversionController.startConversion(list);
+    }
+
+    public void updateList(List<ConversionItemDTO> list) {
+        convertionStatusController.updateList(list);
     }
 }

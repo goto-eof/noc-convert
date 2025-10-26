@@ -21,7 +21,7 @@ public class ConvertionStatusController {
         this.convertionStatusDTO = convertionStatusDTO;
     }
 
-    public void onSearchStepFinish(String targetFormat, List<Path> paths) {
+    public void onSearchStepFinish(Path destinationDirectory, String targetFormat, List<Path> paths) {
         convertionStatusDTO.conversionFileListScrollPane().setVisible(true);
         SwingUtilities.invokeLater(() -> {
             long startTime = System.nanoTime();
@@ -37,18 +37,21 @@ public class ConvertionStatusController {
 
             log.debug("rendering time for 0 records: {} ms", durationMs);
         });
-        List<ConversionItemDTO> list = convertPathListToDTOList(targetFormat, paths);
+        List<ConversionItemDTO> list = convertPathListToDTOList(destinationDirectory, targetFormat, paths);
         ListRendererWorker listRendererWorker = new ListRendererWorker(list, convertionStatusDTO.conversionFileList(), () -> convertionStatusDTO.guiOrchestrator().onRenderingDone(list));
         listRendererWorker.execute();
     }
 
-    private static List<ConversionItemDTO> convertPathListToDTOList(String targetFormat, List<Path> paths) {
+    private static List<ConversionItemDTO> convertPathListToDTOList(Path destPath, String targetFormat, List<Path> paths) {
         return paths.stream().map(path -> ConversionItemDTO.builder()
                 .targetFormat(targetFormat)
+                .targetExtension(targetFormat)
                 .sourceFile(path)
                 .fileName(prepareFileName(path))
                 .status(ConversionStatus.QUEUED)
                 .progressPercentage(0)
+                .sourceFile(path)
+                .destinationDirectory(destPath)
                 .fileSize(FileUtil.getHumanableFileSize(path.toFile()))
                 .build()).toList();
     }
@@ -60,5 +63,14 @@ public class ConvertionStatusController {
             filename = filename.substring(0, maxLength) + "...";
         }
         return filename;
+    }
+
+    public void updateList(List<ConversionItemDTO> list) {
+        SwingUtilities.invokeLater(() -> {
+            DefaultListModel<ConversionItemDTO> model = (DefaultListModel<ConversionItemDTO>) convertionStatusDTO.conversionFileList().getModel();
+            for (ConversionItemDTO conversionItemDTO : list) {
+                model.set(conversionItemDTO.getIndex(), conversionItemDTO);
+            }
+        });
     }
 }

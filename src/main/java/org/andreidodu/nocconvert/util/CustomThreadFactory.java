@@ -6,8 +6,8 @@ public class CustomThreadFactory implements ThreadFactory {
     @Override
     public Thread newThread(Runnable r) {
         Thread t = new Thread(r);
-        t.setName("image-converter");
-        t.setDaemon(true);
+        t.setName("noc-convert-thread-" + t.getId());
+        t.setDaemon(false);
         return t;
     }
 }
