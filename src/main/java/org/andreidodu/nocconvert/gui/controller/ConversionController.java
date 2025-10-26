@@ -1,11 +1,13 @@
 package org.andreidodu.nocconvert.gui.controller;
 
+import org.andreidodu.nocconvert.gui.controller.worker.ImageSearcherSwingWorker;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.service.ImageConverterService;
 import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
 
 import javax.swing.*;
+import java.nio.file.Path;
 import java.util.List;
 
 public class ConversionController {
@@ -37,8 +39,16 @@ public class ConversionController {
                         JOptionPane.showMessageDialog(conversionDTO.guiOrchestrator(), "Huston, we have some validation errors:\n" + String.join("\n", validationMessageList), "Validation Errors", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    JOptionPane.showMessageDialog(conversionDTO.guiOrchestrator(), "You selected: " + conversionDTO.convertComponent().getSelectedItem().getFormat(), "Action", JOptionPane.INFORMATION_MESSAGE);
+
+                    ImageSearcherSwingWorker worker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), conversionDTO.guiOrchestrator()::updateApplicationStatusLabel, this::onSearchComplete);
+                    conversionDTO.applicationStatusLabel().setText("Looking for images in the Source directory...");
+                    worker.execute();
+
                 });
+    }
+
+    private void onSearchComplete(List<Path> paths) {
+
     }
 
 }

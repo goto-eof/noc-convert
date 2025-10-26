@@ -27,6 +27,7 @@ public class FileSystemServiceImpl implements FileSystemService {
         try (Stream<Path> pathStream = Files.walk(directoryPath)) {
 
             Map<Path, List<Path>> parentAndFilesMap = pathStream
+                    .parallel()
                     .filter(file -> isValidFile(file, allowedFileExtensionList))
                     .collect(Collectors.groupingBy(Path::getParent));
 

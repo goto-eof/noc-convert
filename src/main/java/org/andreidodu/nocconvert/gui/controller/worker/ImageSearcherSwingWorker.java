@@ -10,31 +10,33 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
-import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
-public class ImageSearcherSwingWorker extends SwingWorker<List<File>, ImageSearcherSwingWorker.ChunkDTO> {
+public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearcherSwingWorker.ChunkDTO> {
     private static final Logger log = LogManager.getLogger(ImageSearcherSwingWorker.class);
 
     private final Path sourceDirectory;
     private final FileSystemService fileSystemService;
     private final ImageConverterService imageConverterService;
-    private final FormatExtensionMapper formatExtensionMapper;
+    private final Consumer<String> updateApplicationStatusLabel;
+    private final Consumer<List<Path>> onSearchDone;
 
-    public ImageSearcherSwingWorker(Path sourceDirectory) {
+    public ImageSearcherSwingWorker(Path sourceDirectory, Consumer<String> updateApplicationStatusLabel, Consumer<List<Path>> onSearchDone) {
         super();
         this.sourceDirectory = sourceDirectory;
+        this.updateApplicationStatusLabel = updateApplicationStatusLabel;
+        this.onSearchDone = onSearchDone;
+
         this.fileSystemService = new FileSystemServiceImpl();
         this.imageConverterService = new ImageConverterServiceImpl();
-        this.formatExtensionMapper = new FormatExtensionMapper();
     }
 
     @Override
-    protected List<File> doInBackground() throws Exception {
-        fileSystemService.getAllFiles(sourceDirectory, getAvailableReadExtensions(), this::onDirectoryProcessed);
-
-        return List.of();
+    protected List<Path> doInBackground() throws Exception {
+        return fileSystemService.getAllFiles(sourceDirectory, getAvailableReadExtensions(), this::onDirectoryProcessed);
     }
 
     private List<String> getAvailableReadExtensions() {
@@ -43,15 +45,30 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<File>, ImageSearc
                 .map(format -> FormatExtensionMapper.getExtension(format.getFormat()))
                 .toList();
     }
+
     @Override
     protected void process(List<ChunkDTO> chunks) {
-
+        chunks.forEach(chunk -> {
+            String message = String.format("Searching for images: the directory %s contains %s processable images", chunk.directory.getFileName().toString(), chunk.numFiles);
+            updateApplicationStatusLabel.accept(message);
+        });
     }
 
     private void onDirectoryProcessed(Path path, int numFiles) {
         publish(ChunkDTO.builder().directory(path).numFiles(numFiles).build());
     }
 
+    @Override
+    protected void done() {
+        try {
+            List<Path> processingJobResult = get();
+            updateApplicationStatusLabel.accept(String.format("Search process done! %s processable images found.", processingJobResult.size()));
+            onSearchDone.accept(processingJobResult);
+        } catch (InterruptedException | ExecutionException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
 
     @Builder
     protected record ChunkDTO(

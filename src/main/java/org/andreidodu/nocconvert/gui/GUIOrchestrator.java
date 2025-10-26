@@ -22,6 +22,7 @@ import javax.swing.plaf.FontUIResource;
 import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
@@ -45,7 +46,7 @@ public class GUIOrchestrator extends JFrame {
     private JPanel headerPanel;
     private JPanel footerPanel;
     private JPanel scrollPanePanel;
-    private JLabel welcomeLabel;
+    private JLabel applicationStatusLabel;
     private JPanel progressBarPanel;
 
     private final PathSelectionController pathSelectionController;
@@ -60,7 +61,7 @@ public class GUIOrchestrator extends JFrame {
 
         // START TODO move somewhere else
         buildModelForTargetFileFormat();
-        welcomeLabel.setVisible(true);
+        applicationStatusLabel.setVisible(true);
         progressBar1.setForeground(Colors.LIME_DARK);
         progressBarPanel.setVisible(true);
         // END TODO move somewhere else
@@ -95,11 +96,23 @@ public class GUIOrchestrator extends JFrame {
         return new ConvertionStatusController(convertionStatusDTO);
     }
 
+    public Path getSourceDirectory() {
+        return pathSelectionController.getPathSelectionRawDTO().getSourceDirectory();
+    }
+
+    public Path getDestinationDirectory() {
+        return pathSelectionController.getPathSelectionRawDTO().getDestinationDirectory();
+    }
+
+    public void updateApplicationStatusLabel(String text) {
+        applicationStatusLabel.setText(text);
+    }
 
     private ConversionController initializeConversionController() {
         ConversionDTO conversionDTO = ConversionDTO.builder()
                 .guiOrchestrator(this)
                 .convertComponent(convertComponent)
+                .applicationStatusLabel(applicationStatusLabel)
                 .build();
         return new ConversionController(conversionDTO);
     }
@@ -246,9 +259,9 @@ public class GUIOrchestrator extends JFrame {
         conversionFileList.setSelectionBackground(new Color(-16756358));
         conversionFileList.setSelectionForeground(new Color(-8026747));
         scrollPane1.setViewportView(conversionFileList);
-        welcomeLabel = new JLabel();
-        welcomeLabel.setText("Please select the Source and the Destination Directories and press on the Convert button.");
-        scrollPanePanel.add(welcomeLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        applicationStatusLabel = new JLabel();
+        applicationStatusLabel.setText("Please select the Source and the Destination Directories and press on the Convert button.");
+        scrollPanePanel.add(applicationStatusLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         progressBarPanel = new JPanel();
         progressBarPanel.setLayout(new GridLayoutManager(2, 2, new Insets(10, 20, 10, 20), -1, -1));
         progressBarPanel.setBackground(new Color(-14079186));
