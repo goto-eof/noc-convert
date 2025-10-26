@@ -3,15 +3,21 @@ package org.andreidodu.nocconvert.gui.components;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
+import org.andreidodu.nocconvert.gui.constants.Colors;
+import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.GeneralPath;
+import java.util.Optional;
 
 import static org.andreidodu.nocconvert.gui.constants.Colors.*;
 import static org.andreidodu.nocconvert.gui.util.ShapeUtil.*;
 
 public class ListItemRenderer extends JPanel implements ListCellRenderer<ConversionItemDTO> {
+    private static final Logger log = LogManager.getLogger(ImageConverterServiceImpl.class);
 
     private final JLabel fileNameLabel;
     private final JLabel fileSize;
@@ -22,6 +28,7 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
     private final JPanel contentPanel;
     private final JPanel topPanel;
 
+    private Color statusLabelBackground = LIME_DARK;
     int pari = 0;
 
     public ListItemRenderer() {
@@ -56,7 +63,7 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
 
                 GeneralPath path = getRoundedEastPath(width, height, 7);
 
-                g2.setColor(LIME_DARK);
+                g2.setColor(statusLabelBackground);
                 g2.fill(path);
 
                 g2.dispose();
@@ -177,8 +184,14 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         ConversionStatus status = value.getStatus();
 
         statusLabel.setText(status.name());
+        Optional.ofNullable(value.getErrorMessage()).ifPresent(errorMessage -> {
+            statusLabel.setToolTipText(errorMessage);
+            log.info(errorMessage);
+        });
         targetFormat.setText(value.getTargetFormat());
 
+
+        statusLabelBackground = ConversionStatus.FAILED.equals(value.getStatus()) ? Colors.RED : LIME_DARK;
 
         Color border = pari % 2 == 0 ? GRAY_DARK : list.getBackground();
         border = isSelected ? LIME_SUPER_SUPER_DARK : border;
@@ -186,7 +199,11 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         setBorder(BorderFactory.createMatteBorder(10, 10, 10, 10, border));
 
         setBackground(border);
-        progressBar.setForeground(LIME_DARK);
+
+
+        Color statusColor = ConversionStatus.FAILED.equals(value.getStatus()) ? Colors.RED : LIME_DARK;
+
+        progressBar.setForeground(statusColor);
 
         fileNameLabel.setForeground(Color.WHITE);
 

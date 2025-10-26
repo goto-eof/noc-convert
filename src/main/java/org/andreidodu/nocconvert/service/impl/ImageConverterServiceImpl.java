@@ -32,6 +32,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     public void convertImage(Path sourceFile, Path destinationPath, String newFileFormat, Runnable onStart, Consumer<Float> onProgress, Runnable onDone) throws IOException {
 
         BufferedImage image = ImageIO.read(sourceFile.toFile());
+        image = convertToOpaqueIfNecessary(image, newFileFormat);
 
         String fileName = sourceFile.getFileName().toString();
 

@@ -9,10 +9,12 @@ import java.util.function.Consumer;
 public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
     private final List<ConversionItemDTO> list;
     private final Consumer<List<ConversionItemDTO>> updateGui;
+    private final Runnable onDone;
 
-    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui) {
+    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui, Runnable onDone) {
         this.list = list;
         this.updateGui = updateGui;
+        this.onDone = onDone;
     }
 
     @Override
@@ -27,10 +29,11 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
 
     @Override
     protected void process(List<ConversionItemDTO> chunks) {
-        updateGui.accept(chunks);
+//        updateGui.accept(chunks);
     }
 
     @Override
     protected void done() {
+        this.onDone.run();
     }
 }

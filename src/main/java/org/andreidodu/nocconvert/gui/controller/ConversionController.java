@@ -1,6 +1,7 @@
 package org.andreidodu.nocconvert.gui.controller;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.gui.controller.worker.ConversionWorker;
 import org.andreidodu.nocconvert.gui.controller.worker.ImageSearcherSwingWorker;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
@@ -12,7 +13,9 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 public class ConversionController {
     private static final Logger log = LogManager.getLogger(ConversionController.class);
@@ -20,14 +23,12 @@ public class ConversionController {
     private final ImageConverterService imageConverterService;
     private final JLabel applicationStatusLabel;
     private final JLabel secondaryApplicationStatusLabel;
-    private final JList<ConversionItemDTO> conversionItemList;
 
     public ConversionController(ConversionDTO conversionDTO) {
         this.conversionDTO = conversionDTO;
         this.imageConverterService = new ImageConverterServiceImpl();
         this.applicationStatusLabel = conversionDTO.applicationStatusLabel();
         this.secondaryApplicationStatusLabel = conversionDTO.secondaryApplicationStatusLabel();
-        this.conversionItemList = conversionDTO.conversionFileList();
         initializeConvertComponent();
     }
 
@@ -50,6 +51,8 @@ public class ConversionController {
                         JOptionPane.showMessageDialog(conversionDTO.guiOrchestrator(), "Huston, we have some validation errors:\n" + String.join("\n", validationMessageList), "Validation Errors", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
+                    conversionDTO.guiOrchestrator().setEnableSearchStepComponents(false);
+                    startSearchForImagesStep();
 
                     ImageSearcherSwingWorker worker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), this::updateApplicationStatus, this::onSearchComplete);
                     worker.execute();
@@ -62,7 +65,11 @@ public class ConversionController {
     }
 
     public void startSearchForImagesStep() {
-
+        conversionDTO.guiOrchestrator().resetConversionItemList();
+        SwingUtilities.invokeLater(() -> {
+            conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(false);
+            conversionDTO.convertComponent().getMainActionButton().setEnabled(false);
+        });
     }
 
     public void endSearchForImagesStep(List<Path> paths) {
@@ -83,10 +90,33 @@ public class ConversionController {
 
     public void startConversion(List<ConversionItemDTO> list) {
         log.info(list);
-        new ConversionWorker(list, this::updateList).execute();
+        new ConversionWorker(list, this::updateList, this::onConversionDone).execute();
+    }
+
+    private void onConversionDone() {
+        conversionDTO.guiOrchestrator().setEnableSearchStepComponents(true);
+        conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(true);
+        conversionDTO.convertComponent().getMainActionButton().setEnabled(true);
+
+        DefaultListModel<ConversionItemDTO> model = (DefaultListModel<ConversionItemDTO>) conversionDTO.conversionFileList().getModel();
+
+        List<ConversionItemDTO> list = new ArrayList<>();
+        IntStream.range(0, model.getSize())
+                .forEach(index -> {
+                    list.add(model.get(index));
+                });
+
+        long failed = list.stream().filter(dto -> ConversionStatus.FAILED.equals(dto.getStatus())).count();
+        long success = list.stream().filter(dto -> ConversionStatus.COMPLETED.equals(dto.getStatus())).count();
+
+        String message = String.format("Conversion done! Were processed %s images, and we have %s successes / %s failures ", list.size(), success, failed);
+        applicationStatusLabel.setText(message);
+        secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", success, failed));
     }
 
     private void updateList(List<ConversionItemDTO> list) {
         conversionDTO.guiOrchestrator().updateList(list);
     }
+
+
 }

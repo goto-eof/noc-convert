@@ -73,4 +73,9 @@ public class ConvertionStatusController {
             }
         });
     }
+
+    public void resetConversionItemList() {
+        convertionStatusDTO.conversionFileList().setModel(new DefaultListModel<>());
+        convertionStatusDTO.conversionFileListScrollPane().setVisible(false);
+    }
 }

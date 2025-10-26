@@ -78,6 +78,10 @@ public class GUIOrchestrator extends JFrame {
         pathSelectionController.getPathSelectionRawDTO().setSourceDirectory(Path.of("/home/andrei/Desktop/new/in"));
         destinationComponent.getTextField().setText("/home/andrei/Desktop/new");
         sourceComponent.getTextField().setText("/home/andrei/Pictures");
+
+        String message = "Please select the Source and the Destination Directories and press on the Convert button";
+        applicationStatusLabel.setText(message);
+        secondaryApplicationStatusLabel.setText("Waiting for user actions");
     }
 
     private void preInitialization() {
@@ -388,5 +392,9 @@ public class GUIOrchestrator extends JFrame {
 
     public void updateList(List<ConversionItemDTO> list) {
         convertionStatusController.updateList(list);
+    }
+
+    public void resetConversionItemList() {
+        convertionStatusController.resetConversionItemList();
     }
 }

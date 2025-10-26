@@ -54,10 +54,10 @@ public class ConvertSingleItemTask implements Runnable {
                     this::onStart,
                     this::onProgress,
                     this::onDone);
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
             conversionItemDTO.setStatus(ConversionStatus.FAILED);
-            conversionItemDTO.setProgressPercentage(0);
+            conversionItemDTO.setProgressPercentage(100);
             publish.accept(conversionItemDTO);
         }
     }
