@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.geom.GeneralPath;
 import java.util.Optional;
@@ -29,7 +30,6 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
     private final JPanel topPanel;
 
     private Color statusLabelBackground = LIME_DARK;
-    int pari = 0;
 
     public ListItemRenderer() {
         setLayout(new BorderLayout());
@@ -97,8 +97,9 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
             }
         };
         statusPanel = new JPanel(new BorderLayout(0, 0));
-        statusPanel.add(statusLabel, BorderLayout.EAST);
-        statusPanel.add(targetFormat, BorderLayout.CENTER);
+        statusLabel.setPreferredSize(new Dimension(100, 22));
+        statusPanel.add(statusLabel, BorderLayout.CENTER);
+        statusPanel.add(targetFormat, BorderLayout.WEST);
 
         progressBar = new JProgressBar(0, 100);
         progressBar.setFont(fileNameLabel.getFont().deriveFont(Font.BOLD, 8f));
@@ -139,10 +140,12 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         topPanel = new JPanel(new BorderLayout());
         topPanel.add(fileInfoPanel, BorderLayout.WEST);
         topPanel.add(statusPanel, BorderLayout.EAST);
+        topPanel.setBorder(new EmptyBorder(0, 0, 10, 0));
 
 
         contentPanel = new JPanel(new GridBagLayout());
         contentPanel.setOpaque(true);
+
 
         GridBagConstraints gbc = new GridBagConstraints();
 
@@ -160,8 +163,14 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         contentPanel.add(progressBar, gbc);
 
 
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-        add(contentPanel, BorderLayout.CENTER);
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
+
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, LIST_BG));
+        wrapper.add(contentPanel, BorderLayout.CENTER);
+        setBackground(Color.red);
+
+        add(wrapper, BorderLayout.CENTER);
         setOpaque(false);
         topPanel.setOpaque(false);
         progressBar.setOpaque(false);
@@ -193,12 +202,12 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
 
         statusLabelBackground = ConversionStatus.FAILED.equals(value.getStatus()) ? Colors.RED : LIME_DARK;
 
-        Color border = pari % 2 == 0 ? GRAY_DARK : list.getBackground();
-        border = isSelected ? LIME_SUPER_SUPER_DARK : border;
+        Color border = list.getBackground(); // pari % 2 == 0 ? GRAY_DARK :
+        border = isSelected ? LIME_SUPER_SUPER_DARK : GRAY_DARK;
 
         setBorder(BorderFactory.createMatteBorder(10, 10, 10, 10, border));
 
-        setBackground(border);
+        //setBackground(border);
 
 
         Color statusColor = ConversionStatus.FAILED.equals(value.getStatus()) ? Colors.RED : LIME_DARK;
@@ -214,7 +223,7 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         fileNameLabel.setOpaque(false);
         statusLabel.setOpaque(false);
         progressBar.setOpaque(false);
-        pari++;
+//        pari++;
         return this;
     }
 }

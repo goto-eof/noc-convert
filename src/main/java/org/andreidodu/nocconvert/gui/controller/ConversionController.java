@@ -62,11 +62,17 @@ public class ConversionController {
 
     private void onSearchComplete(List<Path> paths) {
         endSearchForImagesStep(paths);
+
     }
 
     public void startSearchForImagesStep() {
         conversionDTO.guiOrchestrator().resetConversionItemList();
+
+
         SwingUtilities.invokeLater(() -> {
+            String message = "Searching for image...";
+            applicationStatusLabel.setText(message);
+            secondaryApplicationStatusLabel.setText("Searching for images...");
             conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(false);
             conversionDTO.convertComponent().getMainActionButton().setEnabled(false);
         });
@@ -79,6 +85,10 @@ public class ConversionController {
             applicationStatusLabel.setText(message);
             secondaryApplicationStatusLabel.setText("Search done: " + paths.size() + " image(s) found");
             applicationStatusLabel.setVisible(true);
+
+            message = String.format("Processing %s images... Please wait.", paths.size());
+            applicationStatusLabel.setText(message);
+            secondaryApplicationStatusLabel.setText("Processing...");
         });
     }
 
@@ -109,7 +119,7 @@ public class ConversionController {
         long failed = list.stream().filter(dto -> ConversionStatus.FAILED.equals(dto.getStatus())).count();
         long success = list.stream().filter(dto -> ConversionStatus.COMPLETED.equals(dto.getStatus())).count();
 
-        String message = String.format("Conversion done! Were processed %s images, and we have %s successes / %s failures ", list.size(), success, failed);
+        String message = String.format("Conversion done! There were processed %s images, and we have %s successes / %s failures ", list.size(), success, failed);
         applicationStatusLabel.setText(message);
         secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", success, failed));
     }
