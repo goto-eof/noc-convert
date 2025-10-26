@@ -24,7 +24,7 @@ public class ConversionController {
     }
 
     private void populateConvertComponentDropdownMenu() {
-        List<FormatExtensionDTO> imageFormatList = imageConverterService.getAvailableFormatExtensionList();
+        List<FormatExtensionDTO> imageFormatList = imageConverterService.getAvailableWriteFormatList();
         conversionDTO.convertComponent().init("CONVERT to PNG", imageFormatList);
     }
 

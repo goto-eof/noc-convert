@@ -8,6 +8,7 @@ import org.andreidodu.nocconvert.service.ImageConverterFacadeService;
 import org.andreidodu.nocconvert.service.impl.ImageConverterFacadeServiceImpl;
 
 import javax.swing.*;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
@@ -17,8 +18,8 @@ public class ConvertImageListSwingWorker extends SwingWorker<List<String>, Void>
     private static final Logger log = LogManager.getLogger(ConvertImageListSwingWorker.class);
 
     private final ImageConverterFacadeService imageConverterFacadeService;
-    private final List<String> fileImageList;
-    private final String destinationDirectory;
+    private final List<Path> fileImageList;
+    private final Path destinationDirectory;
     private final String imageFormat;
 
     private final JPanel errorListJPanel;
@@ -48,12 +49,15 @@ public class ConvertImageListSwingWorker extends SwingWorker<List<String>, Void>
 
     @Override
     protected List<String> doInBackground() {
-        setConverting.accept(true);
-        convertButton.setText("Stop");
-        enableUI.accept(false);
-        errorListJPanel.setVisible(false);
-        frame.revalidate();
-        frame.pack();
+        SwingUtilities.invokeLater(() -> {
+            setConverting.accept(true);
+            convertButton.setText("Stop");
+            enableUI.accept(false);
+            errorListJPanel.setVisible(false);
+            frame.revalidate();
+            frame.pack();
+        });
+
         try {
             return imageConverterFacadeService.convertFileListToCustomFormatMultithreaded(executorService, fileImageList, destinationDirectory, imageFormat)
                     .stream()

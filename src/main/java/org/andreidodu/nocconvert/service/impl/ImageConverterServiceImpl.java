@@ -9,6 +9,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,19 +19,20 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     public static final String PNG_FORMAT = "png";
 
     @Override
-    public ImageConversionResultDTO convertImage(String sourceFileString, String destinationPath, String newFileFormat) throws IOException {
-        File sourceFile = new File(sourceFileString);
+    public ImageConversionResultDTO convertImage(Path sourceFile, Path destinationPath, String newFileFormat) throws IOException {
 
-        BufferedImage image = ImageIO.read(sourceFile);
+        BufferedImage image = ImageIO.read(sourceFile.toFile());
 
-        String fileName = sourceFile.getName();
-        String outputFileString = destinationPath + File.separator + renameFileExtension(fileName, newFileFormat);
+        String fileName = sourceFile.getFileName().toString();
+
+        Path outputFilePath = destinationPath.resolve(renameFileExtension(fileName, newFileFormat));
+        String outputFileString = outputFilePath.toString();
         File outputFile = new File(outputFileString);
         try {
             boolean status = ImageIO.write(convertToOpaqueIfNecessary(image, newFileFormat), newFileFormat, outputFile);
-            return new ImageConversionResultDTO(sourceFileString, status);
+            return new ImageConversionResultDTO(fileName, status);
         } catch (Exception e) {
-            return new ImageConversionResultDTO(sourceFileString + " -> " + e.getMessage(), false);
+            return new ImageConversionResultDTO(fileName + " -> " + e.getMessage(), false);
         }
     }
 
@@ -63,9 +65,18 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
 
     @Override
-    public List<FormatExtensionDTO> getAvailableFormatExtensionList() {
+    public List<FormatExtensionDTO> getAvailableWriteFormatList() {
+        return getFormatExtensionDTOList(ImageIO.getWriterFormatNames());
+    }
+
+    @Override
+    public List<FormatExtensionDTO> getAvailableReadFormatList() {
+        return getFormatExtensionDTOList(ImageIO.getReaderFormatNames());
+    }
+
+    private static List<FormatExtensionDTO> getFormatExtensionDTOList(String[] formatList) {
         List<FormatExtensionDTO> imageFormatList = new ArrayList<>();
-        String[] arrayString = Arrays.stream(ImageIO.getWriterFormatNames())
+        String[] arrayString = Arrays.stream(formatList)
                 .map(String::toLowerCase)
                 .distinct()
                 .sorted()

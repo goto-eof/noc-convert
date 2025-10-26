@@ -58,11 +58,12 @@ public class GUIOrchestrator extends JFrame {
         preInitialization();
         $$$setupUI$$$();
 
-        // TODO move somewhere else
+        // START TODO move somewhere else
         buildModelForTargetFileFormat();
         welcomeLabel.setVisible(true);
         progressBar1.setForeground(Colors.LIME_DARK);
         progressBarPanel.setVisible(true);
+        // END TODO move somewhere else
 
         pathSelectionController = initializePathSelectionController();
         convertionStatusController = initializeProcessingStatusController();

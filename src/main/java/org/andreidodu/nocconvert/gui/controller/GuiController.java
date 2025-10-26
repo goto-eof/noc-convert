@@ -2,12 +2,12 @@ package org.andreidodu.nocconvert.gui.controller;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.andreidodu.nocconvert.gui.controller.worker.ConvertImageListSwingWorker;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConvertImageRequestDTO;
 import org.andreidodu.nocconvert.dto.GUIControllerComponentsDTO;
-import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
+import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
+import org.andreidodu.nocconvert.gui.controller.worker.ConvertImageListSwingWorker;
 import org.andreidodu.nocconvert.service.FileSystemService;
 import org.andreidodu.nocconvert.service.ImageConverterFacadeService;
 import org.andreidodu.nocconvert.service.impl.FileSystemServiceImpl;
@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -167,7 +168,7 @@ public class GuiController {
             });
 
             String sourcePath = sourceDirectoryTextField.getText();
-            List<String> fileImageListToConvert = imageConverterFacadeService.getAllFilesDirectoryByExtension(sourcePath,
+            List<Path> fileImageListToConvert = imageConverterFacadeService.getAllFilesDirectoryByExtension(sourcePath,
                     Arrays.stream(ImageIO.getReaderFormatNames())
                             .map(String::toLowerCase)
                             .distinct()
@@ -176,12 +177,12 @@ public class GuiController {
             );
 
             SwingUtilities.invokeLater(() -> {
-                DefaultListModel<String> model = new DefaultListModel<>();
-                fileImageListToConvert.forEach(model::addElement);
+//                DefaultListModel<String> model = new DefaultListModel<>();
+//                fileImageListToConvert.forEach(model::addElement);
 //                sourceDirectoryFilesList.setModel(model);
             });
 
-            String destinationPath = destinationDirectoryTextField.getText();
+            Path destinationPath = Path.of(destinationDirectoryTextField.getText());
 
 
             if (targetFileFormatComboBox.getSelectedItem() == null || targetFileFormatComboBox.getSelectedItem().getFormat() == null || targetFileFormatComboBox.getSelectedItem().getFormat().isEmpty()) {

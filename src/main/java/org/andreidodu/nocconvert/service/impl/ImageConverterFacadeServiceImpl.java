@@ -23,26 +23,27 @@ public class ImageConverterFacadeServiceImpl implements ImageConverterFacadeServ
     }
 
     @Override
-    public List<String> getAllFilesDirectoryByExtension(String sourcePath, List<String> strings) {
+    public List<Path> getAllFilesDirectoryByExtension(String sourcePath, List<String> strings) {
         if (!new File(sourcePath).exists()) {
             return new ArrayList<>();
         }
         try {
-            return fileSystemService.getAllFiles(sourcePath, strings);
+            return fileSystemService.getAllFiles(Path.of(sourcePath), strings, (a, b) -> {
+            });
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public List<ImageConversionResultDTO> convertFileListToCustomFormatMultithreaded(ExecutorService executorService, List<String> allFiles, String destinationPath, String imageFormat) {
+    public List<ImageConversionResultDTO> convertFileListToCustomFormatMultithreaded(ExecutorService executorService, List<Path> allFiles, Path destinationPath, String imageFormat) {
         createDestinationPath(destinationPath);
         return imageConverterOrchestratorService.convertMultithreaded(executorService, allFiles, destinationPath, imageFormat);
     }
 
-    private static void createDestinationPath(String destinationPath) {
+    private static void createDestinationPath(Path destinationPath) {
         try {
-            Files.createDirectories(Path.of(destinationPath));
+            Files.createDirectories(destinationPath);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

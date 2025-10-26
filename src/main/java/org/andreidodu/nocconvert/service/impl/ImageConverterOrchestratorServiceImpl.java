@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.andreidodu.nocconvert.service.ImageConverterOrchestratorService;
 import org.andreidodu.nocconvert.service.ImageConverterService;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -22,7 +23,7 @@ public class ImageConverterOrchestratorServiceImpl implements ImageConverterOrch
 
 
     @Override
-    public List<ImageConversionResultDTO> convertMultithreaded(ExecutorService executorService, List<String> imageFilesList, String destinationPath, String targetExtension) {
+    public List<ImageConversionResultDTO> convertMultithreaded(ExecutorService executorService, List<Path> imageFilesList, Path destinationPath, String targetExtension) {
         Objects.requireNonNull(imageFilesList);
 
         try {
@@ -40,7 +41,7 @@ public class ImageConverterOrchestratorServiceImpl implements ImageConverterOrch
 
     }
 
-    private Callable<ImageConversionResultDTO> getSinglegetCallable(String destinationPath, String imageFile, String targetExtension) {
+    private Callable<ImageConversionResultDTO> getSinglegetCallable(Path destinationPath, Path imageFile, String targetExtension) {
         return () -> {
             try {
                 return imageConverterService.convertImage(imageFile, destinationPath, targetExtension);
