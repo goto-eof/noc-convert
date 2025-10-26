@@ -1,11 +1,14 @@
 package org.andreidodu.nocconvert.gui.controller.worker;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.util.List;
 
 public class ListRendererWorker extends SwingWorker<List<ConversionItemDTO>, Void> {
+    private static final Logger log = LogManager.getLogger(ListRendererWorker.class);
     private final List<ConversionItemDTO> formatExtensionList;
     private final JList<ConversionItemDTO> list;
     private final int BATCH_SIZE = 500;
@@ -36,7 +39,7 @@ public class ListRendererWorker extends SwingWorker<List<ConversionItemDTO>, Voi
             long durationNs = endTime - startTime;
             double durationMs = durationNs / 1_000_000.0;
 
-            System.out.println("Tempo di Blocco EDT per rendering "+BATCH_SIZE+" record: " + durationMs + " ms");
+            log.debug("EDT blocking time for the rendering of {} records: {} ms", BATCH_SIZE, durationMs);
 
             pos += BATCH_SIZE;
             if (timer != null && pos >= formatExtensionList.size()) {
