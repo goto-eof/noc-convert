@@ -38,18 +38,14 @@ public class ConvertionStatusController {
             log.debug("rendering time for 0 records: {} ms", durationMs);
         });
         List<ConversionItemDTO> list = convertPathListToDTOList(targetFormat, paths);
-        ListRendererWorker listRendererWorker = new ListRendererWorker(
-                list,
-                convertionStatusDTO.conversionFileList(),
-                () -> convertionStatusDTO.guiOrchestrator().onRenderingDone(list)
-        );
+        ListRendererWorker listRendererWorker = new ListRendererWorker(list, convertionStatusDTO.conversionFileList(), () -> convertionStatusDTO.guiOrchestrator().onRenderingDone(list));
         listRendererWorker.execute();
     }
 
     private static List<ConversionItemDTO> convertPathListToDTOList(String targetFormat, List<Path> paths) {
         return paths.stream().map(path -> ConversionItemDTO.builder()
                 .targetFormat(targetFormat)
-                .path(path)
+                .sourceFile(path)
                 .fileName(prepareFileName(path))
                 .status(ConversionStatus.QUEUED)
                 .progressPercentage(0)

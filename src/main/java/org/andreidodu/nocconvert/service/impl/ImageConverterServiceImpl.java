@@ -1,6 +1,5 @@
 package org.andreidodu.nocconvert.service.impl;
 
-import org.andreidodu.nocconvert.dto.ImageConversionResultDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 import org.andreidodu.nocconvert.service.ImageConverterService;
@@ -9,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.event.IIOWriteProgressListener;
 import javax.imageio.stream.ImageOutputStream;
@@ -26,9 +26,10 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     private static final Logger log = LogManager.getLogger(ImageConverterServiceImpl.class);
 
     public static final String PNG_FORMAT = "png";
+    public static final String ICO_FORMAT = "ico";
 
     @Override
-    public void convertImage(Path sourceFile, Path destinationPath, String newFileFormat, Consumer<Float> onProgress, Runnable onStart, Runnable onComplete) throws IOException {
+    public void convertImage(Path sourceFile, Path destinationPath, String newFileFormat, Runnable onStart, Consumer<Float> onProgress, Runnable onDone) throws IOException {
 
         BufferedImage image = ImageIO.read(sourceFile.toFile());
 
@@ -38,9 +39,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         String outputFileString = outputFilePath.toString();
         File outputFile = new File(outputFileString);
         try {
-            BufferedImage preProcessedImage = convertToOpaqueIfNecessary(image, newFileFormat);
-            boolean status = false;
-
             Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(newFileFormat);
             if (!writers.hasNext()) {
                 throw new IllegalStateException("No writer found for format: " + newFileFormat);
@@ -48,11 +46,9 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             ImageWriter writer = writers.next();
 
-            // Create output stream
             try (ImageOutputStream ios = ImageIO.createImageOutputStream(outputFile)) {
                 writer.setOutput(ios);
 
-                // Add progress listener
                 writer.addIIOWriteProgressListener(new IIOWriteProgressListener() {
                     @Override
                     public void imageStarted(ImageWriter source, int imageIndex) {
@@ -66,7 +62,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
                     @Override
                     public void imageComplete(ImageWriter source) {
-                        onComplete.run();
+                        onDone.run();
                     }
 
                     @Override
@@ -88,8 +84,8 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                     }
                 });
 
-                // Perform the actual write
-                writer.write(null, new IIOImage(image, null, null), writer.getDefaultWriteParam());
+                ImageWriteParam customWriteParam = writer.getDefaultWriteParam();
+                writer.write(null, new IIOImage(image, null, null), customWriteParam);
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
@@ -110,7 +106,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     }
 
     public static BufferedImage convertToOpaqueIfNecessary(BufferedImage originalImage, String targetExtension) {
-        if (List.of(PNG_FORMAT, "ico").contains(targetExtension)) {
+        if (List.of(PNG_FORMAT, ICO_FORMAT).contains(targetExtension)) {
             return originalImage;
         }
 

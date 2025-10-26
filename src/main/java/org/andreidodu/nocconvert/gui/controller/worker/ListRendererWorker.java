@@ -33,7 +33,9 @@ public class ListRendererWorker extends SwingWorker<List<ConversionItemDTO>, Voi
         timer = new Timer(DELAY, e -> {
             long startTime = System.nanoTime();
             List<ConversionItemDTO> chunk = formatExtensionList.subList(pos, Integer.min(pos + BATCH_SIZE, formatExtensionList.size()));
-            ((DefaultListModel<ConversionItemDTO>) list.getModel()).addAll(chunk);
+            DefaultListModel<ConversionItemDTO> model = (DefaultListModel<ConversionItemDTO>) list.getModel();
+            model.addAll(chunk);
+            chunk.forEach(dto -> dto.setIndex(model.indexOf(dto)));
 
             long endTime = System.nanoTime();
             long durationNs = endTime - startTime;

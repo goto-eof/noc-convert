@@ -1,5 +1,5 @@
 package org.andreidodu.nocconvert.dto;
 
 public enum ConversionStatus {
-    QUEUED, COMPLETED, FAILED
+    QUEUED, COMPLETED, CANCELED, PROCESSING, FAILED
 }

@@ -46,7 +46,7 @@ public class ImageConverterOrchestratorServiceImpl implements ImageConverterOrch
     private Runnable getSingleRunnable(Path destinationPath, Path imageFile, String targetExtension, Consumer<Float> onProgress, Runnable onStart, Runnable onComplete) {
         return () -> {
             try {
-                imageConverterService.convertImage(imageFile, destinationPath, targetExtension, onProgress, onStart, onComplete);
+                imageConverterService.convertImage(imageFile, destinationPath, targetExtension, onStart, onProgress, onComplete);
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);

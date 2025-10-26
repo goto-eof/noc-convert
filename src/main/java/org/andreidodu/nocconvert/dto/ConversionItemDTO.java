@@ -17,8 +17,12 @@ public class ConversionItemDTO {
     private String fileSize;
     private float progressPercentage;
     private String targetFormat;
+    private String targetExtension;
+    private String errorMessage;
     private ConversionStatus status;
-    private Path path;
+    private Path sourceFile;
+    private Path destinationDirectory;
+    private int index;
 
     private JList<ListItemRenderer> conversionFileList;
 }
