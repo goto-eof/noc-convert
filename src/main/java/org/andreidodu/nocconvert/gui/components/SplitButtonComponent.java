@@ -120,6 +120,7 @@ public class SplitButtonComponent extends JPanel {
 
                 GeneralPath path = getRoundedEastPath(width, height);
                 Color color = isHover ? LIME_SUPER_DARK : LIME_DARK;
+                color = isEnabled() ? color : GRAY_DARK;
 
                 g2.setColor(color);
                 g2.fill(path);
@@ -170,6 +171,8 @@ public class SplitButtonComponent extends JPanel {
                 GeneralPath path = getRoundedWestPath(width, height);
 
                 Color color = isHover ? LIME_SUPER_DARK : LIME_DARK;
+                color = isEnabled() ? color : GRAY_DARK;
+
 
                 g2.setColor(color);
                 g2.fill(path);
@@ -179,6 +182,12 @@ public class SplitButtonComponent extends JPanel {
 
             }
         };
+    }
+
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        this.getDropdownToggleButton().setEnabled(enabled);
+        this.getMainActionButton().setEnabled(enabled);
     }
 
 

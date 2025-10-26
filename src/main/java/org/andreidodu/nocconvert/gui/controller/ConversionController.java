@@ -13,10 +13,14 @@ import java.util.List;
 public class ConversionController {
     private final ConversionDTO conversionDTO;
     private final ImageConverterService imageConverterService;
+    private final JLabel applicationStatusLabel;
+    private final JLabel secondaryApplicationStatusLabel;
 
     public ConversionController(ConversionDTO conversionDTO) {
         this.conversionDTO = conversionDTO;
         this.imageConverterService = new ImageConverterServiceImpl();
+        this.applicationStatusLabel = conversionDTO.applicationStatusLabel();
+        this.secondaryApplicationStatusLabel = conversionDTO.secondaryApplicationStatusLabel();
         initializeConvertComponent();
     }
 
@@ -40,15 +44,42 @@ public class ConversionController {
                         return;
                     }
 
-                    ImageSearcherSwingWorker worker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), conversionDTO.guiOrchestrator()::updateApplicationStatusLabel, this::onSearchComplete);
-                    conversionDTO.applicationStatusLabel().setText("Looking for images in the Source directory...");
+                    ImageSearcherSwingWorker worker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), this::updateApplicationStatus, this::onSearchComplete);
+                    this.startSearchForImagesStep();
                     worker.execute();
 
                 });
     }
 
     private void onSearchComplete(List<Path> paths) {
+        endSearchForImagesStep(paths.size());
+    }
 
+    public void startSearchForImagesStep() {
+        conversionDTO.guiOrchestrator().setEnableSearchStepComponents(false);
+        SwingUtilities.invokeLater(() -> {
+            conversionDTO.convertComponent().setEnabled(false);
+            String message = "Looking for images in the Source directory...";
+            applicationStatusLabel.setText(message);
+            secondaryApplicationStatusLabel.setText("Searching...");
+
+        });
+    }
+
+    public void endSearchForImagesStep(int size) {
+        conversionDTO.guiOrchestrator().setEnableSearchStepComponents(true);
+        SwingUtilities.invokeLater(() -> {
+            conversionDTO.convertComponent().setEnabled(true);
+            String message = String.format("Search step done! %s processable images found.", size);
+            applicationStatusLabel.setText(message);
+            secondaryApplicationStatusLabel.setText("Search done: " + size + " image(s) found");
+        });
+    }
+
+    public void updateApplicationStatus(String text) {
+        SwingUtilities.invokeLater(() -> {
+            applicationStatusLabel.setText(text);
+        });
     }
 
 }

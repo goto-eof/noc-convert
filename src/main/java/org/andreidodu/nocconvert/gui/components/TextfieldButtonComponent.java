@@ -173,11 +173,11 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int width = getWidth();
                 int height = getHeight();
-                if (isHover) {
-                    g2.setColor(LIME_SUPER_DARK);
-                } else {
-                    g2.setColor(LIME_DARK);
-                }
+
+                Color color = isHover ? LIME_SUPER_DARK : LIME_DARK;
+                color = isEnabled() ? color : GRAY_DARK;
+                g2.setColor(color);
+
                 g2.fill(new RoundRectangle2D.Float(
                         0, 0, width, height, ARC_SIZE_BTN, ARC_SIZE_BTN
                 ));

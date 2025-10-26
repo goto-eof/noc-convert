@@ -48,6 +48,7 @@ public class GUIOrchestrator extends JFrame {
     private JPanel scrollPanePanel;
     private JLabel applicationStatusLabel;
     private JPanel progressBarPanel;
+    private JLabel secondaryApplicationStatusLabel;
 
     private final PathSelectionController pathSelectionController;
     private final ConvertionStatusController convertionStatusController;
@@ -104,15 +105,13 @@ public class GUIOrchestrator extends JFrame {
         return pathSelectionController.getPathSelectionRawDTO().getDestinationDirectory();
     }
 
-    public void updateApplicationStatusLabel(String text) {
-        applicationStatusLabel.setText(text);
-    }
 
     private ConversionController initializeConversionController() {
         ConversionDTO conversionDTO = ConversionDTO.builder()
                 .guiOrchestrator(this)
                 .convertComponent(convertComponent)
                 .applicationStatusLabel(applicationStatusLabel)
+                .secondaryApplicationStatusLabel(secondaryApplicationStatusLabel)
                 .build();
         return new ConversionController(conversionDTO);
     }
@@ -280,12 +279,13 @@ public class GUIOrchestrator extends JFrame {
         if (panel7Font != null) panel7.setFont(panel7Font);
         panel7.setOpaque(false);
         progressBarPanel.add(panel7, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JLabel label4 = new JLabel();
-        label4.setBackground(new Color(-14079186));
-        Font label4Font = this.$$$getFont$$$(null, Font.BOLD, 12, label4.getFont());
-        if (label4Font != null) label4.setFont(label4Font);
-        label4.setText("Conversion Complete: 6 files converted / 1 error");
-        panel7.add(label4, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        secondaryApplicationStatusLabel = new JLabel();
+        secondaryApplicationStatusLabel.setBackground(new Color(-14079186));
+        Font secondaryApplicationStatusLabelFont = this.$$$getFont$$$(null, Font.BOLD, 12, secondaryApplicationStatusLabel.getFont());
+        if (secondaryApplicationStatusLabelFont != null)
+            secondaryApplicationStatusLabel.setFont(secondaryApplicationStatusLabelFont);
+        secondaryApplicationStatusLabel.setText("Conversion Complete: 6 files converted / 1 error");
+        panel7.add(secondaryApplicationStatusLabel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel7.add(spacer2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         headerPanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 5, 0, 5), -1, -1));
@@ -299,12 +299,12 @@ public class GUIOrchestrator extends JFrame {
         button1.setIcon(new ImageIcon(getClass().getResource("/images/hamburger.png")));
         button1.setText("");
         headerPanel.add(button1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, new Dimension(48, 48), new Dimension(48, 48), new Dimension(48, 48), 0, false));
-        final JLabel label5 = new JLabel();
-        label5.setBackground(new Color(-14079186));
-        Font label5Font = this.$$$getFont$$$(null, Font.BOLD, 20, label5.getFont());
-        if (label5Font != null) label5.setFont(label5Font);
-        label5.setText("NoCloud Bulk Image Converter");
-        headerPanel.add(label5, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label4 = new JLabel();
+        label4.setBackground(new Color(-14079186));
+        Font label4Font = this.$$$getFont$$$(null, Font.BOLD, 20, label4.getFont());
+        if (label4Font != null) label4.setFont(label4Font);
+        label4.setText("NoCloud Bulk Image Converter");
+        headerPanel.add(label4, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer3 = new Spacer();
         headerPanel.add(spacer3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
     }
@@ -380,4 +380,7 @@ public class GUIOrchestrator extends JFrame {
 
     }
 
+    public void setEnableSearchStepComponents(boolean bool) {
+        pathSelectionController.setEnableComponents(bool);
+    }
 }

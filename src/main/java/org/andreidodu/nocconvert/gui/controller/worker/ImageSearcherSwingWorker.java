@@ -62,7 +62,6 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
     protected void done() {
         try {
             List<Path> processingJobResult = get();
-            updateApplicationStatusLabel.accept(String.format("Search process done! %s processable images found.", processingJobResult.size()));
             onSearchDone.accept(processingJobResult);
         } catch (InterruptedException | ExecutionException e) {
             log.error(e.getMessage(), e);

@@ -9,5 +9,6 @@ import javax.swing.*;
 @Builder
 public record ConversionDTO(GUIOrchestrator guiOrchestrator,
                             SplitButtonComponent convertComponent,
-                            JLabel applicationStatusLabel) {
+                            JLabel applicationStatusLabel,
+                            JLabel secondaryApplicationStatusLabel) {
 }

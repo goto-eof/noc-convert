@@ -101,4 +101,10 @@ public class PathSelectionController {
     }
 
 
+    public void setEnableComponents(boolean bool) {
+        SwingUtilities.invokeLater(() -> {
+            pathSelectionDTO.sourceComponent().setEnabled(bool);
+            pathSelectionDTO.destinationComponent().setEnabled(bool);
+        });
+    }
 }
