@@ -58,8 +58,8 @@ public class PathSelectionController {
 
     public List<String> retrieveValidationErrorsIfExists() {
         List<String> errors = new ArrayList<>();
-        validationService.isValidatePath(pathSelectionRawDTO.getSourceDirectory()).ifPresent(errors::add);
-        validationService.isValidatePath(pathSelectionRawDTO.getDestinationDirectory()).ifPresent(errors::add);
+        validationService.isValidatePath(pathSelectionRawDTO.getSourceDirectory()).ifPresent(text -> errors.add("Source directory: " + text));
+        validationService.isValidatePath(pathSelectionRawDTO.getDestinationDirectory()).ifPresent(text -> errors.add("Destination directory: " + text));
         return errors;
     }
 

@@ -31,6 +31,12 @@ public class ConversionController {
     private void addConvertComponentEventListener() {
         conversionDTO.convertComponent().getMainActionButton()
                 .addActionListener(e -> {
+
+                    List<String> validationMessageList = conversionDTO.guiOrchestrator().getValidationMessageList();
+                    if (!validationMessageList.isEmpty()) {
+                        JOptionPane.showMessageDialog(conversionDTO.guiOrchestrator(), "Huston, we have some validation errors:\n" + String.join("\n", validationMessageList), "Validation Errors", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
                     JOptionPane.showMessageDialog(conversionDTO.guiOrchestrator(), "You selected: " + conversionDTO.convertComponent().getSelectedItem().getFormat(), "Action", JOptionPane.INFORMATION_MESSAGE);
                 });
     }

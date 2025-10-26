@@ -11,7 +11,7 @@ public class ValidationServiceImpl implements ValidationService {
     @Override
     public Optional<String> isValidatePath(Path path) {
         if (!isValidaDirectory(path)) {
-            return Optional.of(String.format("Path %s does not exist or is not a directory", path.toString()));
+            return Optional.of("Invalid directory. Path does not exist or the path is not a directory");
         }
         return Optional.empty();
     }
