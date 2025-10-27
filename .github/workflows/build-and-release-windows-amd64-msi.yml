@@ -61,7 +61,7 @@ jobs:
           $OutputPath = "executable"
           $MainJar = "noc-convert.jar"
           $IconPath = "downloaded-files\resources\icon-windows.ico"
-          jpackage.exe --input $InputPath --dest $OutputPath --name "NoCloud Bulk Image Converter" --vendor "Andrei Dodu" --app-version "$env:RELEASE_TAG" --main-jar "noc-convert.jar" --main-class org.andreidodu.nocconvert.Main --icon $IconPath --type msi --win-shortcut --win-menu --java-options "--add-opens java.desktop/javax.imageio.spi=ALL-UNNAMED -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true" --add-modules java.base,java.desktop --verbose
+          jpackage.exe --input $InputPath --dest $OutputPath --name "NoCloud Bulk Image Converter" --vendor "Andrei Dodu" --app-version "$env:RELEASE_TAG" --main-jar "noc-convert.jar" --main-class org.andreidodu.nocconvert.Main --icon $IconPath --type msi --win-shortcut --win-menu --java-options "--add-opens java.desktop/javax.imageio.spi=ALL-UNNAMED -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true" --add-modules java.base,java.desktop,java.logging,java.management,java.naming --verbose
 
       - name: Zip MSI file
         shell: pwsh

@@ -79,7 +79,7 @@ jobs:
             --icon "$ICON_PATH" \
             --type pkg \
             --java-options "--add-opens java.desktop/javax.imageio.spi=ALL-UNNAMED -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true" \
-            --add-modules java.base,java.desktop \
+            --add-modules java.base,java.desktop,java.logging,java.management,java.naming \
             --verbose
 
       - name: Zip PKG file (ARM)
