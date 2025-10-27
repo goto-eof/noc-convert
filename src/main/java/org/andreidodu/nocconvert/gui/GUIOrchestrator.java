@@ -70,6 +70,7 @@ public class GUIOrchestrator extends JFrame {
         String message = "Please select the Source and the Destination Directories and press on the Convert button";
         applicationStatusLabel.setText(message);
         secondaryApplicationStatusLabel.setText("Waiting for user actions");
+        scrollPanePanel.setVisible(false);
     }
 
     private void preInitialization() {
@@ -93,6 +94,7 @@ public class GUIOrchestrator extends JFrame {
                 .conversionFileList(conversionFileList)
                 .progressBarAndStatusPanel(progressBarPanel)
                 .progressBar(progressBar1)
+                .scrollPanePanel(scrollPanePanel)
                 .build();
         return new ConvertionStatusController(convertionStatusDTO);
     }
@@ -404,5 +406,9 @@ public class GUIOrchestrator extends JFrame {
 
     public void incrementMainProgressBarProgress() {
         convertionStatusController.incrementMainProgressBarProgress();
+    }
+
+    public void startSearch() {
+        convertionStatusController.startSearch();
     }
 }

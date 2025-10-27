@@ -96,6 +96,8 @@ public class ConversionController {
             secondaryApplicationStatusLabel.setText("Searching for images...");
             conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(false);
         });
+
+        conversionDTO.guiOrchestrator().startSearch();
     }
 
     public void endSearchForImagesStep(List<Path> paths) {

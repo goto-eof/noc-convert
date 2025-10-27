@@ -23,6 +23,8 @@ public class ConvertionStatusController {
 
     public void onSearchStepFinish(Path destinationDirectory, String targetFormat, List<Path> paths) {
         convertionStatusDTO.conversionFileListScrollPane().setVisible(true);
+        convertionStatusDTO.scrollPanePanel().setVisible(true);
+
         SwingUtilities.invokeLater(() -> {
             long startTime = System.nanoTime();
 
@@ -96,5 +98,9 @@ public class ConvertionStatusController {
     public void incrementMainProgressBarProgress() {
         convertionStatusDTO.progressBar().setValue(convertionStatusDTO.progressBar().getValue() + 1);
 
+    }
+
+    public void startSearch() {
+        convertionStatusDTO.scrollPanePanel().setVisible(false);
     }
 }
