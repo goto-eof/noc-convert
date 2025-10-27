@@ -1,7 +1,6 @@
 package org.andreidodu.nocconvert.gui.components;
 
 import lombok.Getter;
-import lombok.Setter;
 import org.andreidodu.nocconvert.gui.GUIOrchestrator;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 
@@ -50,7 +49,7 @@ public class SplitButtonComponent extends JPanel {
             throw new IllegalArgumentException("The menu list is empty");
         }
 
-        dropdownToggleButton = buildDropdownToggleButton(menuList);
+        dropdownToggleButton = buildDropdownToggleMenu(menuList);
     }
 
     public void setPreferredFormat(FormatExtensionDTO preferredFormat) {
@@ -59,13 +58,15 @@ public class SplitButtonComponent extends JPanel {
 
     public void updateAction(Action action) {
         this.action = action;
+        String additionalInfo = selectedItem.getExtension().equalsIgnoreCase(selectedItem.getFormat()) ? "" : " (" + selectedItem.getFormat().toUpperCase() + ")";
         if (Action.START.equals(action)) {
-            setMainActionLabel("CONVERT to " + selectedItem.getDescription());
+            setMainActionLabel("CONVERT to " + selectedItem.getDescription() + additionalInfo);
         } else if (Action.STOP.equals(action)) {
-            setMainActionLabel("STOP CONVERSION to " + selectedItem.getDescription());
+            setMainActionLabel("STOP CONVERSION to " + selectedItem.getDescription() + additionalInfo);
         }
+        mainActionButton.repaint();
+        dropdownToggleButton.repaint();
         orchestrator.pack();
-        repaint();
     }
 
     private JPopupMenu getPopupMenu(List<FormatExtensionDTO> imageFormatList) {
@@ -76,21 +77,16 @@ public class SplitButtonComponent extends JPanel {
             item.setForeground(TEXT_LIGHT);
 
             item.addActionListener(e -> {
-                updateAction(action);
                 this.selectedItem = fileFormat;
-                this.repaint();
-                orchestrator.pack();
+                updateAction(action);
             });
-
             popupMenu.add(item);
         }
-
-        updateAction(action);
         return popupMenu;
     }
 
 
-    private JButton buildDropdownToggleButton(List<FormatExtensionDTO> menuList) {
+    private JButton buildDropdownToggleMenu(List<FormatExtensionDTO> menuList) {
         JPopupMenu menu = getPopupMenu(menuList);
         dropdownToggleButton.setOpaque(false);
         dropdownToggleButton.putClientProperty("JPopupMenu.showSeparator", true);
@@ -119,11 +115,13 @@ public class SplitButtonComponent extends JPanel {
                     @Override
                     public void mouseEntered(java.awt.event.MouseEvent evt) {
                         isHover = true;
+                        repaint();
                     }
 
                     @Override
                     public void mouseExited(java.awt.event.MouseEvent evt) {
                         isHover = false;
+                        repaint();
                     }
                 });
             }
@@ -179,11 +177,13 @@ public class SplitButtonComponent extends JPanel {
                     @Override
                     public void mouseEntered(java.awt.event.MouseEvent evt) {
                         isHover = true;
+                        repaint();
                     }
 
                     @Override
                     public void mouseExited(java.awt.event.MouseEvent evt) {
                         isHover = false;
+                        repaint();
                     }
                 });
             }
