@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 
 public class ImageConverterFacadeServiceImpl implements ImageConverterFacadeService {
     private final FileSystemService fileSystemService;
@@ -23,26 +24,27 @@ public class ImageConverterFacadeServiceImpl implements ImageConverterFacadeServ
     }
 
     @Override
-    public List<String> getAllFilesDirectoryByExtension(String sourcePath, List<String> strings) {
+    public List<Path> getAllFilesDirectoryByExtension(String sourcePath, List<String> strings) {
         if (!new File(sourcePath).exists()) {
             return new ArrayList<>();
         }
         try {
-            return fileSystemService.getAllFiles(sourcePath, strings);
+            return fileSystemService.getAllFiles(Path.of(sourcePath), strings, (a, b) -> {
+            });
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public List<ImageConversionResultDTO> convertFileListToCustomFormatMultithreaded(ExecutorService executorService, List<String> allFiles, String destinationPath, String imageFormat) {
+    public void convertFileListToCustomFormatMultithreaded(ExecutorService executorService, List<Path> allFiles, Path destinationPath, String imageFormat, Consumer<Float> onProgress, Runnable onStart, Runnable onComplete) {
         createDestinationPath(destinationPath);
-        return imageConverterOrchestratorService.convertMultithreaded(executorService, allFiles, destinationPath, imageFormat);
+        imageConverterOrchestratorService.convertMultithreaded(executorService, allFiles, destinationPath, imageFormat,  onProgress, onStart, onComplete);
     }
 
-    private static void createDestinationPath(String destinationPath) {
+    private static void createDestinationPath(Path destinationPath) {
         try {
-            Files.createDirectories(Path.of(destinationPath));
+            Files.createDirectories(destinationPath);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

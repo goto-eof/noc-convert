@@ -1,6 +1,7 @@
 package org.andreidodu.nocconvert;
 
-import org.andreidodu.nocconvert.gui.GUI;
+import com.formdev.flatlaf.FlatDarculaLaf;
+import org.andreidodu.nocconvert.gui.GUIOrchestrator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,32 +33,19 @@ public class Main {
 
 
         try {
-            UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatDarculaLaf());
+            UIManager.setLookAndFeel(new FlatDarculaLaf());
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
 
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("NoCloud Bulk Image Converter");
-            JPanel mainPanel = getMainPanel(frame);
-            frame.setContentPane(mainPanel);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.revalidate();
-            frame.pack();
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-        });
-
         deleteLogFileOnExit();
+
+        new GUIOrchestrator();
     }
 
     private static void deleteLogFileOnExit() {
         File logFile = new File("logs/application.log");
         logFile.deleteOnExit();
-    }
-
-    private static JPanel getMainPanel(JFrame frame) {
-        return new GUI(frame).getMainPanel();
     }
 
 }

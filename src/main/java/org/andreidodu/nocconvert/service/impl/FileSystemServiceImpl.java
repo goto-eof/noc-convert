@@ -1,47 +1,67 @@
 package org.andreidodu.nocconvert.service.impl;
 
 import org.andreidodu.nocconvert.service.FileSystemService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FileSystemServiceImpl implements FileSystemService {
+    private static final Logger log = LogManager.getLogger(FileSystemServiceImpl.class);
 
     @Override
-    public List<String> getAllFiles(String directoryPath, List<String> allowedFileExtensionList) {
-        Path start = Paths.get(directoryPath);
-        try (Stream<Path> pathStream = Files.walk(start)) {
-            return pathStream.filter(Files::isRegularFile)
-                    .map(Path::toString)
-                    .filter(string -> {
-                        String name = string.toLowerCase();
-                        return allowedFileExtensionList.stream()
-                                .anyMatch(name::endsWith);
-                    })
-                    .collect(Collectors.toList());
+    public List<Path> getAllFiles(Path directoryPath, List<String> allowedFileExtensionList, BiConsumer<Path, Integer> onDirectoryProcessed) {
+        Objects.requireNonNull(directoryPath, "Directory path must not be null");
+        Objects.requireNonNull(allowedFileExtensionList, "Allowed file extension list must not be null");
+        Objects.requireNonNull(onDirectoryProcessed, "On directory processed must not be null");
+
+        try (Stream<Path> pathStream = Files.walk(directoryPath)) {
+
+            Map<Path, List<Path>> parentAndFilesMap = pathStream
+                    .filter(file -> isValidFile(file, allowedFileExtensionList))
+                    .collect(Collectors.groupingBy(Path::getParent));
+
+            List<Path> result = new ArrayList<>();
+
+            for (Map.Entry<Path, List<Path>> entry : parentAndFilesMap.entrySet()) {
+                result.addAll(entry.getValue());
+                onDirectoryProcessed.accept(entry.getKey(), entry.getValue().size());
+            }
+
+            return result;
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(e);
             throw new RuntimeException(e);
         }
     }
 
-    @Override
-    public boolean containsAtLeaseOneFile(String directoryPath) {
-        File file = new File(directoryPath);
-        File[] files = file.listFiles();
-
-        if (files == null || files.length == 0) {
+    private static boolean isValidFile(Path file, List<String> allowedFileExtensionList) {
+        if (!Files.isRegularFile(file)) {
             return false;
         }
+        String name = file.getFileName().toString().toLowerCase();
+        return allowedFileExtensionList.stream()
+                .anyMatch(name::endsWith);
+    }
 
-        return Arrays.stream(files)
-                .anyMatch(File::isFile);
+    @Override
+    public boolean containsAtLeaseOneFile(Path directoryPath) {
+        Objects.requireNonNull(directoryPath, "Directory path must not be null");
+
+        try (Stream<Path> files = Files.list(directoryPath)) {
+            return files.anyMatch(Files::isRegularFile);
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 }
