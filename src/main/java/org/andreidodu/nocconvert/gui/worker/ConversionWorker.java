@@ -26,6 +26,7 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
     @Override
     protected Void doInBackground() throws Exception {
         conversionOrchestrator = new ConversionOrchestrator(list, this::publishItem, onItemCompleted);
+        conversionOrchestrator.startConversion();
         return null;
     }
 

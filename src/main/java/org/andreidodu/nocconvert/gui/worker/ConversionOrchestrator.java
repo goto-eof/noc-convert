@@ -12,6 +12,7 @@ public class ConversionOrchestrator {
     private final Consumer<ConversionItemDTO> publish;
     private final Runnable onItemCompleted;
     private final ExecutorService executorService;
+    private final List<ConversionItemDTO> conversionItemDTOList;
 
     public ConversionOrchestrator(
             List<ConversionItemDTO> conversionItemDTOList,
@@ -21,8 +22,11 @@ public class ConversionOrchestrator {
 
         this.publish = publish;
         this.onItemCompleted = onItemCompleted;
-
+        this.conversionItemDTOList = conversionItemDTOList;
         executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    }
+
+    public void startConversion() {
         try {
             for (ConversionItemDTO conversionItemDTO : conversionItemDTOList) {
                 executorService.submit(new ConvertSingleItemTask(conversionItemDTO, publish, onItemCompleted));
