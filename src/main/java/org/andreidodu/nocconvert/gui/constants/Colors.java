@@ -43,6 +43,7 @@ public interface Colors {
     Color SELECTED_DARK_ACCENT_BLUE = new Color(0, 120, 212, 124);
     Color ACCENT_GREEN = new Color(102, 212, 0);
     Color ACCENT_GRAY = new Color(205, 203, 203);
+    Color ACCENT_DARK_GRAY = new Color(155, 153, 153);
 
 
     Color TEXT_LIGHT = new Color(255, 255, 255);

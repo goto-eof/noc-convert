@@ -210,7 +210,7 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         //setBackground(border);
 
 
-        Color statusColor = ConversionStatus.FAILED.equals(value.getStatus()) ? Colors.RED : LIME_DARK;
+        Color statusColor = ConversionStatus.FAILED.equals(value.getStatus()) ? Colors.RED : ACCENT_DARK_GRAY;
 
         progressBar.setForeground(statusColor);
 
