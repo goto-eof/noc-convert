@@ -33,7 +33,7 @@ import java.util.function.Consumer;
 public class ImageConverterServiceImpl implements ImageConverterService {
     private static final Logger log = LogManager.getLogger(ImageConverterServiceImpl.class);
 
-    private static final List<String> NO_ALPHA_FORMAT = List.of("bmp", "wbmp", "jpg", "jpeg");
+    private static final List<String> NO_ALPHA_FORMAT = List.of("bmp", "wbmp", "jpg", "jpeg", "pbm", "pfm", "pgm", "pnm","ppm");
     private ImageWriter writer;
     private ImageOutputStream currentOutputStream;
     private ImageInputStream imageInputStream;
