@@ -105,4 +105,5 @@ public class ConvertionStatusController {
     public void startSearch() {
         convertionStatusDTO.scrollPanePanel().setVisible(false);
     }
+
 }

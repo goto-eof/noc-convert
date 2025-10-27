@@ -43,7 +43,9 @@ public class ConversionController {
     private void populateConvertComponentDropdownMenu() {
         List<FormatExtensionDTO> imageFormatList = imageConverterService.getAvailableWriteFormatList();
         FormatExtensionDTO preferredFormat = imageFormatList.stream().filter(format -> "webp".equals(format.getFormat())).findFirst().orElse(imageFormatList.getLast());
-        conversionDTO.convertComponent().init(imageFormatList, preferredFormat, SplitButtonComponent.Action.START);
+        conversionDTO.convertComponent().setImageList(imageFormatList);
+        conversionDTO.convertComponent().setPreferredFormat(preferredFormat);
+        conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);
     }
 
     private void addConvertComponentEventListener() {
@@ -165,5 +167,11 @@ public class ConversionController {
 
     public void shutdown() {
         cancelActiveProcess();
+    }
+
+    public void enableButton(boolean isEnabled) {
+        conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(isEnabled);
+        conversionDTO.convertComponent().getMainActionButton().setEnabled(isEnabled);
+
     }
 }

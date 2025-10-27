@@ -19,37 +19,42 @@ import static org.andreidodu.nocconvert.gui.util.ShapeUtil.getRoundedWestPath;
 public class SplitButtonComponent extends JPanel {
 
     @Getter
-    private JButton mainActionButton;
+    private final JButton mainActionButton;
     @Getter
     private JButton dropdownToggleButton;
     @Getter
     private FormatExtensionDTO selectedItem;
 
     @Getter
-    @Setter
     private Action action;
 
     private final GUIOrchestrator orchestrator;
 
     public SplitButtonComponent(GUIOrchestrator orchestrator) {
+
         Objects.requireNonNull(orchestrator);
+        mainActionButton = buildMainActionButton();
+        dropdownToggleButton = buildCustomDropdownToggleButton();
 
         this.orchestrator = orchestrator;
         setLayout(new BorderLayout(0, 0));
         setOpaque(false);
+
+        add(mainActionButton, BorderLayout.CENTER);
+        add(dropdownToggleButton, BorderLayout.EAST);
     }
 
-    public void init(List<FormatExtensionDTO> menuList, FormatExtensionDTO preferredFormat, Action action) {
+    public void setImageList(List<FormatExtensionDTO> menuList) {
         Objects.requireNonNull(menuList);
         if (menuList.isEmpty()) {
             throw new IllegalArgumentException("The menu list is empty");
         }
 
-        mainActionButton = buildMainActionButton();
-        dropdownToggleButton = buildDropdownToggleButton(menuList, preferredFormat);
-        add(mainActionButton, BorderLayout.CENTER);
-        add(dropdownToggleButton, BorderLayout.EAST);
-        updateAction(action);
+        dropdownToggleButton = buildDropdownToggleButton(menuList);
+    }
+
+    public void setPreferredFormat(FormatExtensionDTO preferredFormat) {
+        this.selectedItem = preferredFormat;
     }
 
     public void updateAction(Action action) {
@@ -63,7 +68,7 @@ public class SplitButtonComponent extends JPanel {
         repaint();
     }
 
-    private JPopupMenu getPopupMenu(List<FormatExtensionDTO> imageFormatList, FormatExtensionDTO preferredFormat) {
+    private JPopupMenu getPopupMenu(List<FormatExtensionDTO> imageFormatList) {
         JPopupMenu popupMenu = new JPopupMenu();
         for (FormatExtensionDTO fileFormat : imageFormatList) {
             JMenuItem item = new JMenuItem(fileFormat.toString());
@@ -78,21 +83,20 @@ public class SplitButtonComponent extends JPanel {
 
             popupMenu.add(item);
         }
-        this.selectedItem = preferredFormat;
+
         updateAction(action);
         return popupMenu;
     }
 
 
-    private JButton buildDropdownToggleButton(List<FormatExtensionDTO> menuList, FormatExtensionDTO preferredFormat) {
-        JButton button = buildCustomDropdownToggleButton();
-        JPopupMenu menu = getPopupMenu(menuList, preferredFormat);
-        button.setOpaque(false);
-        button.putClientProperty("JPopupMenu.showSeparator", true);
-        button.addActionListener(e -> {
-            menu.show(button, 0, button.getHeight());
+    private JButton buildDropdownToggleButton(List<FormatExtensionDTO> menuList) {
+        JPopupMenu menu = getPopupMenu(menuList);
+        dropdownToggleButton.setOpaque(false);
+        dropdownToggleButton.putClientProperty("JPopupMenu.showSeparator", true);
+        dropdownToggleButton.addActionListener(e -> {
+            menu.show(dropdownToggleButton, 0, dropdownToggleButton.getHeight());
         });
-        return button;
+        return dropdownToggleButton;
     }
 
     private JButton buildCustomDropdownToggleButton() {
@@ -237,6 +241,7 @@ public class SplitButtonComponent extends JPanel {
 
         mainActionButton.setText(label);
     }
+
 
     public enum Action {
         START, STOP
