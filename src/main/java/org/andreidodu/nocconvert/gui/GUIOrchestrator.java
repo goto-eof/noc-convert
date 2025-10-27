@@ -67,11 +67,6 @@ public class GUIOrchestrator extends JFrame {
 
     private void postInitialization() {
         initializeWindow();
-        pathSelectionController.getPathSelectionRawDTO().setDestinationDirectory(Path.of("/home/andrei/Desktop/new/out"));
-        pathSelectionController.getPathSelectionRawDTO().setSourceDirectory(Path.of("/home/andrei/Desktop/new/in"));
-        sourceComponent.getTextField().setText("/home/andrei/Desktop/new/in");
-        destinationComponent.getTextField().setText("/home/andrei/Desktop/new/out");
-
         String message = "Please select the Source and the Destination Directories and press on the Convert button";
         applicationStatusLabel.setText(message);
         secondaryApplicationStatusLabel.setText("Waiting for user actions");
