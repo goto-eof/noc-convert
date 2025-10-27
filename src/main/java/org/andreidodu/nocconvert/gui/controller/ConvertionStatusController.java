@@ -24,10 +24,12 @@ public class ConvertionStatusController {
     }
 
     public void onSearchStepFinish(Path destinationDirectory, String targetFormat, List<Path> paths) {
-        convertionStatusDTO.conversionFileListScrollPane().setVisible(true);
-        convertionStatusDTO.scrollPanePanel().setVisible(true);
+
 
         SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.conversionFileListScrollPane().setVisible(true);
+            convertionStatusDTO.scrollPanePanel().setVisible(true);
+
             long startTime = System.nanoTime();
 
             DefaultListModel<ConversionItemDTO> modelProgress = new DefaultListModel<>();
@@ -41,6 +43,7 @@ public class ConvertionStatusController {
 
             log.debug("rendering time for 0 records: {} ms", durationMs);
         });
+
         List<ConversionItemDTO> list = convertPathListToDTOList(destinationDirectory, targetFormat, paths);
         ListRendererWorker listRendererWorker = new ListRendererWorker(list, convertionStatusDTO.conversionFileList(), () -> convertionStatusDTO.guiOrchestrator().onRenderingDone(list));
         listRendererWorker.execute();
@@ -79,7 +82,7 @@ public class ConvertionStatusController {
         convertionStatusDTO.conversionFileList().repaint();
     }
 
-    public void resetConversionItemList() {
+    public void enableProgressBar() {
         convertionStatusDTO.conversionFileList().setModel(new DefaultListModel<>());
         convertionStatusDTO.conversionFileListScrollPane().setVisible(false);
         convertionStatusDTO.progressBarAndStatusPanel().setVisible(true);
@@ -99,11 +102,16 @@ public class ConvertionStatusController {
 
     public void incrementMainProgressBarProgress() {
         convertionStatusDTO.progressBar().setValue(convertionStatusDTO.progressBar().getValue() + 1);
-
     }
 
     public void startSearch() {
         convertionStatusDTO.scrollPanePanel().setVisible(false);
+    }
+
+    public void noFileFound(){
+        convertionStatusDTO.conversionFileListScrollPane().setVisible(false);
+        convertionStatusDTO.progressBarAndStatusPanel().setVisible(false);
+        convertionStatusDTO.progressBar().setVisible(false);
     }
 
 }

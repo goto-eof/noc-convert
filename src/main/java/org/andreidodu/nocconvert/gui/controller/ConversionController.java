@@ -101,17 +101,11 @@ public class ConversionController {
     }
 
     public void endSearchForImagesStep(List<Path> paths) {
+        if (paths.isEmpty()) {
+            conversionDTO.guiOrchestrator().noFilesFound();
+            return;
+        }
         conversionDTO.guiOrchestrator().onSearchStepFinish(conversionDTO.convertComponent().getSelectedItem().getExtension(), paths);
-        SwingUtilities.invokeLater(() -> {
-            String message = String.format("Search step done! %s processable images found.", paths.size());
-            applicationStatusLabel.setText(message);
-            secondaryApplicationStatusLabel.setText("Search done: " + paths.size() + " image(s) found");
-            applicationStatusLabel.setVisible(true);
-
-            message = String.format("Processing %s images... Please wait.", paths.size());
-            applicationStatusLabel.setText(message);
-            secondaryApplicationStatusLabel.setText("Processing...");
-        });
     }
 
     public void updateApplicationStatus(String text) {
@@ -121,7 +115,6 @@ public class ConversionController {
     }
 
     public void startConversion(List<ConversionItemDTO> list) {
-        log.info(list);
         conversionWorker = new ConversionWorker(list, this::updateList, this::onConversionDone, this::onItemCompleted);
         conversionWorker.execute();
         conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(list.size());
@@ -169,9 +162,15 @@ public class ConversionController {
         cancelActiveProcess();
     }
 
-    public void enableButton(boolean isEnabled) {
-        conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(isEnabled);
-        conversionDTO.convertComponent().getMainActionButton().setEnabled(isEnabled);
+    public void noFileFound() {
+        conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(true);
+        conversionDTO.convertComponent().getMainActionButton().setEnabled(true);
+        conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);
 
+    }
+
+    public void enableButtons(boolean b) {
+        conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(b);
+        conversionDTO.convertComponent().getMainActionButton().setEnabled(b);
     }
 }

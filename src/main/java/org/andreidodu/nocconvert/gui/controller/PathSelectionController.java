@@ -100,10 +100,11 @@ public class PathSelectionController {
         return errors;
     }
 
-    public void setEnableComponents(boolean bool) {
+    public void enableButtons(boolean bool) {
         SwingUtilities.invokeLater(() -> {
             pathSelectionDTO.sourceComponent().setEnabled(bool);
             pathSelectionDTO.destinationComponent().setEnabled(bool);
         });
     }
+
 }

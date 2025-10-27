@@ -103,7 +103,7 @@ public class GUIOrchestrator extends JFrame {
             @Override
             public void onOptimizationStart() {
                 SwingUtilities.invokeLater(() -> {
-                    conversionController.enableButton(false);
+                    conversionController.enableButtons(false);
                     secondaryApplicationStatusLabel.setText("Starting performance optimization...");
                     log.info("Running performance workload tests......");
                 });
@@ -121,7 +121,8 @@ public class GUIOrchestrator extends JFrame {
             @Override
             public void onOptimizationComplete(int finalOptimalLimit) {
                 SwingUtilities.invokeLater(() -> {
-                    conversionController.enableButton(true);
+                    conversionController.enableButtons(true);
+                    pathSelectionController.enableButtons(true);
                     String message = "Optimal configuration found. I will use " + finalOptimalLimit + " V-Threads";
                     secondaryApplicationStatusLabel.setText(message);
                     log.info(message);
@@ -421,10 +422,22 @@ public class GUIOrchestrator extends JFrame {
     }
 
     public void setEnableSearchStepComponents(boolean bool) {
-        pathSelectionController.setEnableComponents(bool);
+        pathSelectionController.enableButtons(bool);
     }
 
     public void onSearchStepFinish(String targetFormat, List<Path> paths) {
+
+        SwingUtilities.invokeLater(() -> {
+            String message = String.format("Search step done! %s processable images found.", paths.size());
+            applicationStatusLabel.setText(message);
+            secondaryApplicationStatusLabel.setText("Search done: " + paths.size() + " image(s) found");
+            applicationStatusLabel.setVisible(true);
+
+            message = String.format("Processing %s images... Please wait.", paths.size());
+            applicationStatusLabel.setText(message);
+            secondaryApplicationStatusLabel.setText("Processing...");
+        });
+
         Path destinationDirectory = pathSelectionController.getPathSelectionRawDTO().getDestinationDirectory();
         convertionStatusController.onSearchStepFinish(destinationDirectory, targetFormat, paths);
     }
@@ -438,7 +451,7 @@ public class GUIOrchestrator extends JFrame {
     }
 
     public void resetConversionItemList() {
-        convertionStatusController.resetConversionItemList();
+        convertionStatusController.enableProgressBar();
         convertionStatusController.updateMainProgressBarProgress(0);
     }
 
@@ -460,5 +473,20 @@ public class GUIOrchestrator extends JFrame {
 
     public void startSearch() {
         convertionStatusController.startSearch();
+    }
+
+    public void noFilesFound() {
+        SwingUtilities.invokeLater(() -> {
+            String message = "No file found in the source directory";
+            applicationStatusLabel.setText(message);
+            secondaryApplicationStatusLabel.setText("The source directory is empty");
+        });
+        conversionController.noFileFound();
+        convertionStatusController.noFileFound();
+        pathSelectionController.enableButtons(true);
+    }
+
+    public void noFileFound(boolean b) {
+
     }
 }
