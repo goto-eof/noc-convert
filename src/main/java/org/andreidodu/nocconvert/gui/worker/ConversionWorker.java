@@ -30,7 +30,10 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
         return null;
     }
 
-
+    @Override
+    protected void process(List<ConversionItemDTO> chunks) {
+        this.updateGui.accept(this.list);
+    }
     private void publishItem(ConversionItemDTO conversionItemDTO) {
         publish(conversionItemDTO);
     }

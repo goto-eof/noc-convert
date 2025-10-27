@@ -3,8 +3,8 @@ package org.andreidodu.nocconvert.gui.controller;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.gui.components.ListItemRenderer;
-import org.andreidodu.nocconvert.gui.worker.ListRendererWorker;
 import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
+import org.andreidodu.nocconvert.gui.worker.ListRendererWorker;
 import org.andreidodu.nocconvert.util.FileUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,6 +72,7 @@ public class ConvertionStatusController {
                 model.set(conversionItemDTO.getIndex(), conversionItemDTO);
             }
         });
+        convertionStatusDTO.conversionFileList().repaint();
     }
 
     public void resetConversionItemList() {
