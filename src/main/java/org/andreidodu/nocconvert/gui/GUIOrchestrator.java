@@ -8,7 +8,6 @@ import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.gui.components.ListItemRenderer;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
-import org.andreidodu.nocconvert.gui.constants.Colors;
 import org.andreidodu.nocconvert.gui.controller.ConversionController;
 import org.andreidodu.nocconvert.gui.controller.ConvertionStatusController;
 import org.andreidodu.nocconvert.gui.controller.PathSelectionController;
@@ -24,6 +23,8 @@ import java.awt.geom.RoundRectangle2D;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
+
+import static java.lang.System.exit;
 
 public class GUIOrchestrator extends JFrame {
     private static final float ARC_SIZE = 20;
@@ -61,6 +62,25 @@ public class GUIOrchestrator extends JFrame {
         pathSelectionController = initializePathSelectionController();
         convertionStatusController = initializeProcessingStatusController();
         conversionController = initializeConversionController();
+
+        JPopupMenu menu = new JPopupMenu("Main Menu");
+        JMenuItem about = new JMenuItem("About");
+        about.addActionListener((e) -> SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null,
+                "NoCloud Bulk Image Converter\nv. 2.0.0\nby Andrei Dodu",
+                "About",
+                JOptionPane.INFORMATION_MESSAGE)));
+
+
+        menu.add(about);
+        JMenuItem exit = new JMenuItem("Exit");
+        exit.addActionListener((e) -> SwingUtilities.invokeLater(() -> {
+            conversionController.shutdown();
+            exit(0);
+        }));
+        menu.add(exit);
+        button1.addActionListener(e -> {
+            menu.show(button1, 0, button1.getHeight());
+        });
 
         postInitialization();
     }
@@ -304,7 +324,7 @@ public class GUIOrchestrator extends JFrame {
         if (fontName == null) {
             resultName = currentFont.getName();
         } else {
-            Font testFont = new Font(fontName, Font.PLAIN, 10);
+            Font testFont = new Font(fontName, java.awt.Font.PLAIN, 10);
             if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
                 resultName = fontName;
             } else {

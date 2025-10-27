@@ -165,4 +165,7 @@ public class ConversionController {
     }
 
 
+    public void shutdown() {
+        cancelActiveProcess();
+    }
 }
