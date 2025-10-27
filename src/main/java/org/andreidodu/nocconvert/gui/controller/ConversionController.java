@@ -150,7 +150,7 @@ public class ConversionController {
         long processing = list.stream().filter(dto -> ConversionStatus.PROCESSING.equals(dto.getStatus())).count();
 
         SwingUtilities.invokeLater(() -> {
-            String message = String.format("Conversion done! There were processed %s images, and we have %s successes / %s not processed / %s failures", list.size(), success, queued + processing, failed);
+            String message = String.format("Conversion completed. Total: %s. Successes: %s / Unprocessed: %s / Failures: %s", list.size(), success, queued + processing, failed);
             applicationStatusLabel.setText(message);
             secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", success, failed));
             conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);
