@@ -28,15 +28,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
+// TODO this class should be deprecated
+// TODO before removing it, I need to move some stuff to the right controllers
 public class GuiController {
     private static final Logger log = LogManager.getLogger(GuiController.class);
 
     private final TextfieldButtonComponent sourceDirectoryTextField;
-    //    private final JButton chooseSourceDirectoryButton;
     private final JList<ConversionItemDTO> sourceDirectoryFilesList;
 
     private final TextfieldButtonComponent destinationDirectoryTextField;
-//    private final JButton chooseDestinationDirectoryButton;
 
     private final JButton convertButton;
     private final JList<String> errorsJList;
@@ -58,11 +58,9 @@ public class GuiController {
 
     public GuiController(GUIControllerComponentsDTO guiControllerComponentsDTO) {
         this.sourceDirectoryTextField = guiControllerComponentsDTO.sourceDirectoryTextField();
-//        this.chooseSourceDirectoryButton = guiControllerComponentsDTO.chooseSourceDirectoryButton();
         this.sourceDirectoryFilesList = guiControllerComponentsDTO.sourceDirectoryFilesList();
 
         this.destinationDirectoryTextField = guiControllerComponentsDTO.destinationDirectoryTextField();
-//        this.chooseDestinationDirectoryButton = guiControllerComponentsDTO.chooseDestinationDirectoryButton();
 
         this.convertButton = guiControllerComponentsDTO.convertButton();
         this.errorsJList = guiControllerComponentsDTO.errorsJList();
@@ -74,10 +72,6 @@ public class GuiController {
         this.imageConverterFacadeService = new ImageConverterFacadeServiceImpl();
         this.fileSystemSupportGuiUtil = new FileSystemSupportGuiUtil();
         this.fileSystemService = new FileSystemServiceImpl();
-
-//        addSourceDirectoryChooseButtonEventListener();
-//        addDestinationDirectoryChooseButtonEventListener();
-//        addConvertButtonActionListener();
 
         this.sourceDirectoryTextField.setText("Pictures");
         this.destinationDirectoryTextField.setText("noc-convert");
@@ -176,12 +170,6 @@ public class GuiController {
                             .toList()
             );
 
-            SwingUtilities.invokeLater(() -> {
-//                DefaultListModel<String> model = new DefaultListModel<>();
-//                fileImageListToConvert.forEach(model::addElement);
-//                sourceDirectoryFilesList.setModel(model);
-            });
-
             Path destinationPath = Path.of(destinationDirectoryTextField.getText());
 
 
@@ -228,34 +216,8 @@ public class GuiController {
     private void enableUI(boolean enableFlag) {
         destinationDirectoryTextField.setEnabled(enableFlag);
         sourceDirectoryTextField.setEnabled(enableFlag);
-//        chooseDestinationDirectoryButton.setEnabled(enableFlag);
-//        chooseSourceDirectoryButton.setEnabled(enableFlag);
-        // convertButton.setEnabled(enableFlag);
         targetFileFormatComboBox.setEnabled(enableFlag);
 
         frame.pack();
     }
-
-//    private void addDestinationDirectoryChooseButtonEventListener() {
-//        chooseDestinationDirectoryButton.addActionListener(e -> fileSystemSupportGuiUtil.selectDirectory()
-//                .ifPresent(directory -> {
-//                    destinationDirectoryTextField.setText(directory);
-//                    if (fileSystemService.containsAtLeaseOneFile(directory)) {
-//                        SwingUtilities.invokeLater(() -> {
-//                            JOptionPane.showMessageDialog(null,
-//                                    "The destination directory contains at least one file. All files in the destination directory will be override!",
-//                                    "WARNING!",
-//                                    JOptionPane.WARNING_MESSAGE);
-//                        });
-//                    }
-//                }));
-//    }
-//
-//    private void addSourceDirectoryChooseButtonEventListener() {
-//        chooseSourceDirectoryButton.addActionListener(e -> fileSystemSupportGuiUtil.selectDirectory()
-//                .ifPresent(sourceDirectoryTextField::setText)
-//        );
-//    }
-
-
 }

@@ -1,18 +1,28 @@
 package org.andreidodu.nocconvert.gui.worker;
 
+import lombok.Getter;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.util.performance.AdaptiveGovernorRunnable;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class ConversionOrchestrator {
+    private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
     private final Consumer<ConversionItemDTO> publish;
     private final Runnable onItemCompleted;
+    @Getter
     private final ExecutorService executorService;
     private final List<ConversionItemDTO> conversionItemDTOList;
+    private List<ConvertSingleItemTask> taskList;
+    private static Semaphore semaphore;
 
     public ConversionOrchestrator(
             List<ConversionItemDTO> conversionItemDTOList,
@@ -23,33 +33,37 @@ public class ConversionOrchestrator {
         this.publish = publish;
         this.onItemCompleted = onItemCompleted;
         this.conversionItemDTOList = conversionItemDTOList;
-        executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        executorService = Executors.newVirtualThreadPerTaskExecutor();
+        semaphore = new Semaphore(AdaptiveGovernorRunnable.VT_OPTIMAL_LIMIT);
     }
 
     public void startConversion() {
+        taskList = new ArrayList<>();
+        for (ConversionItemDTO conversionItemDTO : conversionItemDTOList) {
+            ConvertSingleItemTask task = new ConvertSingleItemTask(conversionItemDTO, publish, onItemCompleted, semaphore);
+            taskList.add(task);
+            executorService.submit(task);
+        }
         try {
-            for (ConversionItemDTO conversionItemDTO : conversionItemDTOList) {
-                executorService.submit(new ConvertSingleItemTask(conversionItemDTO, publish, onItemCompleted));
+            getExecutorService().shutdown();
+            boolean terminated = getExecutorService().awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS);
+            if (!terminated) {
+                log.error("Executor did not terminate in time. Forcing emergency shutdown.");
+                getExecutorService().shutdownNow();
             }
-            executorService.shutdown();
-            executorService.awaitTermination(Integer.MAX_VALUE, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
+            log.warn("Conversion Worker interrupted (user STOP action). Forcing Orchestrator cancel.", e);
             Thread.currentThread().interrupt();
-        } finally {
-            executorService.shutdown();
-            try {
-                if (!executorService.awaitTermination(Integer.MAX_VALUE, TimeUnit.MINUTES)) {
-                    executorService.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                executorService.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-
+            shutdown();
+        } catch (Exception e) {
+            shutdown();
         }
     }
 
-    public void cancel() {
-        this.executorService.shutdownNow();
+    public void shutdown() {
+        if (executorService != null && !executorService.isTerminated()) {
+            taskList.forEach(ConvertSingleItemTask::closeStreams);
+            this.executorService.shutdownNow();
+        }
     }
 }

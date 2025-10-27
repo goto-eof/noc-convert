@@ -216,24 +216,15 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         statusLabelBackground = ConversionStatus.FAILED.equals(value.getStatus()) ? RED_DARK : statusLabelBackground;
 
 
-        Color border = list.getBackground(); // pari % 2 == 0 ? GRAY_DARK :
+        Color border = list.getBackground();
         border = isSelected ? LIME_SUPER_SUPER_DARK : GRAY_DARK;
 
         setBorder(BorderFactory.createMatteBorder(10, 10, 10, 10, border));
-
-        //Color statusColor = ConversionStatus.FAILED.equals(value.getStatus()) ? Colors.RED : ACCENT_DARK_GRAY;
 
         progressBar.setForeground(statusLabelBackground);
 
         fileNameLabel.setForeground(Color.WHITE);
 
-
-//        setBackground(ACCENT_BLUE);
-//        topPanel.setBackground(ACCENT_BLUE);
-//        contentPanel.setBackground(ACCENT_BLUE);
-//        fileNameLabel.setBackground(ACCENT_BLUE);
-//        statusLabel.setBackground(ACCENT_BLUE);
-//        progressBar.setBackground(ACCENT_BLUE);
         wrapperPanel.setBackground(GRAY_DARK);
 
         setOpaque(false);
@@ -243,7 +234,6 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         fileNameLabel.setOpaque(false);
         statusLabel.setOpaque(false);
         progressBar.setOpaque(false);
-//        pari++;
         return this;
     }
 }

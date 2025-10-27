@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
@@ -30,10 +31,21 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
         return null;
     }
 
+    private void cancelOrchestratorJob() {
+        if (conversionOrchestrator != null) {
+            conversionOrchestrator.shutdown();
+        }
+    }
+
+    private ExecutorService getExecutorService() {
+        return conversionOrchestrator.getExecutorService();
+    }
+
     @Override
     protected void process(List<ConversionItemDTO> chunks) {
         this.updateGui.accept(this.list);
     }
+
     private void publishItem(ConversionItemDTO conversionItemDTO) {
         publish(conversionItemDTO);
     }
@@ -46,11 +58,9 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
         this.onDone.run();
     }
 
-
     public void shutdown(boolean shutdown) {
-        if (conversionOrchestrator != null) {
-            conversionOrchestrator.cancel();
-        }
+        cancelOrchestratorJob();
         this.cancel(shutdown);
+
     }
 }

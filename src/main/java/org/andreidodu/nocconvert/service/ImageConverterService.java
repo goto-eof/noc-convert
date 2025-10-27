@@ -13,4 +13,6 @@ public interface ImageConverterService {
     List<FormatExtensionDTO> getAvailableWriteFormatList();
 
     List<FormatExtensionDTO> getAvailableReadFormatList();
+
+    void closeAllStreams();
 }

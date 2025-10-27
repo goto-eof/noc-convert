@@ -1,5 +1,6 @@
 package org.andreidodu.nocconvert.service.impl;
 
+import lombok.Setter;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
@@ -9,8 +10,11 @@ import org.apache.logging.log4j.Logger;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
 import javax.imageio.ImageWriter;
+import javax.imageio.event.IIOReadProgressListener;
 import javax.imageio.event.IIOWriteProgressListener;
+import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -19,31 +23,103 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 public class ImageConverterServiceImpl implements ImageConverterService {
     private static final Logger log = LogManager.getLogger(ImageConverterServiceImpl.class);
 
-    public static final String PNG_FORMAT = "png";
-    public static final String ICO_FORMAT = "ico";
-    private static final Object BMP_FORMAT = "nmp";
+    private static final Object BMP_FORMAT = "bmp";
+    private ImageWriter writer;
+    private ImageOutputStream currentOutputStream;
+    private ImageInputStream imageInputStream;
+    int totalPercentage = 0;
+    @Setter
+    private boolean canceled = false;
+    private static final ExecutorService CPU_POOL = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors()
+    );
 
     @Override
     public void convertImage(Path sourceFile, Path destinationPath, String newFileFormat, Runnable onStart, Consumer<Float> onProgress, Runnable onDone) throws IOException {
+        if (canceled) {
+            return;
+        }
         log.debug("Converting image from {}, format: {}", sourceFile, newFileFormat);
 
-        if (Thread.currentThread().isInterrupted()) {
-            log.error("Operation aborted 0");
-            throw new ConversionManualAbortedException("Operation aborted");
-        }
+        interruptIfNecessary();
         onStart.run();
         onProgress.accept(1f);
 
-        BufferedImage image = ImageIO.read(sourceFile.toFile());
-        image = convertToOpaqueIfNecessary(image, newFileFormat);
+        File file = sourceFile.toFile();
+        imageInputStream = ImageIO.createImageInputStream(file);
 
+        Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
+        if (!readers.hasNext()) {
+            throw new IOException("No ImageReader found for: " + file);
+        }
+
+        int[] readPercentage = new int[1];
+        readPercentage[0] = 0;
+
+        ImageReader reader = readers.next();
+        reader.setInput(imageInputStream, true, true);
+        reader.addIIOReadProgressListener(new IIOReadProgressListener() {
+            @Override
+            public void sequenceStarted(ImageReader source, int minIndex) {
+            }
+
+            @Override
+            public void sequenceComplete(ImageReader source) {
+            }
+
+            @Override
+            public void imageStarted(ImageReader source, int imageIndex) {
+                readPercentage[0] = 1;
+            }
+
+            @Override
+            public void imageProgress(ImageReader source, float percentageDone) {
+                readPercentage[0] = (int) percentageDone;
+
+            }
+
+            @Override
+            public void imageComplete(ImageReader source) {
+                readPercentage[0] = 100;
+            }
+
+            @Override
+            public void thumbnailStarted(ImageReader source, int imageIndex, int thumbnailIndex) {
+            }
+
+            @Override
+            public void thumbnailProgress(ImageReader source, float percentageDone) {
+            }
+
+            @Override
+            public void thumbnailComplete(ImageReader source) {
+            }
+
+            @Override
+            public void readAborted(ImageReader source) {
+                totalPercentage = 0;
+            }
+        });
+
+        interruptIfNecessary();
+        BufferedImage image;
+        try {
+            image = CPU_POOL.submit(() ->
+                    convertToOpaqueIfNecessary(reader.read(0), newFileFormat)
+            ).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+        interruptIfNecessary();
         String fileName = sourceFile.getFileName().toString();
-
         Path outputFilePath = destinationPath.resolve(renameFileExtension(fileName, newFileFormat));
         String outputFileString = outputFilePath.toString();
         File outputFile = new File(outputFileString);
@@ -54,16 +130,15 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                 throw new IllegalStateException("No writer found for format: " + newFileFormat);
             }
 
-            ImageWriter writer = writers.next();
-            try (ImageOutputStream ios = ImageIO.createImageOutputStream(outputFile)) {
-                writer.setOutput(ios);
-
+            writer = writers.next();
+            try {
+                currentOutputStream = ImageIO.createImageOutputStream(outputFile);
+                writer.setOutput(currentOutputStream);
                 writer.addIIOWriteProgressListener(new IIOWriteProgressListener() {
                     @Override
                     public void imageStarted(ImageWriter source, int imageIndex) {
                         if (Thread.currentThread().isInterrupted()) {
                             log.error("Operation aborted 1");
-                            throw new ConversionManualAbortedException("Operation aborted");
                         }
                     }
 
@@ -71,9 +146,9 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                     public void imageProgress(ImageWriter source, float percentageDone) {
                         if (Thread.currentThread().isInterrupted()) {
                             log.error("Operation aborted 2");
-                            throw new ConversionManualAbortedException("Operation aborted");
                         }
-                        onProgress.accept(percentageDone);
+
+                        onProgress.accept(readPercentage[0] / 2 + percentageDone / 2);
                     }
 
                     @Override
@@ -96,7 +171,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                     @Override
                     public void writeAborted(ImageWriter source) {
                         log.error("Operation aborted 3");
-                        throw new ConversionManualAbortedException("Operation aborted");
                     }
                 });
 
@@ -107,9 +181,15 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                 }
 
                 writer.write(null, new IIOImage(image, null, null), null);
-                onProgress.accept(99f);
+                onProgress.accept(100f);
+                onDone.run();
 
 
+            } catch (IOException e) {
+                if (Thread.currentThread().isInterrupted()) {
+                    throw new ConversionManualAbortedException("Conversion aborted by thread interruption.");
+                }
+                throw e;
             } catch (ConversionManualAbortedException e) {
                 throw e;
             } catch (Exception e) {
@@ -119,10 +199,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                     throw new ConversionManualAbortedException("Conversion aborted by thread interruption.");
                 }
                 throw new RuntimeException(e);
-            } finally {
-                writer.dispose();
             }
-
 
         } catch (ConversionManualAbortedException e) {
             if (outputFile.exists()) {
@@ -136,9 +213,24 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } finally {
+            if (writer != null) {
+                writer.dispose();
+            }
+
+            closeAllStreams();
+
+
         }
 
         onDone.run();
+    }
+
+    private static void interruptIfNecessary() {
+        if (Thread.currentThread().isInterrupted()) {
+            log.error("Operation aborted 0");
+            throw new ConversionManualAbortedException("Operation aborted");
+        }
     }
 
     private String renameFileExtension(String oldFileName, String newFileFormat) {
@@ -192,5 +284,23 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         return imageFormatList;
     }
 
+    @Override
+    public void closeAllStreams() {
+        setCanceled(true);
+        if (imageInputStream != null) {
+            try {
+                log.debug("Closing image input stream");
+                imageInputStream.close();
+            } catch (IOException ignored) {
+            }
+        }
+        if (currentOutputStream != null) {
+            try {
+                log.debug("Closed image output stream.");
+                currentOutputStream.close();
+            } catch (IOException ignored) {
+            }
+        }
+    }
 
 }

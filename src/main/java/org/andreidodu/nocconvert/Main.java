@@ -1,5 +1,6 @@
 package org.andreidodu.nocconvert;
 
+import com.formdev.flatlaf.FlatDarculaLaf;
 import org.andreidodu.nocconvert.gui.GUIOrchestrator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,7 +33,7 @@ public class Main {
 
 
         try {
-            UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatDarculaLaf());
+            UIManager.setLookAndFeel(new FlatDarculaLaf());
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }

@@ -14,6 +14,10 @@ import org.andreidodu.nocconvert.gui.controller.PathSelectionController;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
+import org.andreidodu.nocconvert.util.performance.AdaptiveGovernorRunnable;
+import org.andreidodu.nocconvert.util.performance.PerformanceUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
@@ -27,6 +31,7 @@ import java.util.Locale;
 import static java.lang.System.exit;
 
 public class GUIOrchestrator extends JFrame {
+    private static final Logger log = LogManager.getLogger(GUIOrchestrator.class);
     private static final float ARC_SIZE = 20;
     @Getter
     private JPanel mainPanel;
@@ -91,6 +96,36 @@ public class GUIOrchestrator extends JFrame {
         applicationStatusLabel.setText(message);
         secondaryApplicationStatusLabel.setText("Waiting for user actions");
         scrollPanePanel.setVisible(false);
+
+
+        PerformanceUtil.checkVThreadPerformance(new AdaptiveGovernorRunnable.AdaptiveTestListener() {
+
+            @Override
+            public void onOptimizationStart() {
+                SwingUtilities.invokeLater(() -> {
+                    secondaryApplicationStatusLabel.setText("Starting performance optimization...");
+                    log.info("Running performance workload tests......");
+                });
+            }
+
+            @Override
+            public void onOptimizationProgress(String statusMessage, int currentLimit, double cpuLoad) {
+                SwingUtilities.invokeLater(() -> {
+                    String message = "Performance test in progress: " + currentLimit + " V-Threads | CPU usage: " + (int) cpuLoad + "%)";
+                    secondaryApplicationStatusLabel.setText(message);
+                    log.info(message);
+                });
+            }
+
+            @Override
+            public void onOptimizationComplete(int finalOptimalLimit) {
+                SwingUtilities.invokeLater(() -> {
+                    String message = "Optimal configuration found. I will use " + finalOptimalLimit + " V-Threads";
+                    secondaryApplicationStatusLabel.setText(message);
+                    log.info(message);
+                });
+            }
+        });
     }
 
     private void preInitialization() {
@@ -325,7 +360,7 @@ public class GUIOrchestrator extends JFrame {
         if (fontName == null) {
             resultName = currentFont.getName();
         } else {
-            Font testFont = new Font(fontName, Font.PLAIN, 10);
+            Font testFont = new Font(fontName, java.awt.Font.PLAIN, 10);
             if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
                 resultName = fontName;
             } else {

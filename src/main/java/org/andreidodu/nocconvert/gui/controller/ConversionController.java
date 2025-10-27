@@ -66,8 +66,6 @@ public class ConversionController {
                             cancelActiveProcess();
                         }
                     }
-
-
                 });
     }
 
