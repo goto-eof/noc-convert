@@ -251,12 +251,13 @@ public class GUIOrchestrator extends JFrame {
         scrollPanePanel.setEnabled(true);
         scrollPanePanel.setOpaque(false);
         panel6.add(scrollPanePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        conversionFileListScrollPane.setBackground(new Color(-14079186));
+        conversionFileListScrollPane.setBackground(new Color(-13026240));
         conversionFileListScrollPane.setForeground(new Color(-2038305));
         conversionFileListScrollPane.setOpaque(false);
         scrollPanePanel.add(conversionFileListScrollPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         conversionFileList.setBackground(new Color(-14408151));
-        conversionFileList.setOpaque(true);
+        conversionFileList.setFocusable(false);
+        conversionFileList.setOpaque(false);
         conversionFileList.setRequestFocusEnabled(false);
         conversionFileList.setSelectionBackground(new Color(-16756358));
         conversionFileList.setSelectionForeground(new Color(-8026747));
@@ -324,7 +325,7 @@ public class GUIOrchestrator extends JFrame {
         if (fontName == null) {
             resultName = currentFont.getName();
         } else {
-            Font testFont = new Font(fontName, java.awt.Font.PLAIN, 10);
+            Font testFont = new Font(fontName, Font.PLAIN, 10);
             if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
                 resultName = fontName;
             } else {

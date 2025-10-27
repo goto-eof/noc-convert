@@ -9,7 +9,7 @@ public interface Colors {
     Color LIME_SUPER_SUPER_DARK = new Color(53, 76, 28, 255);
     Color LIME_SUPER_SUPER_SUPER_DARK = new Color(14, 33, 41, 255);
 
-    Color RED = new Color(255, 66, 66);
+    Color RED = new Color(213, 71, 71);
     Color RED_DARK = new Color(255, 66, 66, 157);
 
     Color YELLOW = new Color(212, 177, 0);

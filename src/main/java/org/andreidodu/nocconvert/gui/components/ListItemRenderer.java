@@ -28,29 +28,30 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
     private final JProgressBar progressBar;
     private final JPanel contentPanel;
     private final JPanel topPanel;
+    private final JPanel wrapperPanel;
 
     private Color statusLabelBackground = LIME_DARK;
 
     public ListItemRenderer() {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
         fileNameLabel = new JLabel() {
             {
                 setFont(getFont().deriveFont(Font.BOLD, 10f));
                 setOpaque(false);
                 setForeground(Color.WHITE);
-                setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+                setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
             }
         };
         fileNameLabel.setFont(fileNameLabel.getFont().deriveFont(Font.BOLD, 12f));
-        fileNameLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         statusLabel = new JLabel() {
             {
                 setFont(getFont().deriveFont(Font.BOLD, 10f));
                 setOpaque(false);
                 setForeground(Color.WHITE);
-                setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+                setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
             }
 
             @Override
@@ -75,7 +76,7 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
                 setFont(getFont().deriveFont(Font.BOLD, 10f));
                 setOpaque(false);
                 setForeground(Color.WHITE);
-                setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+                setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
             }
 
             @Override
@@ -97,7 +98,7 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
             }
         };
         statusPanel = new JPanel(new BorderLayout(0, 0));
-        statusLabel.setPreferredSize(new Dimension(100, 22));
+        statusLabel.setPreferredSize(new Dimension(100, 10));
         statusPanel.add(statusLabel, BorderLayout.CENTER);
         statusPanel.add(targetFormat, BorderLayout.WEST);
 
@@ -140,7 +141,7 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         topPanel = new JPanel(new BorderLayout());
         topPanel.add(fileInfoPanel, BorderLayout.WEST);
         topPanel.add(statusPanel, BorderLayout.EAST);
-        topPanel.setBorder(new EmptyBorder(0, 0, 10, 0));
+        topPanel.setBorder(new EmptyBorder(5, 0, 5, 0));
 
 
         contentPanel = new JPanel(new GridBagLayout());
@@ -165,13 +166,14 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
 
         contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
 
-        JPanel wrapper = new JPanel(new BorderLayout());
-        wrapper.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, LIST_BG));
-        wrapper.add(contentPanel, BorderLayout.CENTER);
-        setBackground(Color.red);
+        wrapperPanel = new JPanel(new BorderLayout());
+        wrapperPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, LIST_BG));
+        wrapperPanel.add(contentPanel, BorderLayout.CENTER);
 
-        add(wrapper, BorderLayout.CENTER);
+        add(wrapperPanel, BorderLayout.CENTER);
+
         setOpaque(false);
+        wrapperPanel.setOpaque(false);
         topPanel.setOpaque(false);
         progressBar.setOpaque(false);
         contentPanel.setOpaque(false);
@@ -207,9 +209,6 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
 
         setBorder(BorderFactory.createMatteBorder(10, 10, 10, 10, border));
 
-        //setBackground(border);
-
-
         Color statusColor = ConversionStatus.FAILED.equals(value.getStatus()) ? Colors.RED : ACCENT_DARK_GRAY;
 
         progressBar.setForeground(statusColor);
@@ -217,7 +216,16 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         fileNameLabel.setForeground(Color.WHITE);
 
 
-        setOpaque(true);
+//        setBackground(ACCENT_BLUE);
+//        topPanel.setBackground(ACCENT_BLUE);
+//        contentPanel.setBackground(ACCENT_BLUE);
+//        fileNameLabel.setBackground(ACCENT_BLUE);
+//        statusLabel.setBackground(ACCENT_BLUE);
+//        progressBar.setBackground(ACCENT_BLUE);
+        wrapperPanel.setBackground(GRAY_DARK);
+
+        setOpaque(false);
+        wrapperPanel.setOpaque(true);
         topPanel.setOpaque(false);
         contentPanel.setOpaque(false);
         fileNameLabel.setOpaque(false);
