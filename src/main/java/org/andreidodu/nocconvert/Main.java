@@ -38,14 +38,7 @@ public class Main {
             log.error(e.getMessage(), e);
         }
 
-        deleteLogFileOnExit();
-
         new GUIOrchestrator();
-    }
-
-    private static void deleteLogFileOnExit() {
-        File logFile = new File("logs/application.log");
-        logFile.deleteOnExit();
     }
 
 }
