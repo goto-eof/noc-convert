@@ -101,13 +101,21 @@ public class ConversionController {
 
     public void startConversion(List<ConversionItemDTO> list) {
         log.info(list);
-        new ConversionWorker(list, this::updateList, this::onConversionDone).execute();
+        new ConversionWorker(list, this::updateList, this::onConversionDone, this::onItemCompleted).execute();
+        conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(list.size());
+
+    }
+
+    private void onItemCompleted(){
+        conversionDTO.guiOrchestrator().incrementMainProgressBarProgress();
     }
 
     private void onConversionDone() {
         conversionDTO.guiOrchestrator().setEnableSearchStepComponents(true);
         conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(true);
         conversionDTO.convertComponent().getMainActionButton().setEnabled(true);
+
+        conversionDTO.guiOrchestrator().conversionDone();
 
         DefaultListModel<ConversionItemDTO> model = (DefaultListModel<ConversionItemDTO>) conversionDTO.conversionFileList().getModel();
 

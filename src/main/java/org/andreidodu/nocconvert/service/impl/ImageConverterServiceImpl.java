@@ -8,17 +8,15 @@ import org.apache.logging.log4j.Logger;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.event.IIOWriteProgressListener;
 import javax.imageio.stream.ImageOutputStream;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
+import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -27,10 +25,11 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
     public static final String PNG_FORMAT = "png";
     public static final String ICO_FORMAT = "ico";
+    private static final Object BMP_FORMAT = "nmp";
 
     @Override
     public void convertImage(Path sourceFile, Path destinationPath, String newFileFormat, Runnable onStart, Consumer<Float> onProgress, Runnable onDone) throws IOException {
-
+        log.debug("Converting image from {}, format: {}", sourceFile, newFileFormat);
         BufferedImage image = ImageIO.read(sourceFile.toFile());
         image = convertToOpaqueIfNecessary(image, newFileFormat);
 
@@ -42,6 +41,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         try {
             Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(newFileFormat);
             if (!writers.hasNext()) {
+                log.debug("No writers found for format: {}", newFileFormat);
                 throw new IllegalStateException("No writer found for format: " + newFileFormat);
             }
 
@@ -85,8 +85,11 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                     }
                 });
 
-                ImageWriteParam customWriteParam = writer.getDefaultWriteParam();
-                writer.write(null, new IIOImage(image, null, null), customWriteParam);
+
+                //ImageIO.write(image, newFileFormat, outputFile);
+                //ImageWriteParam customWriteParam = writer.getDefaultWriteParam();
+                //writer.write(null, new IIOImage(image, null, null), customWriteParam);
+                writer.write(null, new IIOImage(image, null, null), null);
                 onDone.run();
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
@@ -108,7 +111,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     }
 
     public static BufferedImage convertToOpaqueIfNecessary(BufferedImage originalImage, String targetExtension) {
-        if (List.of(PNG_FORMAT, ICO_FORMAT).contains(targetExtension)) {
+        if (!Objects.equals(BMP_FORMAT, targetExtension)) {
             return originalImage;
         }
 
@@ -123,7 +126,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         );
 
         java.awt.Graphics2D g2d = newImage.createGraphics();
-        g2d.drawImage(originalImage, 0, 0, null);
+        g2d.drawImage(originalImage, 0, 0, Color.WHITE, null);
         g2d.dispose();
 
         return newImage;

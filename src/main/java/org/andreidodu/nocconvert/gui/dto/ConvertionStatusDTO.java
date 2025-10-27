@@ -9,5 +9,7 @@ import javax.swing.*;
 @Builder
 public record ConvertionStatusDTO(GUIOrchestrator guiOrchestrator,
                                   JScrollPane conversionFileListScrollPane,
+                                  JPanel progressBarAndStatusPanel,
+                                  JProgressBar progressBar,
                                   JList<ConversionItemDTO> conversionFileList) {
 }

@@ -77,5 +77,23 @@ public class ConvertionStatusController {
     public void resetConversionItemList() {
         convertionStatusDTO.conversionFileList().setModel(new DefaultListModel<>());
         convertionStatusDTO.conversionFileListScrollPane().setVisible(false);
+        convertionStatusDTO.progressBarAndStatusPanel().setVisible(true);
+        convertionStatusDTO.progressBar().setVisible(true);
+    }
+
+    public void updateMainProgressBarMaxValue(int size) {
+        convertionStatusDTO.progressBar().setMaximum(size);
+    }
+
+    public void conversionDone() {
+    }
+
+    public void updateMainProgressBarProgress(int completedItems) {
+        convertionStatusDTO.progressBar().setValue(completedItems);
+    }
+
+    public void incrementMainProgressBarProgress() {
+        convertionStatusDTO.progressBar().setValue(convertionStatusDTO.progressBar().getValue() + 1);
+
     }
 }

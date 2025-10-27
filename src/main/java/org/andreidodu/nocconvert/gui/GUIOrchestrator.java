@@ -96,6 +96,8 @@ public class GUIOrchestrator extends JFrame {
                 .guiOrchestrator(this)
                 .conversionFileListScrollPane(conversionFileListScrollPane)
                 .conversionFileList(conversionFileList)
+                .progressBarAndStatusPanel(progressBarPanel)
+                .progressBar(progressBar1)
                 .build();
         return new ConvertionStatusController(convertionStatusDTO);
     }
@@ -266,6 +268,7 @@ public class GUIOrchestrator extends JFrame {
         panel7.add(spacer2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         progressBarPanel = new JPanel();
         progressBarPanel.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        progressBarPanel.setOpaque(false);
         progressBarPanel.setVisible(false);
         progressBarAndStatusPanel.add(progressBarPanel, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label3 = new JLabel();
@@ -389,5 +392,22 @@ public class GUIOrchestrator extends JFrame {
 
     public void resetConversionItemList() {
         convertionStatusController.resetConversionItemList();
+        convertionStatusController.updateMainProgressBarProgress(0);
+    }
+
+    public void updateMainProgressBarMaxValue(int size) {
+        convertionStatusController.updateMainProgressBarMaxValue(size);
+    }
+
+    public void conversionDone() {
+        convertionStatusController.conversionDone();
+    }
+
+    public void updateMainProgressBarProgress(int completedItems) {
+        convertionStatusController.updateMainProgressBarProgress(completedItems);
+    }
+
+    public void incrementMainProgressBarProgress() {
+        convertionStatusController.incrementMainProgressBarProgress();
     }
 }

@@ -8,7 +8,6 @@ import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.util.function.Consumer;
 
 public class ConvertSingleItemTask implements Runnable {
@@ -16,14 +15,17 @@ public class ConvertSingleItemTask implements Runnable {
     private final Consumer<ConversionItemDTO> publish;
     private final ConversionItemDTO conversionItemDTO;
     private final ImageConverterService imageConverterService;
+    private final Runnable onItemCompleted;
 
     public ConvertSingleItemTask(
             ConversionItemDTO conversionItemDTO,
-            Consumer<ConversionItemDTO> publish
+            Consumer<ConversionItemDTO> publish,
+            Runnable onItemCompleted
     ) {
         this.conversionItemDTO = conversionItemDTO;
         this.publish = publish;
         this.imageConverterService = new ImageConverterServiceImpl();
+        this.onItemCompleted = onItemCompleted;
     }
 
     private void onStart() {
@@ -43,6 +45,7 @@ public class ConvertSingleItemTask implements Runnable {
         conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
         conversionItemDTO.setProgressPercentage(100);
         publish.accept(conversionItemDTO);
+        onItemCompleted.run();
     }
 
     public void run() {
@@ -59,6 +62,7 @@ public class ConvertSingleItemTask implements Runnable {
             conversionItemDTO.setStatus(ConversionStatus.FAILED);
             conversionItemDTO.setProgressPercentage(100);
             publish.accept(conversionItemDTO);
+            onItemCompleted.run();
         }
     }
 }

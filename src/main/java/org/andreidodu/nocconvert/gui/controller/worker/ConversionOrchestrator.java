@@ -10,18 +10,21 @@ import java.util.function.Consumer;
 
 public class ConversionOrchestrator {
     private final Consumer<ConversionItemDTO> publish;
+    private final Runnable onItemCompleted;
 
     public ConversionOrchestrator(
             List<ConversionItemDTO> conversionItemDTOList,
-            Consumer<ConversionItemDTO> publish
+            Consumer<ConversionItemDTO> publish,
+            Runnable onItemCompleted
     ) {
 
         this.publish = publish;
+        this.onItemCompleted = onItemCompleted;
 
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         try {
             for (ConversionItemDTO conversionItemDTO : conversionItemDTOList) {
-                executorService.submit(new ConvertSingleItemTask(conversionItemDTO, publish));
+                executorService.submit(new ConvertSingleItemTask(conversionItemDTO, publish, onItemCompleted));
             }
         } finally {
             executorService.shutdown();
