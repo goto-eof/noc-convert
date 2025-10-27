@@ -2,29 +2,40 @@
 
 <div id="introduction"> </div>
 
-**A fast, secure, and privacy-focused image converter designed to handle large-scale bulk conversions.**
-
----
+A fast, secure, and privacy-focused image converter designed to handle large-scale bulk conversions directly on your
+desktop.
 
 ## Key Features
 
-**NoCloud Bulk Image Converter** is the essential image conversion solution for users who demand maximum performance
-without compromising privacy.
+**NoCloud / Privacy-First:**
+All conversion operations are executed **locally** on your device. Your files never leave your system, ensuring maximum
+security and privacy.
 
-* **Bulk Conversion:** Process hundreds or thousands of files in just a few clicks via the intuitive graphical
-  interface.
-* **NoCloud / Privacy-First:** All conversion operations happen **locally** on your device. Your files never leave your
-  system.
-* **High Performance:** Optimized for speed, making it ideal for designers, photographers, and anyone needing to
-  automate heavy image workflows.
-* **Wide Format Support:** Supports the most common image formats (e.g., JPG, PNG, WEBP, GIF, BMP, etc.).
-* **Intuitive GUI:** Designed for ease of use, making bulk conversion simple for everyone.
+**High-Performance Bulk Conversion & Parallel Processing:**
+Process hundreds or even thousands of images quickly and efficiently. Optimized for speed and utilizing **parallel
+processing** (multithreading) to leverage multi-core CPUs, the application is ideal for automating heavy image workflows
+for designers, photographers, and developers.
 
+**Intuitive Graphical User Interface (GUI) with Real-Time Feedback:**
+Designed for ease of use, making complex bulk conversions simple with just a few clicks. The interface provides *
+*real-time progress bars** (individual and total) to indicate the current status of the job.
+
+**Comprehensive Format Support:**
+Supports a broad and detailed array of common and professional image formats, including:
+
+* **Raster Formats:** JPG/JPEG, PNG, GIF, BMP, WEBP, TGA, ICO, IFF.
+* **Professional Formats:** TIFF (incl. BIGTIFF), PSD, PSB.
+* **Portable Formats:** PAM, PBM, PGM, PFM, PNM, PPM.
+* **Specialty/Legacy:** ICNS, PCT/PICT, WBMP.
+
+**Portable and Secure:**
+The application does not require an internet connection to function, making it completely independent and reliable
+anywhere.
 ---
 
 ## Screenshot
 
-![screenshot NoCloud Bulk Image Converter](docs/images/noc-convert.webp)
+![screenshot NoCloud Bulk Image Converter](docs/images/noc-convert.png)
 
 ## Download
 
