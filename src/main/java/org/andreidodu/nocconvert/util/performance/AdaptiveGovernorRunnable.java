@@ -22,7 +22,7 @@ public class AdaptiveGovernorRunnable implements Runnable {
     private static final double TARGET_CPU_MAX = 0.85;
     private static final int MAX_PERMITS_CAP = NUM_CPU_CORES * 50;
     private static final int ADJUSTMENT_STEP = Math.max(1, NUM_CPU_CORES / 2);
-    private static final long TEST_DURATION_SECONDS = 15;
+    private static final long TEST_DURATION_SECONDS = 10;
 
     private final AdaptiveTestListener listener;
     private volatile Thread submissionThread;

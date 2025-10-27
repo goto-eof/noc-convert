@@ -3,6 +3,7 @@ package org.andreidodu.nocconvert.gui.controller;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.gui.components.ListItemRenderer;
+import org.andreidodu.nocconvert.gui.constants.Colors;
 import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
 import org.andreidodu.nocconvert.gui.worker.ListRendererWorker;
 import org.andreidodu.nocconvert.util.FileUtil;
@@ -94,6 +95,7 @@ public class ConvertionStatusController {
     }
 
     public void conversionDone() {
+        updateGlobalProgressBar();
     }
 
     public void updateMainProgressBarProgress(int completedItems) {
@@ -114,4 +116,11 @@ public class ConvertionStatusController {
         convertionStatusDTO.progressBar().setVisible(false);
     }
 
+    public void updateGlobalProgressBar() {
+        convertionStatusDTO.progressBar().setForeground(Colors.LIME_DARK);
+    }
+
+    public void onConversionStart() {
+        convertionStatusDTO.progressBar().setForeground(Colors.ACCENT_BLUE);
+    }
 }

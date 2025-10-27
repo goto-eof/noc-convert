@@ -112,7 +112,7 @@ public class GUIOrchestrator extends JFrame {
             @Override
             public void onOptimizationProgress(String statusMessage, int currentLimit, double cpuLoad) {
                 SwingUtilities.invokeLater(() -> {
-                    String message = "<html>Performance test in progress, please wait 15 seconds.<br/>" + currentLimit + " V-Threads | CPU usage: " + (int) cpuLoad + "%</html>";
+                    String message = "<html>Performance test in progress, please wait 10 seconds.<br/>" + currentLimit + " V-Threads | CPU usage: " + (int) cpuLoad + "%</html>";
                     secondaryApplicationStatusLabel.setText(message);
                     log.info(message);
                 });
@@ -460,12 +460,8 @@ public class GUIOrchestrator extends JFrame {
         convertionStatusController.updateMainProgressBarMaxValue(size);
     }
 
-    public void conversionDone() {
+    public void onConversionDone() {
         convertionStatusController.conversionDone();
-    }
-
-    public void updateMainProgressBarProgress(int completedItems) {
-        convertionStatusController.updateMainProgressBarProgress(completedItems);
     }
 
     public void incrementMainProgressBarProgress() {
@@ -487,7 +483,7 @@ public class GUIOrchestrator extends JFrame {
         pathSelectionController.enableButtons(true);
     }
 
-    public void noFileFound(boolean b) {
-
+    public void onConversionStart() {
+        convertionStatusController.onConversionStart();
     }
 }
