@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.gui.controller.worker;
+package org.andreidodu.nocconvert.gui.worker;
 
 import lombok.Builder;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
@@ -64,9 +64,8 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
         try {
             List<Path> processingJobResult = get();
             onSearchDone.accept(processingJobResult);
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
         }
     }
 

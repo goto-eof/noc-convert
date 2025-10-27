@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.gui.controller.worker;
+package org.andreidodu.nocconvert.gui.worker;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.apache.logging.log4j.LogManager;

@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.gui.controller.worker;
+package org.andreidodu.nocconvert.gui.worker;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.function.Consumer;
 
 public class ConvertSingleItemTask implements Runnable {
-    private static final Logger log = LogManager.getLogger(ConversionController.class);
+    private static final Logger log = LogManager.getLogger(ConvertSingleItemTask.class);
     private final Consumer<ConversionItemDTO> publish;
     private final ConversionItemDTO conversionItemDTO;
     private final ImageConverterService imageConverterService;
@@ -36,6 +36,9 @@ public class ConvertSingleItemTask implements Runnable {
 
 
     private void onProgress(Float progress) {
+        if (progress < 1 && conversionItemDTO.getProgressPercentage() == 0) {
+            progress = 1f;
+        }
         conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
         conversionItemDTO.setProgressPercentage(progress.intValue());
         publish.accept(conversionItemDTO);

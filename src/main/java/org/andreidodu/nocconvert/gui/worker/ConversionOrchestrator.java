@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.gui.controller.worker;
+package org.andreidodu.nocconvert.gui.worker;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 
@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 public class ConversionOrchestrator {
     private final Consumer<ConversionItemDTO> publish;
     private final Runnable onItemCompleted;
+    private final ExecutorService executorService;
 
     public ConversionOrchestrator(
             List<ConversionItemDTO> conversionItemDTOList,
@@ -21,11 +22,15 @@ public class ConversionOrchestrator {
         this.publish = publish;
         this.onItemCompleted = onItemCompleted;
 
-        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         try {
             for (ConversionItemDTO conversionItemDTO : conversionItemDTOList) {
                 executorService.submit(new ConvertSingleItemTask(conversionItemDTO, publish, onItemCompleted));
             }
+            executorService.shutdown();
+            executorService.awaitTermination(Integer.MAX_VALUE, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } finally {
             executorService.shutdown();
             try {
@@ -38,5 +43,9 @@ public class ConversionOrchestrator {
             }
 
         }
+    }
+
+    public void cancel() {
+        this.executorService.shutdownNow();
     }
 }

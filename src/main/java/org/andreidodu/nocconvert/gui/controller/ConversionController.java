@@ -2,10 +2,11 @@ package org.andreidodu.nocconvert.gui.controller;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
-import org.andreidodu.nocconvert.gui.controller.worker.ConversionWorker;
-import org.andreidodu.nocconvert.gui.controller.worker.ImageSearcherSwingWorker;
+import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
+import org.andreidodu.nocconvert.gui.worker.ConversionWorker;
+import org.andreidodu.nocconvert.gui.worker.ImageSearcherSwingWorker;
 import org.andreidodu.nocconvert.service.ImageConverterService;
 import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
 import org.apache.logging.log4j.LogManager;
@@ -23,6 +24,8 @@ public class ConversionController {
     private final ImageConverterService imageConverterService;
     private final JLabel applicationStatusLabel;
     private final JLabel secondaryApplicationStatusLabel;
+    private ConversionWorker conversionWorker;
+    private ImageSearcherSwingWorker imageSearcherSwingWorker;
 
     public ConversionController(ConversionDTO conversionDTO) {
         this.conversionDTO = conversionDTO;
@@ -40,42 +43,58 @@ public class ConversionController {
     private void populateConvertComponentDropdownMenu() {
         List<FormatExtensionDTO> imageFormatList = imageConverterService.getAvailableWriteFormatList();
         FormatExtensionDTO preferredFormat = imageFormatList.stream().filter(format -> "webp".equals(format.getFormat())).findFirst().orElse(imageFormatList.getLast());
-        conversionDTO.convertComponent().init("CONVERT to PNG", imageFormatList, preferredFormat);
+        conversionDTO.convertComponent().init(imageFormatList, preferredFormat, SplitButtonComponent.Action.START);
     }
 
     private void addConvertComponentEventListener() {
         conversionDTO.convertComponent().getMainActionButton()
                 .addActionListener(e -> {
 
-                    List<String> validationMessageList = conversionDTO.guiOrchestrator().getValidationMessageList();
-                    if (!validationMessageList.isEmpty()) {
-                        JOptionPane.showMessageDialog(conversionDTO.guiOrchestrator(), "Huston, we have some validation errors:\n" + String.join("\n", validationMessageList), "Validation Errors", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    conversionDTO.guiOrchestrator().setEnableSearchStepComponents(false);
-                    startSearchForImagesStep();
+                    if (SplitButtonComponent.Action.START.equals(conversionDTO.convertComponent().getAction())) {
+                        List<String> validationMessageList = conversionDTO.guiOrchestrator().getValidationMessageList();
+                        if (!validationMessageList.isEmpty()) {
+                            JOptionPane.showMessageDialog(conversionDTO.guiOrchestrator(), "Huston, we have some validation errors:\n" + String.join("\n", validationMessageList), "Validation Errors", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                        conversionDTO.guiOrchestrator().setEnableSearchStepComponents(false);
+                        startSearchForImagesStep();
 
-                    ImageSearcherSwingWorker worker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), this::updateApplicationStatus, this::onSearchComplete);
-                    worker.execute();
+                        imageSearcherSwingWorker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), this::updateApplicationStatus, this::onSearchComplete);
+                        imageSearcherSwingWorker.execute();
+                    } else if (SplitButtonComponent.Action.STOP.equals(conversionDTO.convertComponent().getAction())) {
+                        if (conversionWorker != null) {
+                            cancelActiveProcess();
+                        }
+                    }
+
 
                 });
     }
 
+
+    private void cancelActiveProcess() {
+        if (conversionWorker != null && !conversionWorker.isDone()) {
+            log.info("Cancelling active conversion process.");
+            conversionWorker.shutdown(true);
+        } else if (imageSearcherSwingWorker != null && !imageSearcherSwingWorker.isDone()) {
+            imageSearcherSwingWorker.cancel(true);
+            onConversionDone();
+        }
+    }
+
     private void onSearchComplete(List<Path> paths) {
         endSearchForImagesStep(paths);
-
     }
 
     public void startSearchForImagesStep() {
         conversionDTO.guiOrchestrator().resetConversionItemList();
 
-
         SwingUtilities.invokeLater(() -> {
+            conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.STOP);
             String message = "Searching for image...";
             applicationStatusLabel.setText(message);
             secondaryApplicationStatusLabel.setText("Searching for images...");
             conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(false);
-            conversionDTO.convertComponent().getMainActionButton().setEnabled(false);
         });
     }
 
@@ -101,19 +120,19 @@ public class ConversionController {
 
     public void startConversion(List<ConversionItemDTO> list) {
         log.info(list);
-        new ConversionWorker(list, this::updateList, this::onConversionDone, this::onItemCompleted).execute();
+        conversionWorker = new ConversionWorker(list, this::updateList, this::onConversionDone, this::onItemCompleted);
+        conversionWorker.execute();
         conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(list.size());
 
     }
 
-    private void onItemCompleted(){
+    private void onItemCompleted() {
         conversionDTO.guiOrchestrator().incrementMainProgressBarProgress();
     }
 
     private void onConversionDone() {
         conversionDTO.guiOrchestrator().setEnableSearchStepComponents(true);
         conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(true);
-        conversionDTO.convertComponent().getMainActionButton().setEnabled(true);
 
         conversionDTO.guiOrchestrator().conversionDone();
 
@@ -127,10 +146,16 @@ public class ConversionController {
 
         long failed = list.stream().filter(dto -> ConversionStatus.FAILED.equals(dto.getStatus())).count();
         long success = list.stream().filter(dto -> ConversionStatus.COMPLETED.equals(dto.getStatus())).count();
+        long queued = list.stream().filter(dto -> ConversionStatus.QUEUED.equals(dto.getStatus())).count();
+        long processing = list.stream().filter(dto -> ConversionStatus.PROCESSING.equals(dto.getStatus())).count();
 
-        String message = String.format("Conversion done! There were processed %s images, and we have %s successes / %s failures ", list.size(), success, failed);
-        applicationStatusLabel.setText(message);
-        secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", success, failed));
+        SwingUtilities.invokeLater(() -> {
+            String message = String.format("Conversion done! There were processed %s images, and we have %s successes / %s not processed / %s failures", list.size(), success, queued + processing, failed);
+            applicationStatusLabel.setText(message);
+            secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", success, failed));
+            conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);
+        });
+
     }
 
     private void updateList(List<ConversionItemDTO> list) {

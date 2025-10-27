@@ -1,6 +1,7 @@
 package org.andreidodu.nocconvert.gui.components;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.andreidodu.nocconvert.gui.GUIOrchestrator;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 
@@ -24,6 +25,10 @@ public class SplitButtonComponent extends JPanel {
     @Getter
     private FormatExtensionDTO selectedItem;
 
+    @Getter
+    @Setter
+    private Action action;
+
     private final GUIOrchestrator orchestrator;
 
     public SplitButtonComponent(GUIOrchestrator orchestrator) {
@@ -34,18 +39,28 @@ public class SplitButtonComponent extends JPanel {
         setOpaque(false);
     }
 
-    public void init(String mainActionLabel, List<FormatExtensionDTO> menuList, FormatExtensionDTO preferredFormat) {
-        Objects.requireNonNull(mainActionLabel);
+    public void init(List<FormatExtensionDTO> menuList, FormatExtensionDTO preferredFormat, Action action) {
         Objects.requireNonNull(menuList);
         if (menuList.isEmpty()) {
             throw new IllegalArgumentException("The menu list is empty");
         }
 
-        mainActionButton = buildMainActionButton(mainActionLabel);
+        mainActionButton = buildMainActionButton();
         dropdownToggleButton = buildDropdownToggleButton(menuList, preferredFormat);
         add(mainActionButton, BorderLayout.CENTER);
         add(dropdownToggleButton, BorderLayout.EAST);
+        updateAction(action);
+    }
 
+    public void updateAction(Action action) {
+        this.action = action;
+        if (Action.START.equals(action)) {
+            setMainActionLabel("CONVERT to " + selectedItem.getDescription());
+        } else if (Action.STOP.equals(action)) {
+            setMainActionLabel("STOP CONVERSION to " + selectedItem.getDescription());
+        }
+        orchestrator.pack();
+        repaint();
     }
 
     private JPopupMenu getPopupMenu(List<FormatExtensionDTO> imageFormatList, FormatExtensionDTO preferredFormat) {
@@ -56,7 +71,7 @@ public class SplitButtonComponent extends JPanel {
             item.setForeground(TEXT_LIGHT);
 
             item.addActionListener(e -> {
-                setMainActionLabel("CONVERT to " + fileFormat.getDescription());
+                updateAction(action);
                 this.selectedItem = fileFormat;
                 orchestrator.pack();
             });
@@ -64,7 +79,7 @@ public class SplitButtonComponent extends JPanel {
             popupMenu.add(item);
         }
         this.selectedItem = preferredFormat;
-        setMainActionLabel("CONVERT to " + preferredFormat.getDescription());
+        updateAction(action);
         return popupMenu;
     }
 
@@ -140,8 +155,8 @@ public class SplitButtonComponent extends JPanel {
         };
     }
 
-    private JButton buildMainActionButton(String mainLabel) {
-        return new JButton(mainLabel) {
+    private JButton buildMainActionButton() {
+        return new JButton() {
             private boolean isHover;
 
             {
@@ -188,7 +203,15 @@ public class SplitButtonComponent extends JPanel {
 
                 GeneralPath path = getRoundedWestPath(width, height);
 
-                Color color = isHover ? LIME_SUPER_DARK : LIME_DARK;
+                Color dark = LIME_SUPER_DARK;
+                Color light = LIME_DARK;
+
+                if (Action.STOP.equals(action)) {
+                    dark = RED_DARK;
+                    light = RED;
+                }
+
+                Color color = isHover ? dark : light;
                 color = isEnabled() ? color : GRAY_DARK;
 
 
@@ -213,6 +236,10 @@ public class SplitButtonComponent extends JPanel {
         Objects.requireNonNull(label);
 
         mainActionButton.setText(label);
+    }
+
+    public enum Action {
+        START, STOP
     }
 
 }

@@ -1,5 +1,6 @@
 package org.andreidodu.nocconvert.service.impl;
 
+import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 import org.andreidodu.nocconvert.service.ImageConverterService;
@@ -30,6 +31,14 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     @Override
     public void convertImage(Path sourceFile, Path destinationPath, String newFileFormat, Runnable onStart, Consumer<Float> onProgress, Runnable onDone) throws IOException {
         log.debug("Converting image from {}, format: {}", sourceFile, newFileFormat);
+
+        if (Thread.currentThread().isInterrupted()) {
+            log.error("Operation aborted 0");
+            throw new ConversionManualAbortedException("Operation aborted");
+        }
+        onStart.run();
+        onProgress.accept(1f);
+
         BufferedImage image = ImageIO.read(sourceFile.toFile());
         image = convertToOpaqueIfNecessary(image, newFileFormat);
 
@@ -46,24 +55,30 @@ public class ImageConverterServiceImpl implements ImageConverterService {
             }
 
             ImageWriter writer = writers.next();
-
             try (ImageOutputStream ios = ImageIO.createImageOutputStream(outputFile)) {
                 writer.setOutput(ios);
 
                 writer.addIIOWriteProgressListener(new IIOWriteProgressListener() {
                     @Override
                     public void imageStarted(ImageWriter source, int imageIndex) {
-                        onStart.run();
+                        if (Thread.currentThread().isInterrupted()) {
+                            log.error("Operation aborted 1");
+                            throw new ConversionManualAbortedException("Operation aborted");
+                        }
                     }
 
                     @Override
                     public void imageProgress(ImageWriter source, float percentageDone) {
+                        if (Thread.currentThread().isInterrupted()) {
+                            log.error("Operation aborted 2");
+                            throw new ConversionManualAbortedException("Operation aborted");
+                        }
                         onProgress.accept(percentageDone);
                     }
 
                     @Override
                     public void imageComplete(ImageWriter source) {
-                        onDone.run();
+
                     }
 
                     @Override
@@ -80,30 +95,50 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
                     @Override
                     public void writeAborted(ImageWriter source) {
-                        log.error("Operation aborted");
-                        throw new RuntimeException("Operation aborted");
+                        log.error("Operation aborted 3");
+                        throw new ConversionManualAbortedException("Operation aborted");
                     }
                 });
 
 
-                //ImageIO.write(image, newFileFormat, outputFile);
-                //ImageWriteParam customWriteParam = writer.getDefaultWriteParam();
-                //writer.write(null, new IIOImage(image, null, null), customWriteParam);
+                if (Thread.currentThread().isInterrupted()) {
+                    log.error("Operation aborted 4");
+                    throw new ConversionManualAbortedException("Operation aborted");
+                }
+
                 writer.write(null, new IIOImage(image, null, null), null);
+                onProgress.accept(99f);
+
+
+            } catch (ConversionManualAbortedException e) {
+                throw e;
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
+                if (Thread.currentThread().isInterrupted()) {
+                    log.warn("Conversion failed, but thread was interrupted. Treating as cancelled.");
+                    throw new ConversionManualAbortedException("Conversion aborted by thread interruption.");
+                }
                 throw new RuntimeException(e);
             } finally {
                 writer.dispose();
-                onDone.run();
             }
 
 
+        } catch (ConversionManualAbortedException e) {
+            if (outputFile.exists()) {
+                if (outputFile.delete()) {
+                    log.debug("Partial file removed: {}", outputFile.getName());
+                } else {
+                    log.warn("Unable to remove the partial file: {}", outputFile.getName());
+                }
+            }
+            throw e;
         } catch (Exception e) {
-            onDone.run();
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+
+        onDone.run();
     }
 
     private String renameFileExtension(String oldFileName, String newFileFormat) {

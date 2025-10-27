@@ -7,7 +7,7 @@ import org.andreidodu.nocconvert.dto.ConvertImageRequestDTO;
 import org.andreidodu.nocconvert.dto.GUIControllerComponentsDTO;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
-import org.andreidodu.nocconvert.gui.controller.worker.ConvertImageListSwingWorker;
+import org.andreidodu.nocconvert.gui.worker.ConvertImageListSwingWorker;
 import org.andreidodu.nocconvert.service.FileSystemService;
 import org.andreidodu.nocconvert.service.ImageConverterFacadeService;
 import org.andreidodu.nocconvert.service.impl.FileSystemServiceImpl;
