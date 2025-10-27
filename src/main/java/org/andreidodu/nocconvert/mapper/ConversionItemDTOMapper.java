@@ -1,11 +1,10 @@
-package org.andreidodu.nocconvert;
+package org.andreidodu.nocconvert.mapper;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 
 public class ConversionItemDTOMapper {
     public  ConversionItemDTO clone(ConversionItemDTO conversionStatusDTO){
         return ConversionItemDTO.builder()
-
                 .fileName(conversionStatusDTO.getFileName())
                 .fileSize(conversionStatusDTO.getFileSize())
                 .progressPercentage(conversionStatusDTO.getProgressPercentage())
