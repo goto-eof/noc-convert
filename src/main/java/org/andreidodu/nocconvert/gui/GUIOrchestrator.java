@@ -58,13 +58,6 @@ public class GUIOrchestrator extends JFrame {
         preInitialization();
         $$$setupUI$$$();
 
-        // START TODO move somewhere else
-        buildModelForTargetFileFormat();
-        applicationStatusLabel.setVisible(true);
-        progressBar1.setForeground(Colors.LIME_DARK);
-        progressBarAndStatusPanel.setVisible(true);
-        // END TODO move somewhere else
-
         pathSelectionController = initializePathSelectionController();
         convertionStatusController = initializeProcessingStatusController();
         conversionController = initializeConversionController();
@@ -76,8 +69,8 @@ public class GUIOrchestrator extends JFrame {
         initializeWindow();
         pathSelectionController.getPathSelectionRawDTO().setDestinationDirectory(Path.of("/home/andrei/Desktop/new/out"));
         pathSelectionController.getPathSelectionRawDTO().setSourceDirectory(Path.of("/home/andrei/Desktop/new/in"));
-        destinationComponent.getTextField().setText("/home/andrei/Desktop/new");
-        sourceComponent.getTextField().setText("/home/andrei/Pictures");
+        sourceComponent.getTextField().setText("/home/andrei/Desktop/new/in");
+        destinationComponent.getTextField().setText("/home/andrei/Desktop/new/out");
 
         String message = "Please select the Source and the Destination Directories and press on the Convert button";
         applicationStatusLabel.setText(message);

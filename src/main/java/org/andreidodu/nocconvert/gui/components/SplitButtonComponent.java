@@ -34,7 +34,7 @@ public class SplitButtonComponent extends JPanel {
         setOpaque(false);
     }
 
-    public void init(String mainActionLabel, List<FormatExtensionDTO> menuList) {
+    public void init(String mainActionLabel, List<FormatExtensionDTO> menuList, FormatExtensionDTO preferredFormat) {
         Objects.requireNonNull(mainActionLabel);
         Objects.requireNonNull(menuList);
         if (menuList.isEmpty()) {
@@ -42,13 +42,13 @@ public class SplitButtonComponent extends JPanel {
         }
 
         mainActionButton = buildMainActionButton(mainActionLabel);
-        dropdownToggleButton = buildDropdownToggleButton(menuList);
+        dropdownToggleButton = buildDropdownToggleButton(menuList, preferredFormat);
         add(mainActionButton, BorderLayout.CENTER);
         add(dropdownToggleButton, BorderLayout.EAST);
 
     }
 
-    private JPopupMenu getPopupMenu(List<FormatExtensionDTO> imageFormatList) {
+    private JPopupMenu getPopupMenu(List<FormatExtensionDTO> imageFormatList, FormatExtensionDTO preferredFormat) {
         JPopupMenu popupMenu = new JPopupMenu();
         for (FormatExtensionDTO fileFormat : imageFormatList) {
             JMenuItem item = new JMenuItem(fileFormat.toString());
@@ -63,16 +63,15 @@ public class SplitButtonComponent extends JPanel {
 
             popupMenu.add(item);
         }
-        FormatExtensionDTO selectedDefault = imageFormatList.getFirst();
-        this.selectedItem = selectedDefault;
-        setMainActionLabel("CONVERT to " + selectedDefault.getDescription());
+        this.selectedItem = preferredFormat;
+        setMainActionLabel("CONVERT to " + preferredFormat.getDescription());
         return popupMenu;
     }
 
 
-    private JButton buildDropdownToggleButton(List<FormatExtensionDTO> menuList) {
+    private JButton buildDropdownToggleButton(List<FormatExtensionDTO> menuList, FormatExtensionDTO preferredFormat) {
         JButton button = buildCustomDropdownToggleButton();
-        JPopupMenu menu = getPopupMenu(menuList);
+        JPopupMenu menu = getPopupMenu(menuList, preferredFormat);
         button.setOpaque(false);
         button.putClientProperty("JPopupMenu.showSeparator", true);
         button.addActionListener(e -> {

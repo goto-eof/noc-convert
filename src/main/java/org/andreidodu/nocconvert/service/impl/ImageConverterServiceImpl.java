@@ -87,6 +87,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
                 ImageWriteParam customWriteParam = writer.getDefaultWriteParam();
                 writer.write(null, new IIOImage(image, null, null), customWriteParam);
+                onDone.run();
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);

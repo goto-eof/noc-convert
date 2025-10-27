@@ -36,6 +36,7 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
 
     @Override
     protected List<Path> doInBackground() throws Exception {
+        log.debug("Starting to search image from directory {}", sourceDirectory);
         return fileSystemService.getAllFiles(sourceDirectory, getAvailableReadExtensions(), this::onDirectoryProcessed);
     }
 

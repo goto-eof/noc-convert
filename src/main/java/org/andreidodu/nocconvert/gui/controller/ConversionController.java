@@ -39,7 +39,8 @@ public class ConversionController {
 
     private void populateConvertComponentDropdownMenu() {
         List<FormatExtensionDTO> imageFormatList = imageConverterService.getAvailableWriteFormatList();
-        conversionDTO.convertComponent().init("CONVERT to PNG", imageFormatList);
+        FormatExtensionDTO preferredFormat = imageFormatList.stream().filter(format -> "webp".equals(format.getFormat())).findFirst().orElse(imageFormatList.getLast());
+        conversionDTO.convertComponent().init("CONVERT to PNG", imageFormatList, preferredFormat);
     }
 
     private void addConvertComponentEventListener() {
