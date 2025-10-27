@@ -21,7 +21,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -31,7 +33,7 @@ import java.util.function.Consumer;
 public class ImageConverterServiceImpl implements ImageConverterService {
     private static final Logger log = LogManager.getLogger(ImageConverterServiceImpl.class);
 
-    private static final Object BMP_FORMAT = "bmp";
+    private static final List<String> NO_ALPHA_FORMAT = List.of("bmp", "wbmp");
     private ImageWriter writer;
     private ImageOutputStream currentOutputStream;
     private ImageInputStream imageInputStream;
@@ -194,6 +196,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                 throw e;
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
+                deleteBrokenFileIfExists(outputFile);
                 if (Thread.currentThread().isInterrupted()) {
                     log.warn("Conversion failed, but thread was interrupted. Treating as cancelled.");
                     throw new ConversionManualAbortedException("Conversion aborted by thread interruption.");
@@ -202,16 +205,11 @@ public class ImageConverterServiceImpl implements ImageConverterService {
             }
 
         } catch (ConversionManualAbortedException e) {
-            if (outputFile.exists()) {
-                if (outputFile.delete()) {
-                    log.debug("Partial file removed: {}", outputFile.getName());
-                } else {
-                    log.warn("Unable to remove the partial file: {}", outputFile.getName());
-                }
-            }
+            deleteBrokenFileIfExists(outputFile);
             throw e;
         } catch (Exception e) {
             log.error(e.getMessage(), e);
+            deleteBrokenFileIfExists(outputFile);
             throw new RuntimeException(e);
         } finally {
             if (writer != null) {
@@ -224,6 +222,16 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         }
 
         onDone.run();
+    }
+
+    private static void deleteBrokenFileIfExists(File outputFile) {
+        if (outputFile.exists()) {
+            if (outputFile.delete()) {
+                log.debug("Partial file removed: {}", outputFile.getName());
+            } else {
+                log.warn("Unable to remove the partial file: {}", outputFile.getName());
+            }
+        }
     }
 
     private static void interruptIfNecessary() {
@@ -239,18 +247,18 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     }
 
     public static BufferedImage convertToOpaqueIfNecessary(BufferedImage originalImage, String targetExtension) {
-        if (!Objects.equals(BMP_FORMAT, targetExtension)) {
+        if (!NO_ALPHA_FORMAT.contains(targetExtension)) {
             return originalImage;
         }
 
-        if (originalImage.getTransparency() == java.awt.Transparency.OPAQUE) {
-            return originalImage;
-        }
+//        if (originalImage.getTransparency() == java.awt.Transparency.OPAQUE) {
+//            return originalImage;
+//        }
 
         BufferedImage newImage = new BufferedImage(
                 originalImage.getWidth(),
                 originalImage.getHeight(),
-                BufferedImage.TYPE_INT_RGB
+                calculateType(targetExtension)
         );
 
         java.awt.Graphics2D g2d = newImage.createGraphics();
@@ -258,6 +266,15 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         g2d.dispose();
 
         return newImage;
+    }
+
+    private static int calculateType(String targetExtension) {
+        if ("bmp".equalsIgnoreCase(targetExtension)) {
+            return BufferedImage.TYPE_INT_RGB;
+        } else if ("wbmp".equalsIgnoreCase(targetExtension)) {
+            return BufferedImage.TYPE_BYTE_BINARY;
+        }
+        return BufferedImage.TYPE_INT_RGB;
     }
 
 

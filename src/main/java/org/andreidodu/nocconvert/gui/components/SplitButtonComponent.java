@@ -78,6 +78,7 @@ public class SplitButtonComponent extends JPanel {
             item.addActionListener(e -> {
                 updateAction(action);
                 this.selectedItem = fileFormat;
+                this.repaint();
                 orchestrator.pack();
             });
 
