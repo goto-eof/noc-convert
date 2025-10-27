@@ -62,7 +62,7 @@ public class SplitButtonComponent extends JPanel {
         if (Action.START.equals(action)) {
             setMainActionLabel("CONVERT to " + selectedItem.getDescription() + additionalInfo);
         } else if (Action.STOP.equals(action)) {
-            setMainActionLabel("STOP CONVERSION to " + selectedItem.getDescription() + additionalInfo);
+            setMainActionLabel("STOP CONVERSION to " + selectedItem.getExtension().toUpperCase() + additionalInfo);
         }
         mainActionButton.repaint();
         dropdownToggleButton.repaint();
@@ -165,7 +165,7 @@ public class SplitButtonComponent extends JPanel {
             {
                 setContentAreaFilled(false);
                 setBorderPainted(false);
-
+                setPreferredSize(new Dimension(280, 40));
 
                 setForeground(TEXT_LIGHT);
                 setFont(getFont().deriveFont(Font.BOLD, 14f));
