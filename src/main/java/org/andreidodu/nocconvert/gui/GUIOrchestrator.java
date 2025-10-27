@@ -111,7 +111,7 @@ public class GUIOrchestrator extends JFrame {
             @Override
             public void onOptimizationProgress(String statusMessage, int currentLimit, double cpuLoad) {
                 SwingUtilities.invokeLater(() -> {
-                    String message = "Performance test in progress: " + currentLimit + " V-Threads | CPU usage: " + (int) cpuLoad + "%)";
+                    String message = "Performance test in progress: " + currentLimit + " V-Threads | CPU usage: " + (int) cpuLoad + "%";
                     secondaryApplicationStatusLabel.setText(message);
                     log.info(message);
                 });
