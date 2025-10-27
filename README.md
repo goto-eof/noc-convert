@@ -12,15 +12,18 @@ All conversion operations are executed **locally** on your device. Your files ne
 security and privacy.
 
 **High-Performance Bulk Conversion & Parallel Processing:**
+
 Process hundreds or even thousands of images quickly and efficiently. Optimized for speed and utilizing **parallel
 processing** (multithreading) to leverage multi-core CPUs, the application is ideal for automating heavy image workflows
 for designers, photographers, and developers.
 
 **Intuitive Graphical User Interface (GUI) with Real-Time Feedback:**
+
 Designed for ease of use, making complex bulk conversions simple with just a few clicks. The interface provides *
 *real-time progress bars** (individual and total) to indicate the current status of the job.
 
 **Comprehensive Format Support:**
+
 Supports a broad and detailed array of common and professional image formats, including:
 
 * **Raster Formats:** JPG/JPEG, PNG, GIF, BMP, WEBP, TGA, ICO, IFF.
@@ -29,8 +32,10 @@ Supports a broad and detailed array of common and professional image formats, in
 * **Specialty/Legacy:** ICNS, PCT/PICT, WBMP.
 
 **Portable and Secure:**
+
 The application does not require an internet connection to function, making it completely independent and reliable
 anywhere.
+
 ---
 
 ## Screenshot
