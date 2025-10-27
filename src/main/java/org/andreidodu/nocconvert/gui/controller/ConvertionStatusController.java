@@ -19,6 +19,8 @@ public class ConvertionStatusController {
 
     public ConvertionStatusController(ConvertionStatusDTO convertionStatusDTO) {
         this.convertionStatusDTO = convertionStatusDTO;
+
+        convertionStatusDTO.progressBar().setStringPainted(true);
     }
 
     public void onSearchStepFinish(Path destinationDirectory, String targetFormat, List<Path> paths) {

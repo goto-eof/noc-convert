@@ -3,7 +3,6 @@ package org.andreidodu.nocconvert.gui.components;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
-import org.andreidodu.nocconvert.gui.constants.Colors;
 import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +29,7 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
     private final JPanel topPanel;
     private final JPanel wrapperPanel;
 
-    private Color statusLabelBackground = LIME_DARK;
+    private Color statusLabelBackground = LIME_SUPER_DARK;
 
     public ListItemRenderer() {
         setLayout(new BorderLayout());
@@ -90,7 +89,7 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
 
                 GeneralPath path = getRoundedWestPath(width, height, 7);
 
-                g2.setColor(YELLOW_DARK);
+                g2.setColor(YELLOW_SUPER_DARK);
                 g2.fill(path);
 
                 g2.dispose();
@@ -202,16 +201,29 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         targetFormat.setText(value.getTargetFormat());
 
 
-        statusLabelBackground = ConversionStatus.FAILED.equals(value.getStatus()) ? Colors.RED : LIME_DARK;
+        if (ConversionStatus.PROCESSING.equals(value.getStatus())) {
+            statusLabelBackground = ACCENT_BLUE_DARK;
+        }
+
+        if (ConversionStatus.COMPLETED.equals(value.getStatus())) {
+            statusLabelBackground = LIME_DARK;
+        }
+
+        if (ConversionStatus.QUEUED.equals(value.getStatus())) {
+            statusLabelBackground = YELLOW_DARK;
+        }
+
+        statusLabelBackground = ConversionStatus.FAILED.equals(value.getStatus()) ? RED_DARK : statusLabelBackground;
+
 
         Color border = list.getBackground(); // pari % 2 == 0 ? GRAY_DARK :
         border = isSelected ? LIME_SUPER_SUPER_DARK : GRAY_DARK;
 
         setBorder(BorderFactory.createMatteBorder(10, 10, 10, 10, border));
 
-        Color statusColor = ConversionStatus.FAILED.equals(value.getStatus()) ? Colors.RED : ACCENT_DARK_GRAY;
+        //Color statusColor = ConversionStatus.FAILED.equals(value.getStatus()) ? Colors.RED : ACCENT_DARK_GRAY;
 
-        progressBar.setForeground(statusColor);
+        progressBar.setForeground(statusLabelBackground);
 
         fileNameLabel.setForeground(Color.WHITE);
 
