@@ -51,17 +51,19 @@ public class ConvertionStatusController {
     }
 
     private static List<ConversionItemDTO> convertPathListToDTOList(Path destPath, String targetFormat, List<Path> paths) {
-        return paths.stream().map(path -> ConversionItemDTO.builder()
-                .targetFormat(targetFormat)
-                .targetExtension(targetFormat)
-                .sourceFile(path)
-                .fileName(prepareFileName(path))
-                .status(ConversionStatus.QUEUED)
-                .progressPercentage(0)
-                .sourceFile(path)
-                .destinationDirectory(destPath)
-                .fileSize(FileUtil.getHumanableFileSize(path.toFile()))
-                .build()).toList();
+        return paths.stream()
+                .map(path -> ConversionItemDTO.builder()
+                        .targetFormat(targetFormat)
+                        .targetExtension(targetFormat)
+                        .sourceFile(path)
+                        .fileName(prepareFileName(path))
+                        .status(ConversionStatus.QUEUED)
+                        .progressPercentage(0f)
+                        .sourceFile(path)
+                        .destinationDirectory(destPath)
+                        .fileSize(FileUtil.getHumanableFileSize(path.toFile()))
+                        .build())
+                .toList();
     }
 
     private static String prepareFileName(Path path) {
@@ -79,8 +81,8 @@ public class ConvertionStatusController {
             for (ConversionItemDTO conversionItemDTO : list) {
                 model.set(conversionItemDTO.getIndex(), conversionItemDTO);
             }
+            convertionStatusDTO.conversionFileList().repaint();
         });
-        convertionStatusDTO.conversionFileList().repaint();
     }
 
     public void enableProgressBar() {
@@ -110,7 +112,7 @@ public class ConvertionStatusController {
         convertionStatusDTO.scrollPanePanel().setVisible(false);
     }
 
-    public void noFileFound(){
+    public void noFileFound() {
         convertionStatusDTO.conversionFileListScrollPane().setVisible(false);
         convertionStatusDTO.progressBarAndStatusPanel().setVisible(false);
         convertionStatusDTO.progressBar().setVisible(false);

@@ -51,7 +51,8 @@ public class ImageConverterOrchestratorServiceImpl implements ImageConverterOrch
                         targetExtension,
                         onStart,
                         onProgress,
-                        onComplete
+                        onComplete,
+                        (str)->{}
                 );
             } catch (Exception e) {
                 log.error(e.getMessage(), e);

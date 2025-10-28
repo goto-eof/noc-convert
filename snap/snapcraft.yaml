@@ -1,5 +1,5 @@
 name: noc-convert
-version: '2.0.8'
+version: '2.0.14'
 summary: Fast, no-cloud bulk image converter.
 description: |
   Bulk Image Converter (NoCloud). The easy way to batch convert all your images.

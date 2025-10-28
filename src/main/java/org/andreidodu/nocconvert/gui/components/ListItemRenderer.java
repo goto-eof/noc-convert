@@ -11,7 +11,6 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.geom.GeneralPath;
-import java.util.Optional;
 
 import static org.andreidodu.nocconvert.gui.constants.Colors.*;
 import static org.andreidodu.nocconvert.gui.util.ShapeUtil.*;
@@ -28,7 +27,7 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
     private final JPanel contentPanel;
     private final JPanel topPanel;
     private final JPanel wrapperPanel;
-
+    private final JLabel errorMessage;
     private Color statusLabelBackground = LIME_SUPER_DARK;
 
     public ListItemRenderer() {
@@ -171,6 +170,13 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
 
         add(wrapperPanel, BorderLayout.CENTER);
 
+        errorMessage = new JLabel();
+        errorMessage.setOpaque(true);
+        errorMessage.setForeground(RED);
+        errorMessage.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
+
+        wrapperPanel.add(errorMessage, BorderLayout.SOUTH);
+
         setOpaque(false);
         wrapperPanel.setOpaque(false);
         topPanel.setOpaque(false);
@@ -183,37 +189,40 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
 
     @Override
     public Component getListCellRendererComponent(JList<? extends ConversionItemDTO> list,
-                                                  ConversionItemDTO value,
+                                                  ConversionItemDTO currentItemDTO,
                                                   int index,
                                                   boolean isSelected,
                                                   boolean cellHasFocus) {
-        fileNameLabel.setText(value.getFileName());
-        progressBar.setValue((int) value.getProgressPercentage());
-        fileSize.setText(value.getFileSize());
+        fileNameLabel.setText((currentItemDTO.getIndex() + 1) + " | " + currentItemDTO.getFileName());
+        progressBar.setValue(currentItemDTO.getProgressPercentage().intValue());
+        fileSize.setText(currentItemDTO.getFileSize());
 
-        ConversionStatus status = value.getStatus();
+        ConversionStatus status = currentItemDTO.getStatus();
 
         statusLabel.setText(status.name());
-        Optional.ofNullable(value.getErrorMessage()).ifPresent(errorMessage -> {
-            statusLabel.setToolTipText(errorMessage);
-            log.info(errorMessage);
-        });
-        targetFormat.setText(value.getTargetFormat());
+
+        if (currentItemDTO.getErrorMessage() != null) {
+            errorMessage.setText(currentItemDTO.getErrorMessage());
+        } else {
+            errorMessage.setText("");
+        }
+
+        targetFormat.setText(currentItemDTO.getTargetFormat());
 
 
-        if (ConversionStatus.PROCESSING.equals(value.getStatus())) {
+        if (ConversionStatus.PROCESSING.equals(currentItemDTO.getStatus())) {
             statusLabelBackground = ACCENT_BLUE_DARK;
         }
 
-        if (ConversionStatus.COMPLETED.equals(value.getStatus())) {
+        if (ConversionStatus.COMPLETED.equals(currentItemDTO.getStatus())) {
             statusLabelBackground = LIME_DARK;
         }
 
-        if (ConversionStatus.QUEUED.equals(value.getStatus())) {
+        if (ConversionStatus.QUEUED.equals(currentItemDTO.getStatus())) {
             statusLabelBackground = YELLOW_DARK;
         }
 
-        statusLabelBackground = ConversionStatus.FAILED.equals(value.getStatus()) ? RED_DARK : statusLabelBackground;
+        statusLabelBackground = ConversionStatus.FAILED.equals(currentItemDTO.getStatus()) ? RED_DARK : statusLabelBackground;
 
 
         Color border = list.getBackground();
@@ -228,6 +237,7 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         wrapperPanel.setBackground(GRAY_DARK);
 
         setOpaque(false);
+        errorMessage.setOpaque(false);
         wrapperPanel.setOpaque(true);
         topPanel.setOpaque(false);
         contentPanel.setOpaque(false);

@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.util.List;
+import java.util.stream.IntStream;
 
 public class ListRendererWorker extends SwingWorker<List<ConversionItemDTO>, Void> {
     private static final Logger log = LogManager.getLogger(ListRendererWorker.class);
@@ -34,12 +35,17 @@ public class ListRendererWorker extends SwingWorker<List<ConversionItemDTO>, Voi
     }
 
     private void populateListGradually() {
+
+        IntStream.range(0, formatExtensionList.size())
+                .forEach(i -> formatExtensionList.get(i).setIndex(i));
+
         timer = new Timer(DELAY, e -> {
             long startTime = System.nanoTime();
-            List<ConversionItemDTO> chunk = formatExtensionList.subList(pos, Integer.min(pos + BATCH_SIZE, formatExtensionList.size()));
+            int chunkListLength = Integer.min(pos + BATCH_SIZE, formatExtensionList.size());
+            List<ConversionItemDTO> chunkList = formatExtensionList.subList(pos, chunkListLength);
             DefaultListModel<ConversionItemDTO> model = (DefaultListModel<ConversionItemDTO>) list.getModel();
-            model.addAll(chunk);
-            chunk.forEach(dto -> dto.setIndex(model.indexOf(dto)));
+
+            model.addAll(chunkList);
 
             long endTime = System.nanoTime();
             long durationNs = endTime - startTime;

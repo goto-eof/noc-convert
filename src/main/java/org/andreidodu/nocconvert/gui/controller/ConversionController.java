@@ -7,6 +7,7 @@ import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.gui.worker.ConversionWorker;
 import org.andreidodu.nocconvert.gui.worker.ImageSearcherSwingWorker;
+import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
 import org.andreidodu.nocconvert.service.ImageConverterService;
 import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
 import org.apache.logging.log4j.LogManager;
@@ -115,6 +116,8 @@ public class ConversionController {
     }
 
     public void startConversion(List<ConversionItemDTO> list) {
+        ConversionItemDTOMapper conversionItemDTOMapper = new ConversionItemDTOMapper();
+        list = list.stream().map(conversionItemDTOMapper::clone).toList();
         conversionDTO.guiOrchestrator().onConversionStart();
         conversionWorker = new ConversionWorker(list, this::updateList, this::onConversionDone, this::onItemCompleted);
         conversionWorker.execute();
@@ -146,8 +149,16 @@ public class ConversionController {
         long processing = list.stream().filter(dto -> ConversionStatus.PROCESSING.equals(dto.getStatus())).count();
 
         SwingUtilities.invokeLater(() -> {
-            String message = String.format("Conversion completed. Total: %s. Successes: %s / Unprocessed: %s / Failures: %s", list.size(), success, queued + processing, failed);
-            applicationStatusLabel.setText(message);
+            String coloredMessage = String.format("<html><div style='text-align:center;'>" +
+                    "<span style='font-size:14pt;'>Conversion completed.</span><br/>" +
+                    "<span style='font-size:14pt; font-weight:bold;'>Total: </span>" + "<span style='font-size:14pt; font-weight:bold;'>%s. </span>" +
+                    "<span style='color:green; font-weight:bold; font-size:14pt;'>Success: %s / </span>" +
+                    "<span style='color:#CCCC00; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" +
+                    "<span style='color:red; font-weight:bold; font-size:14pt;'>Failed: %s</span>" +
+                    "</div></html>", list.size(), success, queued + processing, failed);
+
+
+            applicationStatusLabel.setText(coloredMessage);
             secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", success, failed));
             conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);
         });
