@@ -183,9 +183,10 @@ public class AdaptiveGovernorRunnable implements Runnable {
     }
 
     private void processTestWorkload(Semaphore adaptiveSemaphore) {
+        boolean acquired = false;
         try {
             adaptiveSemaphore.acquire();
-
+            acquired = true;
             long startTime = System.nanoTime();
             long maxDurationNanos = 30_000_000 + new Random().nextInt(10_000_000);
 
@@ -194,12 +195,13 @@ public class AdaptiveGovernorRunnable implements Runnable {
                 isPrime(random.nextInt(MAX_PRIME));
             }
 
-            Thread.sleep(5);
+            Thread.yield();
+            Thread.sleep(10);
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
-            if (adaptiveSemaphore.availablePermits() < MAX_PERMITS_CAP) {
+            if (acquired) {
                 adaptiveSemaphore.release();
             }
         }

@@ -71,7 +71,7 @@ public class GUIOrchestrator extends JFrame {
         JPopupMenu menu = new JPopupMenu("Main Menu");
         JMenuItem about = new JMenuItem("About");
         about.addActionListener((e) -> SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null,
-                "NoCloud Bulk Image Converter\nv. 2.0.7\nby Andrei Dodu",
+                "NoCloud Bulk Image Converter\nv. 2.0.8\nby Andrei Dodu",
                 "About",
                 JOptionPane.INFORMATION_MESSAGE)));
 
@@ -105,8 +105,8 @@ public class GUIOrchestrator extends JFrame {
                 SwingUtilities.invokeLater(() -> {
                     conversionController.enableButtons(false);
                     secondaryApplicationStatusLabel.setText("Starting performance optimization...");
-                    log.info("Running performance workload tests......");
                 });
+                log.info("Running performance workload tests......");
             }
 
             @Override
@@ -114,8 +114,9 @@ public class GUIOrchestrator extends JFrame {
                 SwingUtilities.invokeLater(() -> {
                     String message = "<html>Performance test in progress, please wait 10 seconds.<br/>" + currentLimit + " V-Threads | CPU usage: " + (int) cpuLoad + "%</html>";
                     secondaryApplicationStatusLabel.setText(message);
-                    log.info(message);
+                    secondaryApplicationStatusLabel.repaint();
                 });
+                log.info(message);
             }
 
             @Override
@@ -125,8 +126,8 @@ public class GUIOrchestrator extends JFrame {
                     pathSelectionController.enableButtons(true);
                     String message = "Optimal configuration found. I will use " + finalOptimalLimit + " V-Threads";
                     secondaryApplicationStatusLabel.setText(message);
-                    log.info(message);
                 });
+                log.info(message);
             }
         });
     }
@@ -265,7 +266,7 @@ public class GUIOrchestrator extends JFrame {
         Font label1Font = this.$$$getFont$$$(null, Font.BOLD, 14, label1.getFont());
         if (label1Font != null) label1.setFont(label1Font);
         label1.setForeground(new Color(-8289660));
-        label1.setText("noc-convert v.2.0.7");
+        label1.setText("noc-convert v.2.0.8");
         panel5.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         Font label2Font = this.$$$getFont$$$(null, -1, 12, label2.getFont());

@@ -1,11 +1,12 @@
 name: noc-convert
-version: '2.0.7'
+version: '2.0.8'
 summary: Fast, no-cloud bulk image converter.
 description: |
   Bulk Image Converter (NoCloud). The easy way to batch convert all your images.
-grade: stable
-confinement: strict
 base: core24
+grade: stable
+# build-base: devel
+confinement: strict
 icon: snap/gui/icon.png
 title: NoCloud Bulk Image Converter
 website: https://andre-i.eu
@@ -29,12 +30,9 @@ apps:
       - desktop
       - desktop-legacy
 platforms:
-  amd64:
+  all:
     build-on: [ amd64 ]
-    build-for: [ amd64 ]
-  arm64:
-    build-on: [ arm64 ]
-    build-for: [ arm64 ]
+    build-for: [ all ]
 parts:
   wrapper:
     plugin: dump
