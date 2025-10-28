@@ -34,12 +34,12 @@ public class ImageUtil {
 
     public static BufferedImage normalizeAsIco(BufferedImage bufferedImage) {
         Objects.requireNonNull(bufferedImage);
-        return normalizeIconFormatCommon(TYPE_4BYTE_ABGR, bufferedImage, ICO_MAX_SIZE);
+        return normalizeIconFormatCommon(TYPE_4BYTE_ABGR, bufferedImage, ICO_MAX_SIZE, true);
     }
 
     public static BufferedImage normalizeAsIcns(BufferedImage bufferedImage) {
         Objects.requireNonNull(bufferedImage);
-        return normalizeIconFormatCommon(TYPE_INT_ARGB, bufferedImage, ICNS_MAX_SIZE);
+        return normalizeIconFormatCommon(TYPE_INT_ARGB, bufferedImage, ICNS_MAX_SIZE, false);
     }
 
     public static BufferedImage convertToOpaque(BufferedImage originalImage) {
@@ -50,6 +50,10 @@ public class ImageUtil {
                 originalImage.getHeight(),
                 BufferedImage.TYPE_INT_RGB
         );
+
+//        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+//        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+//        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         java.awt.Graphics2D g2d = newImage.createGraphics();
         g2d.drawImage(originalImage, 0, 0, Color.WHITE, null);
@@ -90,8 +94,7 @@ public class ImageUtil {
         }
     }
 
-    private static BufferedImage normalizeIconFormatCommon(int imageType, BufferedImage bufferedImage, int targetSize) {
-        Objects.requireNonNull(bufferedImage);
+    private static BufferedImage normalizeIconFormatCommon(int imageType, BufferedImage bufferedImage, int targetSize, boolean isOpaque) {
 
         if (bufferedImage.getWidth() == targetSize && bufferedImage.getHeight() == targetSize && bufferedImage.getType() == imageType) {
             BufferedImage copy = new BufferedImage(targetSize, targetSize, imageType);
@@ -108,14 +111,16 @@ public class ImageUtil {
         BufferedImage out = new BufferedImage(targetSize, targetSize, imageType);
         Graphics2D g2 = out.createGraphics();
 
+        if (isOpaque) {
+            g2.setColor(Color.black);
+            g2.fillRect(0, 0, targetSize, targetSize);
+        }
 
-        g2.setComposite(AlphaComposite.Clear);
-        g2.fillRect(0, 0, targetSize, targetSize);
-        g2.setComposite(AlphaComposite.SrcOver);
-
-//        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-//        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-//        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        if (!isOpaque) {
+            g2.setComposite(AlphaComposite.Clear);
+            g2.fillRect(0, 0, targetSize, targetSize);
+            g2.setComposite(AlphaComposite.SrcOver);
+        }
 
         int x = (targetSize - scaledW) / 2;
         int y = (targetSize - scaledH) / 2;

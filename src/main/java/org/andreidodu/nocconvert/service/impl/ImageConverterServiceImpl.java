@@ -33,6 +33,7 @@ import static org.andreidodu.nocconvert.util.ImageUtil.*;
 
 public class ImageConverterServiceImpl implements ImageConverterService {
     private static final Logger log = LogManager.getLogger(ImageConverterServiceImpl.class);
+    public static final String WEBP_FORMAT = "webp";
 
     private ImageWriter writer;
     private ImageOutputStream currentOutputStream;
@@ -86,7 +87,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
         writeImageOuter(newFileFormat, onProgress, onDone, outputFile, readPercentage, image);
 
-        onDone.run();
     }
 
     private static void validateReader(Iterator<ImageReader> readers, File file) throws IOException {
@@ -128,6 +128,9 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                 writer.dispose();
             }
             closeAllStreams();
+            if (WEBP_FORMAT.equalsIgnoreCase(newFileFormat)) {
+                onDone.run();
+            }
         }
     }
 
@@ -143,7 +146,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             currentOutputStream = ImageIO.createImageOutputStream(outputFile);
             writer.setOutput(currentOutputStream);
-            writer.addIIOWriteProgressListener(getWriterListener(onProgress, readPercentage));
+            writer.addIIOWriteProgressListener(getWriterListener(onProgress, readPercentage, onDone));
 
             if (Thread.currentThread().isInterrupted()) {
                 log.error("Operation aborted 4");
@@ -152,7 +155,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             writer.write(null, new IIOImage(image, null, null), null);
             onProgress.accept(100f);
-            onDone.run();
 
         } catch (IOException e) {
             if (Thread.currentThread().isInterrupted()) {
@@ -180,7 +182,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         }
     }
 
-    private static IIOWriteProgressListener getWriterListener(Consumer<Float> onProgress, int[] readPercentage) {
+    private static IIOWriteProgressListener getWriterListener(Consumer<Float> onProgress, int[] readPercentage, Runnable onDone) {
         return new IIOWriteProgressListener() {
             @Override
             public void imageStarted(ImageWriter source, int imageIndex) {
@@ -193,6 +195,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
             public void imageProgress(ImageWriter source, float percentageDone) {
                 if (Thread.currentThread().isInterrupted()) {
                     log.error("Operation aborted 2");
+                    throw new ConversionManualAbortedException("Conversion aborted by thread interruption.");
                 }
 
                 onProgress.accept(readPercentage[0] / 2 + percentageDone / 2);
@@ -200,7 +203,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             @Override
             public void imageComplete(ImageWriter source) {
-
+                onDone.run();
             }
 
             @Override
@@ -218,6 +221,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
             @Override
             public void writeAborted(ImageWriter source) {
                 log.error("Operation aborted 3");
+                onDone.run();
             }
         };
     }
@@ -239,6 +243,11 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             @Override
             public void imageProgress(ImageReader source, float percentageDone) {
+                if (Thread.currentThread().isInterrupted()) {
+                    log.error("Operation aborted 5");
+                    throw new ConversionManualAbortedException("Conversion aborted by thread interruption.");
+                }
+
                 readPercentage[0] = (int) percentageDone;
 
             }
