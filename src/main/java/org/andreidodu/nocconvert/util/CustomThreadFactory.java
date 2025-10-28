@@ -7,7 +7,7 @@ public class CustomThreadFactory implements ThreadFactory {
     public Thread newThread(Runnable r) {
         Thread t = new Thread(r);
         t.setName("noc-convert-thread-" + t.getId());
-        t.setDaemon(false);
+        t.setDaemon(true);
         return t;
     }
 }

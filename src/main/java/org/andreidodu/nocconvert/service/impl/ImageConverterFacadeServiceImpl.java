@@ -1,6 +1,5 @@
 package org.andreidodu.nocconvert.service.impl;
 
-import org.andreidodu.nocconvert.dto.ImageConversionResultDTO;
 import org.andreidodu.nocconvert.service.FileSystemService;
 import org.andreidodu.nocconvert.service.ImageConverterFacadeService;
 import org.andreidodu.nocconvert.service.ImageConverterOrchestratorService;

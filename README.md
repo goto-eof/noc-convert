@@ -22,14 +22,38 @@ for designers, photographers, and developers.
 Designed for ease of use, making complex bulk conversions simple with just a few clicks. The interface provides *
 *real-time progress bars** (individual and total) to indicate the current status of the job.
 
-**Comprehensive Format Support:**
+**Format Compatibility (Input/Output)**
 
-Supports a broad and detailed array of common and professional image formats, including:
+NocConvert is engineered to support a comprehensive ecosystem of image formats, ensuring your files can always be read
+and written with maximum fidelity—from common web formats to professional and scientific standards.
 
-* **Raster Formats:** JPG/JPEG, PNG, GIF, BMP, WEBP, TGA, ICO, IFF.
-* **Professional Formats:** TIFF (incl. BIGTIFF), PSD, PSB.
-* **Portable Formats:** PAM, PBM, PGM, PFM, PNM, PPM.
-* **Specialty/Legacy:** ICNS, PCT/PICT, WBMP.
+- Input Formats
+  These are all the formats the application can read and use as a source file for conversion:
+    - Standard Raster: Basic, widely used formats for every day and web use.
+        - Key Formats: JPG, PNG, GIF, BMP, WEBP, WMF.
+    - Professional Grade: High-fidelity support for editing, design, and high resolution.
+        - Key Formats: PSD, PSB (Adobe Photoshop), TIFF, BIGTIFF, HDR, PCX, XWD.
+    - Scientific/Raw: NetPBM family and derivatives for technical data and portability.
+        - Key Formats: PAM, PBM, PGM, PFM, PNM, PPM, RGBE.
+    - Legacy & System: Historical formats and specific operating system icons/files.
+        - Key Formats: ICO, ICNS, CUR, PICT, IFF, TGA/TARGA, DCX, PCT, PNTG, SGI.
+    - Variants: Support for specific and lossless formats.
+        - Key Formats: JPEG-LOSSLESS, THUMBS, SVG.
+
+
+- Output Formats
+  These are all the formats the application can write to and save the conversion result:
+    - Standard Raster: Ideal for final export, distribution, and web use.
+        - Key Formats: JPG, PNG, GIF, BMP, WEBP.
+    - Professional Grade: Perfect for lossless archiving and further processing.
+        - Key Formats: PSD, PSB, TIFF, BIGTIFF.
+    - Portable Formats: Raw and compatible output for external data pipelines.
+        - Key Formats: PAM, PBM, PGM, PFM, PNM, PPM.
+    - Legacy & System: For integration into specific systems and archives.
+        - Key Formats: ICO, ICNS, PICT, IFF, TGA/TARGA, PCT.
+
+In Summary: NocConvert ensures that virtually any file you own can be converted to your desired target format,
+delivering maximum quality and flexibility for all your imaging needs.
 
 **Portable and Secure:**
 
@@ -46,10 +70,10 @@ anywhere.
 
 <div id="download">v.2.0.14</div>
 
-| Platform    | AMD 64-bit                                                                                                                  | ARM 64-bit                                                                                                                |
-|:------------|:----------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------|
-| **Linux**   | [zip (.deb)](https://github.com/goto-eof/noc-convert/releases/download/2.0.14/noc-convert-Linux-2.0.14-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                         |
-| **Windows** | [zip (.msi)](https://github.com/goto-eof/noc-convert/releases/download/2.0.14/noc-convert-Windows-2.0.14-amd64-Installer.zip) | N/A                                                                                                                       |
+| Platform    | AMD 64-bit                                                                                                                    | ARM 64-bit                                                                                                                  |
+|:------------|:------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------|
+| **Linux**   | [zip (.deb)](https://github.com/goto-eof/noc-convert/releases/download/2.0.14/noc-convert-Linux-2.0.14-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                           |
+| **Windows** | [zip (.msi)](https://github.com/goto-eof/noc-convert/releases/download/2.0.14/noc-convert-Windows-2.0.14-amd64-Installer.zip) | N/A                                                                                                                         |
 | **macOS**   | [zip (.pkg)](https://github.com/goto-eof/noc-convert/releases/download/2.0.14/noc-convert-MacOS-2.0.14-amd64-Installer.zip)   | [zip (.pkg)](https://github.com/goto-eof/noc-convert/releases/download/2.0.14/noc-convert-MacOS-2.0.14-arm64-Installer.zip) |
 
 ## Installation and Usage

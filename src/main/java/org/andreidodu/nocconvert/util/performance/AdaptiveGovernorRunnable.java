@@ -57,6 +57,9 @@ public class AdaptiveGovernorRunnable implements Runnable {
             System.out.printf("OPTIMIZATION COMPLETE. Limit set to: %d\n", VT_OPTIMAL_LIMIT);
 
             if (listener != null) {
+                log.debug("----------------------------------------------------------------");
+                log.debug("Device Performance Optimization Completed");
+                log.debug("----------------------------------------------------------------");
                 listener.onOptimizationComplete(VT_OPTIMAL_LIMIT);
             }
 

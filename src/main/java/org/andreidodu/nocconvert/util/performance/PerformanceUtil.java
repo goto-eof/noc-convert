@@ -15,7 +15,6 @@ public class PerformanceUtil {
             return null;
         });
 
-
         Thread outerThread = new Thread(() -> {
             log.info("Starting performance testing...");
 
