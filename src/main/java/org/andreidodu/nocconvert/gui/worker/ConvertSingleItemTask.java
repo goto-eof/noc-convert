@@ -2,8 +2,6 @@ package org.andreidodu.nocconvert.gui.worker;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
-import org.andreidodu.nocconvert.exception.InvalidFileFormatException;
-import org.andreidodu.nocconvert.exception.SourceFileConstraintsNotRespectedException;
 import org.andreidodu.nocconvert.service.ImageConverterService;
 import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
 import org.apache.logging.log4j.LogManager;
@@ -57,7 +55,6 @@ public class ConvertSingleItemTask implements Runnable {
         conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
         conversionItemDTO.setProgressPercentage(100f);
         publish.accept(conversionItemDTO);
-        onItemCompleted.run();
     }
 
     public void run() {
@@ -81,11 +78,6 @@ public class ConvertSingleItemTask implements Runnable {
                     this::onProgressController,
                     this::onDone,
                     this::writeAborted);
-        } catch (SourceFileConstraintsNotRespectedException | InvalidFileFormatException waringException) {
-            conversionItemDTO.setStatus(ConversionStatus.FAILED);
-            conversionItemDTO.setProgressPercentage(100f);
-            conversionItemDTO.setErrorMessage(waringException.getMessage());
-            publish.accept(conversionItemDTO);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             conversionItemDTO.setStatus(ConversionStatus.FAILED);
@@ -108,7 +100,7 @@ public class ConvertSingleItemTask implements Runnable {
 
     public void closeStreams() {
         this.canceled = true;
-        imageConverterService.closeAllStreams();
+        imageConverterService.cancelTask();
     }
 
     public void writeAborted(String errorMessage) {

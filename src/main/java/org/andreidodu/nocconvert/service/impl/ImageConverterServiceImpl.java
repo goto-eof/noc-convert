@@ -1,11 +1,14 @@
 package org.andreidodu.nocconvert.service.impl;
 
+import lombok.Builder;
+import lombok.Getter;
 import lombok.Setter;
 import org.andreidodu.nocconvert.dto.ImageHeaderDTO;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.exception.InvalidFileFormatException;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.service.ImageConverterService;
+import org.andreidodu.nocconvert.util.CustomThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,20 +37,13 @@ import static org.andreidodu.nocconvert.util.ImageUtil.*;
 public class ImageConverterServiceImpl implements ImageConverterService {
     private static final Logger log = LogManager.getLogger(ImageConverterServiceImpl.class);
     public static final String WEBP_FORMAT = "webp";
-
-    private ImageWriter writer;
-    private ImageOutputStream currentOutputStream;
-    private ImageInputStream imageInputStream;
     int totalPercentage = 0;
     @Setter
     private boolean canceled = false;
 
-    private static final ExecutorService CPU_POOL = Executors.newFixedThreadPool(
-            Runtime.getRuntime().availableProcessors()
-    );
 
     @Override
-    public void convertImage(Path sourceFile, Path destinationPath, String newFileFormat, Runnable onStart, Consumer<Float> onProgress, Runnable onDone, Consumer<String> writeAborted) throws IOException {
+    public void convertImage(Path sourceFile, Path destinationPath, String newFileFormat, Runnable onStart, Consumer<Float> onProgress, Runnable onDone, Consumer<String> writeAborted) {
         if (canceled) {
             return;
         }
@@ -66,32 +62,39 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         List<String> validInputFormatListInLowerCase = Arrays.stream(ImageIO.getReaderFormatNames()).toList();
         validateInputImage(sourceFile, sourceFileFormat, validInputFormatListInLowerCase);
 
-        imageInputStream = ImageIO.createImageInputStream(file);
+        try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(file)) {
 
-        Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
 
-        validateReader(readers, file);
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
 
-        int[] readPercentage = new int[1];
-        readPercentage[0] = 0;
+            validateReader(readers, file);
 
-        BufferedImage image = readImage(readers, readPercentage);
+            TotalReadPercentageDTO totalReadPercentageDTO = TotalReadPercentageDTO.builder().build();
 
-        interruptIfNecessary();
+            BufferedImage image = readImage(imageInputStream, readers, totalReadPercentageDTO);
 
-        image = preprocessImage(sourceFile, newFileFormat, image, CPU_POOL);
+            interruptIfNecessary();
 
-        interruptIfNecessary();
+            try (ExecutorService cpuPool = Executors.newSingleThreadExecutor(new CustomThreadFactory())) {
+                image = preprocessImage(sourceFile, newFileFormat, image, cpuPool);
+            } catch (Exception e) {
+                onDone.run();
+                throw e;
+            }
 
-        File outputFile = calculateOutputFile(sourceFile, destinationPath, newFileFormat);
+            interruptIfNecessary();
 
-        writeImageOuter(newFileFormat, onProgress, onDone, outputFile, readPercentage, image);
+            File outputFile = calculateOutputFile(sourceFile, destinationPath, newFileFormat);
 
+            writeImageOuter(newFileFormat, onProgress, onDone, outputFile, totalReadPercentageDTO, image);
+        } catch (IOException | ArrayIndexOutOfBoundsException ee) {
+            throw new RuntimeException(ee.getMessage(), ee);
+        }
     }
 
-    private static void validateReader(Iterator<ImageReader> readers, File file) throws IOException {
+    private static void validateReader(Iterator<ImageReader> readers, File file) {
         if (!readers.hasNext()) {
-            throw new IOException("No ImageReader found for: " + file);
+            throw new RuntimeException("No ImageReader found for: " + file);
         }
     }
 
@@ -99,23 +102,31 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         String fileName = sourceFile.getFileName().toString();
         Path outputFilePath = destinationPath.resolve(renameFileExtension(fileName, newFileFormat));
         String outputFileString = outputFilePath.toString();
-        File outputFile = new File(outputFileString);
-        return outputFile;
+        return new File(outputFileString);
     }
 
-    private BufferedImage readImage(Iterator<ImageReader> readers, int[] readPercentage) throws IOException {
-        ImageReader reader = readers.next();
-        reader.setInput(imageInputStream, true, true);
-        reader.addIIOReadProgressListener(getReaderListener(readPercentage));
-
-        interruptIfNecessary();
-        BufferedImage image = reader.read(0);
-        return image;
-    }
-
-    private void writeImageOuter(String newFileFormat, Consumer<Float> onProgress, Runnable onDone, File outputFile, int[] readPercentage, BufferedImage image) {
+    private BufferedImage readImage(ImageInputStream imageInputStream, Iterator<ImageReader> readers, TotalReadPercentageDTO totalReadPercentageDTO) {
         try {
-            writeImageInner(newFileFormat, onProgress, onDone, outputFile, readPercentage, image);
+            ImageReader reader = readers.next();
+
+            try {
+                reader.setInput(imageInputStream, true, true);
+                reader.addIIOReadProgressListener(getReaderListener(totalReadPercentageDTO));
+                interruptIfNecessary();
+                return reader.read(0);
+            } finally {
+                reader.dispose();
+            }
+
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    private void writeImageOuter(String newFileFormat, Consumer<Float> onProgress, Runnable onDone, File outputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image) {
+        try {
+            writeImageInner(newFileFormat, onProgress, onDone, outputFile, totalReadPercentageDTO, image);
         } catch (ConversionManualAbortedException e) {
             deleteBrokenFileIfExists(outputFile);
             throw e;
@@ -124,29 +135,25 @@ public class ImageConverterServiceImpl implements ImageConverterService {
             deleteBrokenFileIfExists(outputFile);
             throw new RuntimeException(e.getMessage(), e);
         } finally {
-            if (writer != null) {
-                writer.dispose();
-            }
-            closeAllStreams();
+            cancelTask();
             if (WEBP_FORMAT.equalsIgnoreCase(newFileFormat)) {
                 onDone.run();
             }
         }
     }
 
-    private void writeImageInner(String newFileFormat, Consumer<Float> onProgress, Runnable onDone, File outputFile, int[] readPercentage, BufferedImage image) throws IOException {
+    private void writeImageInner(String newFileFormat, Consumer<Float> onProgress, Runnable onDone, File outputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image) throws IOException {
         Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(newFileFormat);
         if (!writers.hasNext()) {
             log.debug("No writers found for format: {}", newFileFormat);
             throw new IllegalStateException("No writer found for format: " + newFileFormat);
         }
 
-        writer = writers.next();
+        ImageWriter writer = writers.next();
         try {
-
-            currentOutputStream = ImageIO.createImageOutputStream(outputFile);
+            ImageOutputStream currentOutputStream = ImageIO.createImageOutputStream(outputFile);
             writer.setOutput(currentOutputStream);
-            writer.addIIOWriteProgressListener(getWriterListener(onProgress, readPercentage, onDone));
+            writer.addIIOWriteProgressListener(getWriterListener(onProgress, totalReadPercentageDTO, onDone));
 
             if (Thread.currentThread().isInterrupted()) {
                 log.error("Operation aborted 4");
@@ -155,7 +162,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             writer.write(null, new IIOImage(image, null, null), null);
             onProgress.accept(100f);
-
         } catch (IOException e) {
             if (Thread.currentThread().isInterrupted()) {
                 throw new ConversionManualAbortedException("Conversion aborted by thread interruption.");
@@ -170,7 +176,9 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                 log.warn("Conversion failed, but thread was interrupted. Treating as cancelled.");
                 throw new ConversionManualAbortedException("Conversion aborted by thread interruption.");
             }
-            throw new RuntimeException(e.getMessage(), e);
+            throw e;
+        } finally {
+            writer.dispose();
         }
     }
 
@@ -182,7 +190,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         }
     }
 
-    private static IIOWriteProgressListener getWriterListener(Consumer<Float> onProgress, int[] readPercentage, Runnable onDone) {
+    private static IIOWriteProgressListener getWriterListener(Consumer<Float> onProgress, TotalReadPercentageDTO totalReadPercentageDTO, Runnable onDone) {
         return new IIOWriteProgressListener() {
             @Override
             public void imageStarted(ImageWriter source, int imageIndex) {
@@ -198,7 +206,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                     throw new ConversionManualAbortedException("Conversion aborted by thread interruption.");
                 }
 
-                onProgress.accept(readPercentage[0] / 2 + percentageDone / 2);
+                onProgress.accept(totalReadPercentageDTO.getTotalReadPercentage() / 2 + percentageDone / 2);
             }
 
             @Override
@@ -226,7 +234,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         };
     }
 
-    private IIOReadProgressListener getReaderListener(int[] readPercentage) {
+    private IIOReadProgressListener getReaderListener(TotalReadPercentageDTO totalReadPercentageDTO) {
         return new IIOReadProgressListener() {
             @Override
             public void sequenceStarted(ImageReader source, int minIndex) {
@@ -238,7 +246,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             @Override
             public void imageStarted(ImageReader source, int imageIndex) {
-                readPercentage[0] = 1;
+                totalReadPercentageDTO.setTotalReadPercentage(1);
             }
 
             @Override
@@ -247,14 +255,12 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                     log.error("Operation aborted 5");
                     throw new ConversionManualAbortedException("Conversion aborted by thread interruption.");
                 }
-
-                readPercentage[0] = (int) percentageDone;
-
+                totalReadPercentageDTO.setTotalReadPercentage((int) percentageDone);
             }
 
             @Override
             public void imageComplete(ImageReader source) {
-                readPercentage[0] = 100;
+                totalReadPercentageDTO.setTotalReadPercentage(100);
             }
 
             @Override
@@ -284,22 +290,9 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     }
 
     @Override
-    public void closeAllStreams() {
+    public void cancelTask() {
         setCanceled(true);
-        if (imageInputStream != null) {
-            try {
-                log.debug("Closing image input stream");
-                imageInputStream.close();
-            } catch (IOException ignored) {
-            }
-        }
-        if (currentOutputStream != null) {
-            try {
-                log.debug("Closed image output stream.");
-                currentOutputStream.close();
-            } catch (IOException ignored) {
-            }
-        }
+        Thread.currentThread().interrupt();
     }
 
     @Override
@@ -310,6 +303,13 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     @Override
     public List<FormatExtensionDTO> getAvailableReadFormatList() {
         return getFormatExtensionDTOList(ImageIO.getReaderFormatNames());
+    }
+
+    @Builder
+    @Getter
+    @Setter
+    protected static class TotalReadPercentageDTO {
+        private int totalReadPercentage;
     }
 
 }

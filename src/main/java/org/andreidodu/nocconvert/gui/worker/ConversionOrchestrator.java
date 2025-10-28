@@ -23,15 +23,18 @@ public class ConversionOrchestrator {
     private final List<ConversionItemDTO> conversionItemDTOList;
     private List<ConvertSingleItemTask> taskList;
     private static Semaphore semaphore;
+    private Runnable onAllTasksComplete;
 
     public ConversionOrchestrator(
             List<ConversionItemDTO> conversionItemDTOList,
             Consumer<ConversionItemDTO> publish,
-            Runnable onItemCompleted
+            Runnable onItemCompleted,
+            Runnable onAllTasksComplete
     ) {
 
         this.publish = publish;
         this.onItemCompleted = onItemCompleted;
+        this.onAllTasksComplete = onAllTasksComplete;
         this.conversionItemDTOList = conversionItemDTOList;
         executorService = Executors.newVirtualThreadPerTaskExecutor();
         semaphore = new Semaphore(AdaptiveGovernorRunnable.VT_OPTIMAL_LIMIT);
@@ -57,6 +60,8 @@ public class ConversionOrchestrator {
             shutdown();
         } catch (Exception e) {
             shutdown();
+        }finally {
+            onAllTasksComplete.run();
         }
     }
 

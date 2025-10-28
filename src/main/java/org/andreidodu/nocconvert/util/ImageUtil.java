@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static java.awt.image.BufferedImage.TYPE_4BYTE_ABGR;
 import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
@@ -172,15 +173,15 @@ public class ImageUtil {
         Objects.requireNonNull(image);
 
         if (isIsNotCompatibleWithIcoFormat(newFileFormat, image)) {
-            return adaptForIcoFormat(sourceFile, image, cpuPool);
+            return adaptForIcoFormat(sourceFile, image);
         }
 
         if (ICNS_FORMAT.equalsIgnoreCase(newFileFormat) && isNotCompatibleWithIcnsFormat(image)) {
-            return adaptForIcnsFormat(sourceFile, image, cpuPool);
+            return adaptForIcnsFormat(sourceFile, image);
         }
 
         if (OPAQUE_FORMAT_LIST.contains(newFileFormat)) {
-            return adaptForOpaqueFormat(image, newFileFormat, cpuPool);
+            return adaptForOpaqueFormat(image, newFileFormat);
         }
 
         return image;
@@ -190,29 +191,34 @@ public class ImageUtil {
         return ICO_FORMAT.equalsIgnoreCase(newFileFormat) && (image.getWidth() > ICO_MAX_SIZE || image.getHeight() > ICO_MAX_SIZE || image.getWidth() % 8 != 0);
     }
 
-    private static BufferedImage adaptForOpaqueFormat(BufferedImage image, String newFormat, ExecutorService cpuPool) throws InterruptedException, ExecutionException {
+    private static BufferedImage adaptForOpaqueFormat(BufferedImage image, String newFormat) throws InterruptedException, ExecutionException {
         final BufferedImage originalImage = image;
-        return cpuPool.submit(() -> convertToOpaque(originalImage, newFormat)).get();
+        try (ExecutorService cpuPool = Executors.newSingleThreadExecutor(new CustomThreadFactory())) {
+            return cpuPool.submit(() -> convertToOpaque(originalImage, newFormat)).get();
+        }
     }
 
-    private static BufferedImage adaptForIcnsFormat(Path sourceFile, BufferedImage image, ExecutorService cpuPool) throws InterruptedException, ExecutionException {
+    private static BufferedImage adaptForIcnsFormat(Path sourceFile, BufferedImage image) throws InterruptedException, ExecutionException {
         String message = String.format("the specific constraints for icns format are not respected by the input image, so I will force conversion of %s.", sourceFile);
         log.warn(message);
 
-        final BufferedImage originalImage = image;
-        image = cpuPool.submit(() -> normalizeAsIcns(originalImage)).get();
-
+        try (ExecutorService cpuPool = Executors.newSingleThreadExecutor(new CustomThreadFactory())) {
+            final BufferedImage originalImage = image;
+            image = cpuPool.submit(() -> normalizeAsIcns(originalImage)).get();
+        }
         message = String.format("new image size: %s x %s", image.getWidth(), image.getHeight());
         log.warn(message);
         return image;
     }
 
-    private static BufferedImage adaptForIcoFormat(Path sourceFile, BufferedImage image, ExecutorService cpuPool) throws InterruptedException, ExecutionException {
+    private static BufferedImage adaptForIcoFormat(Path sourceFile, BufferedImage image) throws InterruptedException, ExecutionException {
         String message = String.format("the specific constraints for ico format are not respected by the input image, so I will force conversion of %s.", sourceFile);
         log.warn(message);
 
-        final BufferedImage originalImage = image;
-        image = cpuPool.submit(() -> normalizeAsIco(originalImage)).get();
+        try (ExecutorService cpuPool = Executors.newSingleThreadExecutor(new CustomThreadFactory())) {
+            final BufferedImage originalImage = image;
+            image = cpuPool.submit(() -> normalizeAsIco(originalImage)).get();
+        }
 
         message = String.format("new image size: %s x %s", image.getWidth(), image.getHeight());
         log.warn(message);

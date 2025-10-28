@@ -6,7 +6,6 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
@@ -16,29 +15,28 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
     private final Runnable onDone;
     private final Runnable onItemCompleted;
     private ConversionOrchestrator conversionOrchestrator;
+    private final Runnable onAllTasksComplete;
 
-    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui, Runnable onDone, Runnable onItemCompleted) {
+    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui, Runnable onDone, Runnable onItemCompleted, Runnable onAllTasksComplete) {
         this.list = list;
         this.updateGui = updateGui;
         this.onDone = onDone;
         this.onItemCompleted = onItemCompleted;
+        this.onAllTasksComplete = onAllTasksComplete;
     }
 
     @Override
     protected Void doInBackground() throws Exception {
-        conversionOrchestrator = new ConversionOrchestrator(list, this::publishItem, onItemCompleted);
+        conversionOrchestrator = new ConversionOrchestrator(list, this::publishItem, onItemCompleted, onAllTasksComplete);
         conversionOrchestrator.startConversion();
         return null;
     }
+
 
     private void cancelOrchestratorJob() {
         if (conversionOrchestrator != null) {
             conversionOrchestrator.shutdown();
         }
-    }
-
-    private ExecutorService getExecutorService() {
-        return conversionOrchestrator.getExecutorService();
     }
 
     @Override

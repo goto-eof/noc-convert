@@ -94,10 +94,11 @@ public class ConvertionStatusController {
 
     public void updateMainProgressBarMaxValue(int size) {
         convertionStatusDTO.progressBar().setMaximum(size);
+        convertionStatusDTO.progressBar().setStringPainted(true);
     }
 
     public void conversionDone() {
-        updateGlobalProgressBar();
+        onAllTaskComplete();
     }
 
     public void updateMainProgressBarProgress(int completedItems) {
@@ -118,8 +119,10 @@ public class ConvertionStatusController {
         convertionStatusDTO.progressBar().setVisible(false);
     }
 
-    public void updateGlobalProgressBar() {
+    public void onAllTaskComplete() {
         convertionStatusDTO.progressBar().setForeground(Colors.LIME_DARK);
+        convertionStatusDTO.progressBar().setValue(convertionStatusDTO.progressBar().getMaximum());
+
     }
 
     public void onConversionStart() {
