@@ -42,13 +42,13 @@ public class ImageUtil {
         return normalizeIconFormatCommon(TYPE_INT_ARGB, bufferedImage, ICNS_MAX_SIZE, false);
     }
 
-    public static BufferedImage convertToOpaque(BufferedImage originalImage) {
+    public static BufferedImage convertToOpaque(BufferedImage originalImage, String newFormat) {
         Objects.requireNonNull(originalImage);
 
         BufferedImage newImage = new BufferedImage(
                 originalImage.getWidth(),
                 originalImage.getHeight(),
-                BufferedImage.TYPE_INT_RGB
+                WBMP_FORMAT.equalsIgnoreCase(newFormat) ? BufferedImage.TYPE_BYTE_BINARY : BufferedImage.TYPE_INT_RGB
         );
 
 //        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
@@ -56,7 +56,7 @@ public class ImageUtil {
 //        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         java.awt.Graphics2D g2d = newImage.createGraphics();
-        g2d.drawImage(originalImage, 0, 0, Color.WHITE, null);
+        g2d.drawImage(originalImage, 0, 0, Color.BLACK, null);
         g2d.dispose();
 
         return newImage;
@@ -179,8 +179,8 @@ public class ImageUtil {
             return adaptForIcnsFormat(sourceFile, image, cpuPool);
         }
 
-        if (OPAQUE_FORMAT_LIST.contains(newFileFormat) && image.getTransparency() != java.awt.Transparency.OPAQUE) {
-            return adaptForOpaqueFormat(image, cpuPool);
+        if (OPAQUE_FORMAT_LIST.contains(newFileFormat)) {
+            return adaptForOpaqueFormat(image, newFileFormat, cpuPool);
         }
 
         return image;
@@ -190,9 +190,9 @@ public class ImageUtil {
         return ICO_FORMAT.equalsIgnoreCase(newFileFormat) && (image.getWidth() > ICO_MAX_SIZE || image.getHeight() > ICO_MAX_SIZE || image.getWidth() % 8 != 0);
     }
 
-    private static BufferedImage adaptForOpaqueFormat(BufferedImage image, ExecutorService cpuPool) throws InterruptedException, ExecutionException {
+    private static BufferedImage adaptForOpaqueFormat(BufferedImage image, String newFormat, ExecutorService cpuPool) throws InterruptedException, ExecutionException {
         final BufferedImage originalImage = image;
-        return cpuPool.submit(() -> convertToOpaque(originalImage)).get();
+        return cpuPool.submit(() -> convertToOpaque(originalImage, newFormat)).get();
     }
 
     private static BufferedImage adaptForIcnsFormat(Path sourceFile, BufferedImage image, ExecutorService cpuPool) throws InterruptedException, ExecutionException {
