@@ -30,9 +30,12 @@ apps:
       - desktop
       - desktop-legacy
 platforms:
-  all:
+  amd64:
     build-on: [ amd64 ]
-    build-for: [ all ]
+    build-for: [ amd64 ]
+  arm64:
+    build-on: [ arm64 ]
+    build-for: [ arm64 ]
 parts:
   wrapper:
     plugin: dump
