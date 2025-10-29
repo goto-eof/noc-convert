@@ -1,4 +1,4 @@
-# NoCloud Bulk Image Converter v.2.0.17 (noc-convert)
+# NoCloud Bulk Image Converter v.2.0.18 (noc-convert)
 
 <div id="introduction"> </div>
 
@@ -68,13 +68,13 @@ anywhere.
 
 ## Download
 
-<div id="download">v.2.0.17</div>
+<div id="download">v.2.0.18</div>
 
 | Platform    | AMD 64-bit                                                                                                                    | ARM 64-bit                                                                                                                  |
 |:------------|:------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------|
-| **Linux**   | [zip (.deb)](https://github.com/goto-eof/noc-convert/releases/download/2.0.17/noc-convert-Linux-2.0.17-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                           |
-| **Windows** | [zip (.msi)](https://github.com/goto-eof/noc-convert/releases/download/2.0.17/noc-convert-Windows-2.0.17-amd64-Installer.zip) | N/A                                                                                                                         |
-| **macOS**   | [zip (.pkg)](https://github.com/goto-eof/noc-convert/releases/download/2.0.17/noc-convert-MacOS-2.0.17-amd64-Installer.zip)   | [zip (.pkg)](https://github.com/goto-eof/noc-convert/releases/download/2.0.17/noc-convert-MacOS-2.0.17-arm64-Installer.zip) |
+| **Linux**   | [zip (.deb)](https://github.com/goto-eof/noc-convert/releases/download/2.0.18/noc-convert-Linux-2.0.18-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                           |
+| **Windows** | [zip (.msi)](https://github.com/goto-eof/noc-convert/releases/download/2.0.18/noc-convert-Windows-2.0.18-amd64-Installer.zip) | N/A                                                                                                                         |
+| **macOS**   | [zip (.pkg)](https://github.com/goto-eof/noc-convert/releases/download/2.0.18/noc-convert-MacOS-2.0.18-amd64-Installer.zip)   | [zip (.pkg)](https://github.com/goto-eof/noc-convert/releases/download/2.0.18/noc-convert-MacOS-2.0.18-arm64-Installer.zip) |
 
 ## Installation and Usage
 
