@@ -1,6 +1,7 @@
 package org.andreidodu.nocconvert.gui.worker;
 
 import lombok.Builder;
+import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 import org.andreidodu.nocconvert.service.FileSystemService;
 import org.andreidodu.nocconvert.service.ImageConverterService;
@@ -21,22 +22,22 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
     private final FileSystemService fileSystemService;
     private final ImageConverterService imageConverterService;
     private final Consumer<String> updateApplicationStatusLabel;
-    private final Consumer<List<Path>> onSearchDone;
+    private final FilesInDirectoryListener filesInDirectoryListener;
 
-    public ImageSearcherSwingWorker(Path sourceDirectory, Consumer<String> updateApplicationStatusLabel, Consumer<List<Path>> onSearchDone) {
+    public ImageSearcherSwingWorker(Path sourceDirectory, Consumer<String> updateApplicationStatusLabel, FilesInDirectoryListener filesInDirectoryListener) {
         super();
         this.sourceDirectory = sourceDirectory;
         this.updateApplicationStatusLabel = updateApplicationStatusLabel;
-        this.onSearchDone = onSearchDone;
+        this.filesInDirectoryListener = filesInDirectoryListener;
 
         this.fileSystemService = new FileSystemServiceImpl();
         this.imageConverterService = new ImageConverterServiceImpl();
     }
 
     @Override
-    protected List<Path> doInBackground() throws Exception {
+    protected List<Path> doInBackground() {
         log.debug("Starting to search image from directory {}", sourceDirectory);
-        return fileSystemService.getAllFiles(sourceDirectory, getAvailableReadExtensions(), this::onDirectoryProcessed);
+        return fileSystemService.getAllFilesInDirectory(sourceDirectory, getAvailableReadExtensions(), new FilesInDirectoryListenerImpl(), super::isCancelled);
     }
 
     private List<String> getAvailableReadExtensions() {
@@ -48,29 +49,53 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
 
     @Override
     protected void process(List<ChunkDTO> chunks) {
-        chunks.forEach(chunk -> {
-            String message = String.format("Searching for images: the directory %s contains %s processable images", chunk.directory.getFileName().toString(), chunk.numFiles);
-            updateApplicationStatusLabel.accept(message);
-        });
-    }
-
-    private void onDirectoryProcessed(Path path, int numFiles) {
-        publish(ChunkDTO.builder().directory(path).numFiles(numFiles).build());
+//        chunks.forEach(chunk -> {
+//            String message = String.format("Searching for images: the directory %s contains %s processable images", chunk.directory.getFileName().toString(), chunk.numFiles);
+//            updateApplicationStatusLabel.accept(message);
+//        });
     }
 
     @Override
     protected void done() {
-        try {
-            List<Path> processingJobResult = get();
-            onSearchDone.accept(processingJobResult);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
+        // NOTE: we're already passing the result through the FilesInDirectoryListenerImpl
+    }
+
+    public void shutdown(boolean b) {
+        this.cancel(b);
     }
 
     @Builder
     protected record ChunkDTO(
             Path directory,
-            int numFiles) {
+            long numFiles) {
     }
+
+    private class FilesInDirectoryListenerImpl implements FilesInDirectoryListener {
+        @Override
+        public void onDirectoryProcessed(long totalFiles, Path directory, long filesInDirectory) {
+            publish(ChunkDTO.builder().directory(directory).numFiles(filesInDirectory).build());
+            filesInDirectoryListener.onDirectoryProcessed(totalFiles, directory, filesInDirectory);
+        }
+
+        @Override
+        public void onFileFound(Path path) {
+            filesInDirectoryListener.onFileFound(path);
+        }
+
+        @Override
+        public void onUpdateTotalFile(Long numberOfDirectories) {
+            filesInDirectoryListener.onUpdateTotalFile(numberOfDirectories);
+        }
+
+        @Override
+        public void onDone(List<Path> result) {
+            filesInDirectoryListener.onDone(result);
+        }
+
+        @Override
+        public void onOperationAborted() {
+            filesInDirectoryListener.onOperationAborted();
+        }
+    }
+
 }

@@ -1,13 +1,16 @@
 package org.andreidodu.nocconvert.service;
 
-import java.io.File;
-import java.io.IOException;
+import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
+
 import java.nio.file.Path;
 import java.util.List;
-import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 public interface FileSystemService {
-    List<Path> getAllFiles(Path directoryPath, List<String> allowedFileExtensionList, BiConsumer<Path, Integer> onDirectoryProcessed) throws IOException;
+    List<Path> getAllFilesInDirectory(Path directoryPath,
+                                      List<String> allowedFileExtensionList,
+                                      FilesInDirectoryListener listener,
+                                      Supplier<Boolean> isCancelled);
 
     boolean containsAtLeaseOneFile(Path directoryPath);
 }

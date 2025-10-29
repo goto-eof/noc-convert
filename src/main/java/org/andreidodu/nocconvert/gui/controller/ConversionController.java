@@ -7,6 +7,7 @@ import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.gui.worker.ConversionWorker;
 import org.andreidodu.nocconvert.gui.worker.ImageSearcherSwingWorker;
+import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
 import org.andreidodu.nocconvert.service.ImageConverterService;
 import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
@@ -62,25 +63,78 @@ public class ConversionController {
                         conversionDTO.guiOrchestrator().setEnableSearchStepComponents(false);
                         startSearchForImagesStep();
 
-                        imageSearcherSwingWorker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), this::updateApplicationStatus, this::onSearchComplete);
+                        imageSearcherSwingWorker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), this::updateApplicationStatus, new FilesInDirectoryListenerImpl());
                         imageSearcherSwingWorker.execute();
                     } else if (SplitButtonComponent.Action.STOP.equals(conversionDTO.convertComponent().getAction())) {
-                        if (conversionWorker != null) {
-                            cancelActiveProcess();
-                        }
+                        cancelActiveProcess();
                     }
                 });
     }
 
 
+    private class FilesInDirectoryListenerImpl implements FilesInDirectoryListener {
+
+        @Override
+        public void onDirectoryProcessed(long totalFiles, Path directory, long filesInDirectory) {
+            SwingUtilities.invokeLater(() -> {
+                applicationStatusLabel.setText("found " + filesInDirectory + " in " + normalizeString(directory.getFileName().toString()));
+            });
+        }
+
+        private String normalizeString(String string) {
+            if (string == null || string.isEmpty()) {
+                return "";
+            }
+
+            if (string.length() > 30) {
+                return string.substring(0, 30);
+            }
+
+            return string;
+        }
+
+        @Override
+        public void onFileFound(Path path) {
+            SwingUtilities.invokeLater(() -> {
+                applicationStatusLabel.setText("File: " + path.getFileName().toString());
+            });
+        }
+
+        @Override
+        public void onUpdateTotalFile(Long numberOfFiles) {
+            SwingUtilities.invokeLater(() -> {
+                secondaryApplicationStatusLabel.setText(numberOfFiles + " Total Files");
+            });
+        }
+
+        @Override
+        public void onDone(List<Path> result) {
+            onSearchComplete(result);
+        }
+
+        @Override
+        public void onOperationAborted() {
+            ConversionController.this.onOperationAborted();
+        }
+    }
+
+    private void onOperationAborted() {
+        conversionDTO.guiOrchestrator().onOperationAborted();
+    }
+
+
     private void cancelActiveProcess() {
+
         if (conversionWorker != null && !conversionWorker.isDone()) {
             log.info("Cancelling active conversion process.");
             conversionWorker.shutdown(true);
-        } else if (imageSearcherSwingWorker != null && !imageSearcherSwingWorker.isDone()) {
-            imageSearcherSwingWorker.cancel(true);
+        }
+
+        if (imageSearcherSwingWorker != null && !imageSearcherSwingWorker.isDone()) {
+            imageSearcherSwingWorker.shutdown(true);
             onConversionDone();
         }
+
     }
 
     private void onSearchComplete(List<Path> paths) {
