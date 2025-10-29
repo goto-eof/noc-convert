@@ -45,12 +45,17 @@ public class FileSystemServiceImpl implements FileSystemService {
     }
 
     private static boolean isValidFile(Path file, List<String> allowedFileExtensionList) {
-        if (!Files.isRegularFile(file)) {
+        try {
+            if (!Files.isRegularFile(file)) {
+                return false;
+            }
+            String name = file.getFileName().toString().toLowerCase();
+            return allowedFileExtensionList.stream()
+                    .anyMatch(name::endsWith);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
             return false;
         }
-        String name = file.getFileName().toString().toLowerCase();
-        return allowedFileExtensionList.stream()
-                .anyMatch(name::endsWith);
     }
 
     @Override
