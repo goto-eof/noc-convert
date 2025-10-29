@@ -20,8 +20,6 @@ public class ConvertionStatusController {
 
     public ConvertionStatusController(ConvertionStatusDTO convertionStatusDTO) {
         this.convertionStatusDTO = convertionStatusDTO;
-
-        convertionStatusDTO.progressBar().setStringPainted(true);
     }
 
     public void onSearchStepFinish(Path destinationDirectory, String targetFormat, List<Path> paths) {
@@ -86,15 +84,19 @@ public class ConvertionStatusController {
     }
 
     public void enableProgressBar() {
-        convertionStatusDTO.conversionFileList().setModel(new DefaultListModel<>());
-        convertionStatusDTO.conversionFileListScrollPane().setVisible(false);
-        convertionStatusDTO.progressBarAndStatusPanel().setVisible(true);
-        convertionStatusDTO.progressBar().setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.conversionFileList().setModel(new DefaultListModel<>());
+            convertionStatusDTO.conversionFileListScrollPane().setVisible(false);
+            convertionStatusDTO.progressBarAndStatusPanel().setVisible(true);
+            convertionStatusDTO.progressBar().setVisible(true);
+        });
     }
 
     public void updateMainProgressBarMaxValue(int size) {
-        convertionStatusDTO.progressBar().setMaximum(size);
-        convertionStatusDTO.progressBar().setStringPainted(true);
+        SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.progressBar().setMaximum(size);
+            convertionStatusDTO.progressBar().setStringPainted(true);
+        });
     }
 
     public void conversionDone() {
@@ -102,30 +104,41 @@ public class ConvertionStatusController {
     }
 
     public void updateMainProgressBarProgress(int completedItems) {
-        convertionStatusDTO.progressBar().setValue(completedItems);
+        SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.progressBar().setValue(completedItems);
+        });
     }
 
     public void incrementMainProgressBarProgress() {
-        convertionStatusDTO.progressBar().setValue(convertionStatusDTO.progressBar().getValue() + 1);
+        SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.progressBar().setValue(convertionStatusDTO.progressBar().getValue() + 1);
+        });
     }
 
     public void startSearch() {
-        convertionStatusDTO.scrollPanePanel().setVisible(false);
+        SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.scrollPanePanel().setVisible(false);
+        });
     }
 
     public void noFileFound() {
-        convertionStatusDTO.conversionFileListScrollPane().setVisible(false);
-        convertionStatusDTO.progressBarAndStatusPanel().setVisible(false);
-        convertionStatusDTO.progressBar().setVisible(false);
+        SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.conversionFileListScrollPane().setVisible(false);
+            convertionStatusDTO.progressBarAndStatusPanel().setVisible(false);
+            convertionStatusDTO.progressBar().setVisible(false);
+        });
     }
 
     public void onAllTaskComplete() {
-        convertionStatusDTO.progressBar().setForeground(Colors.LIME_DARK);
-        convertionStatusDTO.progressBar().setValue(convertionStatusDTO.progressBar().getMaximum());
-
+        SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.progressBar().setForeground(Colors.LIME_DARK);
+            convertionStatusDTO.progressBar().setValue(convertionStatusDTO.progressBar().getMaximum());
+        });
     }
 
     public void onConversionStart() {
-        convertionStatusDTO.progressBar().setForeground(Colors.ACCENT_BLUE);
+        SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.progressBar().setForeground(Colors.ACCENT_BLUE);
+        });
     }
 }

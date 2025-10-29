@@ -6,7 +6,7 @@ import java.util.List;
 public interface FilesInDirectoryListener {
     void onDirectoryProcessed(long totalFiles, Path directory, long filesInDirectory);
 
-    void onFileFound(Path path);
+    void onFileFound(Path filename);
 
     void onUpdateTotalFile(Long numberOfDirectories);
 

@@ -78,8 +78,8 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
         }
 
         @Override
-        public void onFileFound(Path path) {
-            filesInDirectoryListener.onFileFound(path);
+        public void onFileFound(Path filename) {
+            filesInDirectoryListener.onFileFound(filename);
         }
 
         @Override

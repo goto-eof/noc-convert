@@ -18,6 +18,7 @@ import javax.swing.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 public class ConversionController {
@@ -28,6 +29,8 @@ public class ConversionController {
     private final JLabel secondaryApplicationStatusLabel;
     private ConversionWorker conversionWorker;
     private ImageSearcherSwingWorker imageSearcherSwingWorker;
+    private List<Path> paths;
+    private int processedItems;
 
     public ConversionController(ConversionDTO conversionDTO) {
         this.conversionDTO = conversionDTO;
@@ -77,7 +80,7 @@ public class ConversionController {
         @Override
         public void onDirectoryProcessed(long totalFiles, Path directory, long filesInDirectory) {
             SwingUtilities.invokeLater(() -> {
-                applicationStatusLabel.setText("found " + filesInDirectory + " in " + normalizeString(directory.getFileName().toString()));
+                applicationStatusLabel.setText("found " + filesInDirectory + " file(s) in " + normalizeString(directory.getFileName().toString()));
             });
         }
 
@@ -94,16 +97,16 @@ public class ConversionController {
         }
 
         @Override
-        public void onFileFound(Path path) {
+        public void onFileFound(Path filename) {
             SwingUtilities.invokeLater(() -> {
-                applicationStatusLabel.setText("File: " + path.getFileName().toString());
+                applicationStatusLabel.setText("File: " + filename.getFileName().toString());
             });
         }
 
         @Override
         public void onUpdateTotalFile(Long numberOfFiles) {
             SwingUtilities.invokeLater(() -> {
-                secondaryApplicationStatusLabel.setText(numberOfFiles + " Total Files");
+                secondaryApplicationStatusLabel.setText(numberOfFiles + " Total Images");
             });
         }
 
@@ -160,6 +163,7 @@ public class ConversionController {
             conversionDTO.guiOrchestrator().noFilesFound();
             return;
         }
+        this.paths = paths;
         conversionDTO.guiOrchestrator().onSearchStepFinish(conversionDTO.convertComponent().getSelectedItem().getExtension(), paths);
     }
 
@@ -173,6 +177,9 @@ public class ConversionController {
         ConversionItemDTOMapper conversionItemDTOMapper = new ConversionItemDTOMapper();
         list = list.stream().map(conversionItemDTOMapper::clone).toList();
         conversionDTO.guiOrchestrator().onConversionStart();
+
+        this.processedItems = 0;
+
         conversionWorker = new ConversionWorker(list, this::updateList, this::onConversionDone, this::onItemCompleted, this::onAllTasksComplete);
         conversionWorker.execute();
         conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(list.size());
@@ -182,13 +189,21 @@ public class ConversionController {
         conversionDTO.guiOrchestrator().onConversionDone();
     }
 
-    private void onItemCompleted() {
+    private void onItemCompleted(ConversionItemDTO item) {
         conversionDTO.guiOrchestrator().incrementMainProgressBarProgress();
+        processedItems++;
+
+        Optional.ofNullable(paths).ifPresent(paths -> {
+            applicationStatusLabel.setText("Converted " + processedItems + " of " + paths.size() + " Images. Please wait.");
+            conversionDTO.secondaryApplicationStatusLabel().setText("Processed " + processedItems + "/" + paths.size() + " Images...");
+        });
     }
 
     private void onConversionDone() {
-        conversionDTO.guiOrchestrator().setEnableSearchStepComponents(true);
-        conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(true);
+        SwingUtilities.invokeLater(() -> {
+            conversionDTO.guiOrchestrator().setEnableSearchStepComponents(true);
+            conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(true);
+        });
 
         conversionDTO.guiOrchestrator().onConversionDone();
 
@@ -237,14 +252,17 @@ public class ConversionController {
     }
 
     public void noFileFound() {
-        conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(true);
-        conversionDTO.convertComponent().getMainActionButton().setEnabled(true);
-        conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);
-
+        SwingUtilities.invokeLater(() -> {
+            enableConvertButtons(true);
+            conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);
+        });
     }
 
-    public void enableButtons(boolean b) {
-        conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(b);
-        conversionDTO.convertComponent().getMainActionButton().setEnabled(b);
+    public void enableConvertButtons(boolean value) {
+        SwingUtilities.invokeLater(() -> {
+            conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(value);
+            conversionDTO.convertComponent().getMainActionButton().setEnabled(value);
+        });
+
     }
 }

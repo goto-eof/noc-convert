@@ -92,10 +92,13 @@ public class GUIOrchestrator extends JFrame {
 
     private void postInitialization() {
         initializeWindow();
-        String message = "Please select the Source and the Destination Directories and press on the Convert button";
-        applicationStatusLabel.setText(message);
-        secondaryApplicationStatusLabel.setText("Waiting for user actions");
-        scrollPanePanel.setVisible(false);
+        String messageFull = "Please select the Source and the Destination Directories and press on the Convert button";
+        String messageShort = "Waiting for user actions";
+        SwingUtilities.invokeLater(() -> {
+            applicationStatusLabel.setText(messageFull);
+            secondaryApplicationStatusLabel.setText(messageShort);
+            scrollPanePanel.setVisible(false);
+        });
 
 
         PerformanceUtil.checkVThreadPerformance(new AdaptiveGovernorRunnable.AdaptiveTestListener() {
@@ -103,7 +106,7 @@ public class GUIOrchestrator extends JFrame {
             @Override
             public void onOptimizationStart() {
                 SwingUtilities.invokeLater(() -> {
-                    conversionController.enableButtons(false);
+                    conversionController.enableConvertButtons(false);
                     secondaryApplicationStatusLabel.setText("Starting performance optimization...");
                 });
                 log.info("Running performance workload tests......");
@@ -116,26 +119,28 @@ public class GUIOrchestrator extends JFrame {
                     secondaryApplicationStatusLabel.setText(message);
                     secondaryApplicationStatusLabel.repaint();
                 });
-                log.info(message);
+                log.info(messageFull);
             }
 
             @Override
             public void onOptimizationComplete(int finalOptimalLimit) {
                 SwingUtilities.invokeLater(() -> {
-                    conversionController.enableButtons(true);
+                    conversionController.enableConvertButtons(true);
                     pathSelectionController.enableButtons(true);
                     String message = "Optimal configuration found. I will use " + finalOptimalLimit + " V-Threads";
                     secondaryApplicationStatusLabel.setText(message);
                 });
-                log.info(message);
+                log.info(messageFull);
             }
         });
     }
 
     private void preInitialization() {
-        convertComponent = new SplitButtonComponent(this);
-        convertComponent.getDropdownToggleButton().setEnabled(false);
-        convertComponent.getMainActionButton().setEnabled(false);
+        SwingUtilities.invokeLater(() -> {
+            convertComponent = new SplitButtonComponent(this);
+            convertComponent.getDropdownToggleButton().setEnabled(false);
+            convertComponent.getMainActionButton().setEnabled(false);
+        });
     }
 
     private PathSelectionController initializePathSelectionController() {
@@ -164,11 +169,6 @@ public class GUIOrchestrator extends JFrame {
         return pathSelectionController.getPathSelectionRawDTO().getSourceDirectory();
     }
 
-    public Path getDestinationDirectory() {
-        return pathSelectionController.getPathSelectionRawDTO().getDestinationDirectory();
-    }
-
-
     private ConversionController initializeConversionController() {
         ConversionDTO conversionDTO = ConversionDTO.builder()
                 .guiOrchestrator(this)
@@ -179,7 +179,6 @@ public class GUIOrchestrator extends JFrame {
                 .build();
         return new ConversionController(conversionDTO);
     }
-
 
     private void initializeWindow() {
         setTitle("NoCloud Bulk Image Converter");
@@ -378,29 +377,31 @@ public class GUIOrchestrator extends JFrame {
 
 
     private void createUIComponents() {
+
         sourceComponent = new TextfieldButtonComponent("", "Source");
         destinationComponent = new TextfieldButtonComponent("", "Destination");
-
         headerPanel = new JPanel();
-        Color headerBorderColor = new Color(168, 172, 174, 255);
-        headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, headerBorderColor));
-
         conversionFileList = new JList<>();
-        conversionFileList.setCellRenderer(new ListItemRenderer());
+        conversionFileListScrollPane = new JScrollPane();
 
         footerPanel = new JPanel(new BorderLayout(0, 0));
-        footerPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, headerBorderColor));
+        SwingUtilities.invokeLater(() -> {
+            Color headerBorderColor = new Color(168, 172, 174, 255);
+            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, headerBorderColor));
 
-        conversionFileListScrollPane = new JScrollPane();
-        conversionFileListScrollPane.setVisible(false);
-        conversionFileListScrollPane.setViewportView(conversionFileList);
-        conversionFileListScrollPane.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+            conversionFileList.setCellRenderer(new ListItemRenderer());
+
+            footerPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, headerBorderColor));
+
+            conversionFileListScrollPane.setVisible(false);
+            conversionFileListScrollPane.setViewportView(conversionFileList);
+            conversionFileListScrollPane.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+        });
 
 
         scrollPanePanel = new JPanel() {
             {
                 setOpaque(false);
-
             }
 
             @Override
@@ -420,7 +421,6 @@ public class GUIOrchestrator extends JFrame {
             }
 
         };
-
     }
 
     public void setEnableSearchStepComponents(boolean bool) {
@@ -428,16 +428,17 @@ public class GUIOrchestrator extends JFrame {
     }
 
     public void onSearchStepFinish(String targetFormat, List<Path> paths) {
+        String messageFullSearchStop = String.format("Search step done! %s processable images found.", paths.size());
+        String messageShortFullSearchStop = "Search done: " + paths.size() + " image(s) found";
+        String messageStartImageConversion = String.format("<html>Converting %s images. Please wait.</html>", paths.size());
+        String messageShortProcessing = "Processing...";
 
         SwingUtilities.invokeLater(() -> {
-            String message = String.format("Search step done! %s processable images found.", paths.size());
-            applicationStatusLabel.setText(message);
-            secondaryApplicationStatusLabel.setText("Search done: " + paths.size() + " image(s) found");
+            secondaryApplicationStatusLabel.setText(messageShortFullSearchStop);
+            applicationStatusLabel.setText(messageFullSearchStop);
             applicationStatusLabel.setVisible(true);
-
-            message = String.format("Processing %s images... Please wait.", paths.size());
-            applicationStatusLabel.setText(message);
-            secondaryApplicationStatusLabel.setText("Processing...");
+            applicationStatusLabel.setText(messageStartImageConversion);
+            secondaryApplicationStatusLabel.setText(messageShortProcessing);
         });
 
         Path destinationDirectory = pathSelectionController.getPathSelectionRawDTO().getDestinationDirectory();
@@ -474,10 +475,11 @@ public class GUIOrchestrator extends JFrame {
     }
 
     public void noFilesFound() {
+        String messageFull = "No file found in the source directory";
+        String messageShort = "The source directory is empty";
         SwingUtilities.invokeLater(() -> {
-            String message = "No file found in the source directory";
-            applicationStatusLabel.setText(message);
-            secondaryApplicationStatusLabel.setText("The source directory is empty");
+            applicationStatusLabel.setText(messageFull);
+            secondaryApplicationStatusLabel.setText(messageShort);
         });
         conversionController.noFileFound();
         convertionStatusController.noFileFound();
@@ -486,10 +488,11 @@ public class GUIOrchestrator extends JFrame {
 
 
     public void onOperationAborted() {
+        String messageFull = "Operation aborted by the user";
+        String messageShort = "Operation aborted";
         SwingUtilities.invokeLater(() -> {
-            String message = "Operation aborted by the user";
-            applicationStatusLabel.setText(message);
-            secondaryApplicationStatusLabel.setText("Operation aborted");
+            applicationStatusLabel.setText(messageFull);
+            secondaryApplicationStatusLabel.setText(messageShort);
         });
         conversionController.noFileFound();
         convertionStatusController.noFileFound();

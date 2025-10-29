@@ -17,18 +17,18 @@ import java.util.function.Consumer;
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
     private final Consumer<ConversionItemDTO> publish;
-    private final Runnable onItemCompleted;
+    private final Consumer<ConversionItemDTO> onItemCompleted;
     @Getter
     private final ExecutorService executorService;
     private final List<ConversionItemDTO> conversionItemDTOList;
     private List<ConvertSingleItemTask> taskList;
     private static Semaphore semaphore;
-    private Runnable onAllTasksComplete;
+    private final Runnable onAllTasksComplete;
 
     public ConversionOrchestrator(
             List<ConversionItemDTO> conversionItemDTOList,
             Consumer<ConversionItemDTO> publish,
-            Runnable onItemCompleted,
+            Consumer<ConversionItemDTO> onItemCompleted,
             Runnable onAllTasksComplete
     ) {
 
@@ -60,7 +60,7 @@ public class ConversionOrchestrator {
             shutdown();
         } catch (Exception e) {
             shutdown();
-        }finally {
+        } finally {
             onAllTasksComplete.run();
         }
     }

@@ -13,11 +13,11 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
     private final List<ConversionItemDTO> list;
     private final Consumer<List<ConversionItemDTO>> updateGui;
     private final Runnable onDone;
-    private final Runnable onItemCompleted;
+    private final Consumer<ConversionItemDTO> onItemCompleted;
     private ConversionOrchestrator conversionOrchestrator;
     private final Runnable onAllTasksComplete;
 
-    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui, Runnable onDone, Runnable onItemCompleted, Runnable onAllTasksComplete) {
+    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui, Runnable onDone, Consumer<ConversionItemDTO>  onItemCompleted, Runnable onAllTasksComplete) {
         this.list = list;
         this.updateGui = updateGui;
         this.onDone = onDone;

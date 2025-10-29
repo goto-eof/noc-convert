@@ -17,7 +17,7 @@ public class ConvertSingleItemTask implements Runnable {
     private final Consumer<ConversionItemDTO> publish;
     private final ConversionItemDTO conversionItemDTO;
     private final ImageConverterService imageConverterService;
-    private final Runnable onItemCompleted;
+    private final Consumer<ConversionItemDTO> onItemCompleted;
     private LocalDateTime lastCall = LocalDateTime.now();
     private boolean canceled = false;
     private final Semaphore semaphore;
@@ -25,7 +25,7 @@ public class ConvertSingleItemTask implements Runnable {
     public ConvertSingleItemTask(
             ConversionItemDTO conversionItemDTO,
             Consumer<ConversionItemDTO> publish,
-            Runnable onItemCompleted,
+            Consumer<ConversionItemDTO> onItemCompleted,
             Semaphore semaphore
     ) {
         this.conversionItemDTO = conversionItemDTO;
@@ -85,7 +85,7 @@ public class ConvertSingleItemTask implements Runnable {
             conversionItemDTO.setErrorMessage(e.getMessage());
             publish.accept(conversionItemDTO);
         } finally {
-            onItemCompleted.run();
+            onItemCompleted.accept(conversionItemDTO);
             semaphore.release();
         }
 
