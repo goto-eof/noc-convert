@@ -60,7 +60,7 @@ public class FileSystemServiceImpl implements FileSystemService {
             }
             listener.onUpdateTotalFile(totalFiles);
         }
-        listener.onDone(result);
+        listener.onSearchDone(result);
         return result;
     }
 

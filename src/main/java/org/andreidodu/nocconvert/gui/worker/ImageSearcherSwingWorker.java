@@ -4,9 +4,8 @@ import lombok.Builder;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 import org.andreidodu.nocconvert.service.FileSystemService;
-import org.andreidodu.nocconvert.service.ImageConverterService;
 import org.andreidodu.nocconvert.service.impl.FileSystemServiceImpl;
-import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
+import org.andreidodu.nocconvert.util.ImageConverterUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,7 +19,7 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
 
     private final Path sourceDirectory;
     private final FileSystemService fileSystemService;
-    private final ImageConverterService imageConverterService;
+    private final ImageConverterUtil imageConverterService;
     private final Consumer<String> updateApplicationStatusLabel;
     private final FilesInDirectoryListener filesInDirectoryListener;
 
@@ -31,7 +30,7 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
         this.filesInDirectoryListener = filesInDirectoryListener;
 
         this.fileSystemService = new FileSystemServiceImpl();
-        this.imageConverterService = new ImageConverterServiceImpl();
+        this.imageConverterService = new ImageConverterUtil();
     }
 
     @Override
@@ -88,8 +87,8 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
         }
 
         @Override
-        public void onDone(List<Path> result) {
-            filesInDirectoryListener.onDone(result);
+        public void onSearchDone(List<Path> result) {
+            filesInDirectoryListener.onSearchDone(result);
         }
 
         @Override

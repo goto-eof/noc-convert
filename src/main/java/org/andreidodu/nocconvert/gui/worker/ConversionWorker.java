@@ -12,26 +12,34 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
     private static final Logger log = LogManager.getLogger(ConversionWorker.class);
     private final List<ConversionItemDTO> list;
     private final Consumer<List<ConversionItemDTO>> updateGui;
-    private final Runnable onDone;
+    private final Runnable onConversionDone;
     private final Consumer<ConversionItemDTO> onItemCompleted;
     private ConversionOrchestrator conversionOrchestrator;
     private final Runnable onAllTasksComplete;
 
-    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui, Runnable onDone, Consumer<ConversionItemDTO>  onItemCompleted, Runnable onAllTasksComplete) {
+    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui, Runnable onConversionDone, Consumer<ConversionItemDTO> onItemCompleted, Runnable onAllTasksComplete) {
         this.list = list;
         this.updateGui = updateGui;
-        this.onDone = onDone;
+        this.onConversionDone = onConversionDone;
         this.onItemCompleted = onItemCompleted;
         this.onAllTasksComplete = onAllTasksComplete;
     }
 
     @Override
-    protected Void doInBackground() throws Exception {
+    protected Void doInBackground() {
         conversionOrchestrator = new ConversionOrchestrator(list, this::publishItem, onItemCompleted, onAllTasksComplete);
         conversionOrchestrator.startConversion();
         return null;
     }
 
+    public int getVirtualThreadsPermits() {
+        return conversionOrchestrator.getVirtualThreadsPermits();
+    }
+
+
+    public int getPlatformThreadsPermits() {
+        return conversionOrchestrator.getPlatformThreadsPermits();
+    }
 
     private void cancelOrchestratorJob() {
         if (conversionOrchestrator != null) {
@@ -53,12 +61,13 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
         if (isCancelled()) {
             log.debug("Conversion Worker cancelled.");
         }
-        this.onDone.run();
+        this.onConversionDone.run();
     }
 
     public void shutdown(boolean shutdown) {
         cancelOrchestratorJob();
         this.cancel(shutdown);
-
+        this.onConversionDone.run();
     }
+
 }

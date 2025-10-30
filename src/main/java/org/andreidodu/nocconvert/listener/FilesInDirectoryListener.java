@@ -10,7 +10,7 @@ public interface FilesInDirectoryListener {
 
     void onUpdateTotalFile(Long numberOfDirectories);
 
-    void onDone(List<Path> result);
+    void onSearchDone(List<Path> result);
 
     void onOperationAborted();
 }

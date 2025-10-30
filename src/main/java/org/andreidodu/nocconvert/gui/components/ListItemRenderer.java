@@ -27,7 +27,7 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
     private final JPanel contentPanel;
     private final JPanel topPanel;
     private final JPanel wrapperPanel;
-    private final JLabel errorMessage;
+    private final JTextArea errorMessage;
     private Color statusLabelBackground = LIME_SUPER_DARK;
 
     public ListItemRenderer() {
@@ -170,8 +170,12 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
 
         add(wrapperPanel, BorderLayout.CENTER);
 
-        errorMessage = new JLabel();
+        errorMessage = new JTextArea();
+        errorMessage.setWrapStyleWord(true);
+        errorMessage.setLineWrap(true);
+        errorMessage.setEnabled(false);
         errorMessage.setOpaque(true);
+        errorMessage.setBackground(LIST_BG);
         errorMessage.setForeground(RED);
         errorMessage.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
 
@@ -203,8 +207,10 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
 
         if (currentItemDTO.getErrorMessage() != null) {
             errorMessage.setText(currentItemDTO.getErrorMessage());
+            errorMessage.setVisible(true);
         } else {
             errorMessage.setText("");
+            errorMessage.setVisible(false);
         }
 
         targetFormat.setText(currentItemDTO.getTargetFormat());

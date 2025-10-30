@@ -3,7 +3,7 @@ package org.andreidodu.nocconvert.gui.util;
 import java.awt.geom.GeneralPath;
 
 public class ShapeUtil {
-    private static final float DEFAULT_ARC_SIZE = 10;
+    private static final float DEFAULT_ARC_SIZE = 5;
 
     public static GeneralPath getRoundedWestPath(int width, int height) {
         return getRoundedWestPath(width, height, DEFAULT_ARC_SIZE);

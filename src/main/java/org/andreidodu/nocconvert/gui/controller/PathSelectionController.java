@@ -72,7 +72,7 @@ public class PathSelectionController {
 
     private Boolean isUserWantToContinue() {
         int response = JOptionPane.showConfirmDialog(pathSelectionDTO.guiOrchestrator(),
-                "The destination directory contains at least one file. Some files or all files in the destination directory could be override.\nDo you want to continue?",
+                "The destination directory contains at least one file. New files will be renamed if the same filename will be find in the directory.\nDo you want to continue?",
                 "WARNING!",
                 JOptionPane.YES_NO_OPTION);
 

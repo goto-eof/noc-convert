@@ -14,16 +14,24 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
+
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
     private final Consumer<ConversionItemDTO> publish;
     private final Consumer<ConversionItemDTO> onItemCompleted;
-    @Getter
-    private final ExecutorService executorService;
+    private final ExecutorService virtualThreadExecutor;
     private final List<ConversionItemDTO> conversionItemDTOList;
-    private List<ConvertSingleItemTask> taskList;
+    private List<ConvertSingleItemTask> virtualTaskList;
     private static Semaphore semaphore;
     private final Runnable onAllTasksComplete;
+    private final ExecutorService platformExecutorService;
+    @Getter
+    private final int platformThreadsPermits;
+    @Getter
+    private final int virtualThreadsPermits;
+    @Getter
+    private final int permits = AdaptiveSimpleGovernorRunnable.IDEAL_NUM_OF_THREADS.get();
 
     public ConversionOrchestrator(
             List<ConversionItemDTO> conversionItemDTOList,
@@ -36,39 +44,63 @@ public class ConversionOrchestrator {
         this.onItemCompleted = onItemCompleted;
         this.onAllTasksComplete = onAllTasksComplete;
         this.conversionItemDTOList = conversionItemDTOList;
-        executorService = Executors.newVirtualThreadPerTaskExecutor();
-        semaphore = new Semaphore(AdaptiveSimpleGovernorRunnable.IDEAL_NUM_OF_THREADS.get());
+        virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
+
+        platformThreadsPermits = permits;
+        platformExecutorService = Executors.newFixedThreadPool(platformThreadsPermits);
+
+        virtualThreadsPermits = calculateSafeValueWithoutXPercent(permits, 30);
+        semaphore = new Semaphore(virtualThreadsPermits);
     }
 
+
     public void startConversion() {
-        taskList = new ArrayList<>();
+        virtualTaskList = new ArrayList<>();
         for (ConversionItemDTO conversionItemDTO : conversionItemDTOList) {
-            ConvertSingleItemTask task = new ConvertSingleItemTask(conversionItemDTO, publish, onItemCompleted, semaphore);
-            taskList.add(task);
-            executorService.submit(task);
+            ConvertSingleItemTask task = new ConvertSingleItemTask(conversionItemDTO, publish, onItemCompleted, semaphore, platformExecutorService);
+            virtualTaskList.add(task);
+            virtualThreadExecutor.submit(task);
         }
+        onCompleteAll();
+    }
+
+    private void onCompleteAll() {
         try {
-            getExecutorService().shutdown();
-            boolean terminated = getExecutorService().awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS);
+            virtualThreadExecutor.shutdown();
+            boolean terminated = virtualThreadExecutor.awaitTermination(31, TimeUnit.DAYS);
             if (!terminated) {
-                log.error("Executor did not terminate in time. Forcing emergency shutdown.");
-                getExecutorService().shutdownNow();
+                log.error("virtualThreadExecutor did not terminate in time. Forcing emergency shutdown.");
+                virtualTaskList.forEach(ConvertSingleItemTask::closeStreams);
             }
+
+            platformExecutorService.shutdown();
+            boolean platformExecutorShutdown = platformExecutorService.awaitTermination(31, TimeUnit.DAYS);
+            if (!platformExecutorShutdown) {
+                log.error("platformExecutorService did not terminate in time. Forcing emergency shutdown.");
+                platformExecutorService.shutdownNow();
+            }
+
+            virtualThreadExecutor.shutdownNow();
+
         } catch (InterruptedException e) {
             log.warn("Conversion Worker interrupted (user STOP action). Forcing Orchestrator cancel.", e);
             Thread.currentThread().interrupt();
-            shutdown();
-        } catch (Exception e) {
-            shutdown();
         } finally {
+            shutdown();
             onAllTasksComplete.run();
         }
     }
 
     public void shutdown() {
-        if (executorService != null && !executorService.isTerminated()) {
-            taskList.forEach(ConvertSingleItemTask::closeStreams);
-            this.executorService.shutdownNow();
+
+        if (platformExecutorService != null && !platformExecutorService.isTerminated()) {
+            platformExecutorService.shutdownNow();
         }
+
+        if (virtualThreadExecutor != null && !virtualThreadExecutor.isTerminated()) {
+            virtualTaskList.forEach(ConvertSingleItemTask::closeStreams);
+            this.virtualThreadExecutor.shutdownNow();
+        }
+
     }
 }

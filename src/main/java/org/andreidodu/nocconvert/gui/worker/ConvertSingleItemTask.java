@@ -9,8 +9,11 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
+
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class ConvertSingleItemTask implements Runnable {
     private static final Logger log = LogManager.getLogger(ConvertSingleItemTask.class);
@@ -21,16 +24,19 @@ public class ConvertSingleItemTask implements Runnable {
     private LocalDateTime lastCall = LocalDateTime.now();
     private boolean canceled = false;
     private final Semaphore semaphore;
+    private final ExecutorService platformExecutorService;
 
     public ConvertSingleItemTask(
             ConversionItemDTO conversionItemDTO,
             Consumer<ConversionItemDTO> publish,
             Consumer<ConversionItemDTO> onItemCompleted,
-            Semaphore semaphore
+            Semaphore semaphore,
+            ExecutorService platformExecutorService
     ) {
         this.conversionItemDTO = conversionItemDTO;
         this.publish = publish;
-        this.imageConverterService = new ImageConverterServiceImpl();
+        this.platformExecutorService = platformExecutorService;
+        this.imageConverterService = new ImageConverterServiceImpl(this.platformExecutorService);
         this.onItemCompleted = onItemCompleted;
         this.semaphore = semaphore;
     }
@@ -48,12 +54,6 @@ public class ConvertSingleItemTask implements Runnable {
         }
         conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
         conversionItemDTO.setProgressPercentage(progress);
-        publish.accept(conversionItemDTO);
-    }
-
-    private void onDone() {
-        conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
-        conversionItemDTO.setProgressPercentage(100f);
         publish.accept(conversionItemDTO);
     }
 
@@ -75,20 +75,20 @@ public class ConvertSingleItemTask implements Runnable {
                     conversionItemDTO.getDestinationDirectory(),
                     conversionItemDTO.getTargetExtension(),
                     this::onStart,
-                    this::onProgressController,
-                    this::onDone,
-                    this::writeAborted);
+                    this::onProgressController
+            );
+            conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
+            onItemCompleted.accept(conversionItemDTO);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             conversionItemDTO.setStatus(ConversionStatus.FAILED);
             conversionItemDTO.setProgressPercentage(100f);
-            conversionItemDTO.setErrorMessage(e.getMessage());
+            conversionItemDTO.setErrorMessage(getRootCauseMessage(e));
             publish.accept(conversionItemDTO);
-        } finally {
             onItemCompleted.accept(conversionItemDTO);
+        } finally {
             semaphore.release();
         }
-
     }
 
     private void onProgressController(float progress) {
@@ -101,9 +101,5 @@ public class ConvertSingleItemTask implements Runnable {
     public void closeStreams() {
         this.canceled = true;
         imageConverterService.cancelTask();
-    }
-
-    public void writeAborted(String errorMessage) {
-
     }
 }
