@@ -7,10 +7,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
@@ -49,7 +46,7 @@ public class AdaptiveSimpleGovernorRunnable {
     private void stressTestTask() {
         com.sun.management.OperatingSystemMXBean osBean = getOperatingSystemMXBean();
         startScheduledService(osBean);
-        Thread.ofPlatform().start(this::startStressTestThreads);
+        Thread.ofVirtual().start(this::startStressTestThreads);
     }
 
     private static com.sun.management.OperatingSystemMXBean getOperatingSystemMXBean() {
@@ -79,7 +76,6 @@ public class AdaptiveSimpleGovernorRunnable {
         double cpuLoad = osBean.getCpuLoad();
         int percentage = (int) (cpuLoad * 100);
         adaptiveTestListener.onOptimizationProgress("stress testing", currentPTID.get(), percentage);
-        //
         if (wereDoneAtLeastXTests(2) && percentage >= 80 && percentage <= 90.0 && isRunning.get()) {
             IDEAL_NUM_OF_THREADS.set(Integer.max(IDEAL_NUM_OF_THREADS.get(), currentPTID.get()));
             log.info("Ideal number of threads is: {}", IDEAL_NUM_OF_THREADS);
@@ -99,10 +95,44 @@ public class AdaptiveSimpleGovernorRunnable {
     }
 
     private void intensiveTask(int id) {
+
+
+        FutureTask<Boolean> future = new FutureTask<>(() -> task(id));
+        Thread.ofPlatform().start(future);
+        try {
+            future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.error(e.getCause().getMessage(), e.getCause());
+            throw new RuntimeException(e);
+        }
+        sleep();
+        lessIntensiveTask(id);
+        sleep();
+        lessIntensiveTask(id);
+        sleep();
+        lessIntensiveTask(id);
+
+    }
+
+    private void lessIntensiveTask(int id) {
+        int i = 1000000;
+        while (i-- > 0) ;
+    }
+
+    private void sleep() {
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private boolean task(int id) {
         double i = 0;
         while (isShouldRun(id, i)) {
             i = updateIncrementor(i);
         }
+        return true;
     }
 
     private static double updateIncrementor(double i) {
