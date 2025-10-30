@@ -85,7 +85,7 @@ public class AdaptiveSimpleGovernorRunnable {
         int percentage = (int) (cpuLoad * 100);
         adaptiveTestListener.onOptimizationProgress("stress testing", currentPTID.get(), percentage);
         if (wereDoneAtLeastXTests(2) && percentage >= 80 && percentage <= 90.0 && isRunning.get()) {
-            IDEAL_NUM_OF_THREADS.set(Integer.max(IDEAL_NUM_OF_THREADS.get(), currentPTID.get()));
+            IDEAL_NUM_OF_THREADS.set(Integer.max(2, currentPTID.get()));
             log.info("Ideal number of threads is: {}", IDEAL_NUM_OF_THREADS);
         } else if (percentage < 80) {
             log.debug("Canceled watchdog task because percentage is less than 80");
