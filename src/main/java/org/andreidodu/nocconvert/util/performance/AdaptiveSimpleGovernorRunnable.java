@@ -56,8 +56,10 @@ public class AdaptiveSimpleGovernorRunnable {
 
     private void startStressTestThreads() {
         try (ExecutorService executor = Executors.newCachedThreadPool()) {
+            log.debug("Starting stress test threads");
             IntStream.range(0, NUM_PROCESSORS)
                     .forEach(index -> executor.submit(() -> intensiveTask(index)));
+            log.debug("Completed test threads submission");
         }
     }
 
@@ -70,6 +72,7 @@ public class AdaptiveSimpleGovernorRunnable {
         currentPTID.set(currentPTID.get() - 1);
         if (currentPTID.get() <= DEFAULT_INITIAL_NUM_OF_THREADS) {
             cancel(scheduledExecutorService);
+            log.debug("Canceled watchdog task because num. of threads is less than default");
             return;
         }
 
@@ -80,6 +83,7 @@ public class AdaptiveSimpleGovernorRunnable {
             IDEAL_NUM_OF_THREADS.set(Integer.max(IDEAL_NUM_OF_THREADS.get(), currentPTID.get()));
             log.info("Ideal number of threads is: {}", IDEAL_NUM_OF_THREADS);
         } else if (percentage < 80) {
+            log.debug("Canceled watchdog task because percentage is less than 80");
             cancel(scheduledExecutorService);
         }
     }
@@ -95,7 +99,7 @@ public class AdaptiveSimpleGovernorRunnable {
     }
 
     private void intensiveTask(int id) {
-
+        log.debug("Starting intensive task for id {}", id);
 
         FutureTask<Boolean> future = new FutureTask<>(() -> task(id));
         Thread.ofPlatform().start(future);
@@ -105,12 +109,16 @@ public class AdaptiveSimpleGovernorRunnable {
             log.error(e.getCause().getMessage(), e.getCause());
             throw new RuntimeException(e);
         }
+        log.debug("Submitted intensive pt for id {}", id);
+
         sleep();
         lessIntensiveTask(id);
         sleep();
         lessIntensiveTask(id);
         sleep();
         lessIntensiveTask(id);
+        log.debug("Finished intensive task for id {}", id);
+
 
     }
 
