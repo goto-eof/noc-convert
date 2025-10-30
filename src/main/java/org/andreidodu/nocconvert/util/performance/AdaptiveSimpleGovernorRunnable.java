@@ -76,6 +76,7 @@ public class AdaptiveSimpleGovernorRunnable {
         log.debug("watchdog task for thread {}", currentPTID.get());
         currentPTID.set(currentPTID.get() - 1);
         if (currentPTID.get() <= 2) {
+            IDEAL_NUM_OF_THREADS.set(2);
             cancel(scheduledExecutorService);
             log.debug("Canceled watchdog task because num. of threads is less than default");
             return;
