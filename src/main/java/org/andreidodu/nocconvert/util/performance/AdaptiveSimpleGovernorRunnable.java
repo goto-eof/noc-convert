@@ -34,6 +34,7 @@ public class AdaptiveSimpleGovernorRunnable {
         log.info("-----------------------");
 
         adaptiveTestListener.onOptimizationStart();
+        log.info("cpus: {}", NUM_PROCESSORS);
         executeStressTestOnNewThread();
     }
 
@@ -44,8 +45,11 @@ public class AdaptiveSimpleGovernorRunnable {
     }
 
     private void stressTestTask() {
+        log.debug("creating main threads");
         com.sun.management.OperatingSystemMXBean osBean = getOperatingSystemMXBean();
+        log.debug("creating watchdog thread");
         startScheduledService(osBean);
+        log.debug("running stress test main thread");
         Thread.ofPlatform().start(this::startStressTestThreads);
     }
 
