@@ -84,7 +84,7 @@ jobs:
             --type deb \
             --linux-shortcut \
             --java-options "--add-opens java.desktop/javax.imageio.spi=ALL-UNNAMED -Dlog4j2.disable.jmx=true -Dlog4j2.formatMsgNoLookups=true -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true" \
-            --add-modules java.base,java.desktop,java.logging,java.management,java.naming \
+            --add-modules java.base,java.desktop,java.logging,java.management,java.naming,jdk.management \
             --verbose
 
       - name: Zip DEB file
