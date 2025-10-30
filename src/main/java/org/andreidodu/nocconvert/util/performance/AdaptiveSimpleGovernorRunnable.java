@@ -116,7 +116,7 @@ public class AdaptiveSimpleGovernorRunnable {
 
     private void lessIntensiveTask(int id) {
         int i = 1000000;
-        while (i-- > 0) ;
+        while (isRunning.get() && i-- > 0 && currentPTID.get() > id) ;
     }
 
     private void sleep() {
