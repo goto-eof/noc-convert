@@ -20,7 +20,7 @@ public class AdaptiveSimpleGovernorRunnable {
     private final AdaptiveTestListener adaptiveTestListener;
     @Getter
     private final AtomicInteger currentPTID = new AtomicInteger(NUM_PROCESSORS);
-    public static final int DEFAULT_INITIAL_NUM_OF_THREADS = 2;
+    public static final int DEFAULT_INITIAL_NUM_OF_THREADS = NUM_PROCESSORS;
     public final static AtomicInteger IDEAL_NUM_OF_THREADS = new AtomicInteger(DEFAULT_INITIAL_NUM_OF_THREADS);
     private final AtomicBoolean isRunning = new AtomicBoolean(true);
 
@@ -69,8 +69,9 @@ public class AdaptiveSimpleGovernorRunnable {
     }
 
     private void watchdogTask(com.sun.management.OperatingSystemMXBean osBean, ScheduledExecutorService scheduledExecutorService) {
+        log.debug("watchdog task for thread {}", currentPTID.get());
         currentPTID.set(currentPTID.get() - 1);
-        if (currentPTID.get() <= DEFAULT_INITIAL_NUM_OF_THREADS) {
+        if (currentPTID.get() <= 2) {
             cancel(scheduledExecutorService);
             log.debug("Canceled watchdog task because num. of threads is less than default");
             return;
