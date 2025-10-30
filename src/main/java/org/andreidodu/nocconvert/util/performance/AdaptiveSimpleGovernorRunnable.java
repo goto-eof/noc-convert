@@ -46,7 +46,7 @@ public class AdaptiveSimpleGovernorRunnable {
     private void stressTestTask() {
         com.sun.management.OperatingSystemMXBean osBean = getOperatingSystemMXBean();
         startScheduledService(osBean);
-        Thread.ofVirtual().start(this::startStressTestThreads);
+        Thread.ofPlatform().start(this::startStressTestThreads);
     }
 
     private static com.sun.management.OperatingSystemMXBean getOperatingSystemMXBean() {
