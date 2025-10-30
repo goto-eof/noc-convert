@@ -38,9 +38,9 @@ public class AdaptiveSimpleGovernorRunnable {
     }
 
     private void executeStressTestOnNewThread() {
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.submit(this::stressTestTask);
-        executorService.shutdown();
+        try (ExecutorService executorService = Executors.newSingleThreadExecutor()) {
+            executorService.submit(this::stressTestTask);
+        }
     }
 
     private void stressTestTask() {
