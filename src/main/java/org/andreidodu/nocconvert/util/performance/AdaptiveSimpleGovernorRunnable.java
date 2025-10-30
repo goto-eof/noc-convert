@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
-public class AdaptiveSimpleGovernorRunnable implements Runnable {
+public class AdaptiveSimpleGovernorRunnable {
     private static final Logger log = LogManager.getLogger(AdaptiveSimpleGovernorRunnable.class);
 
     public static final int NUM_PROCESSORS = Runtime.getRuntime().availableProcessors();
@@ -31,7 +31,7 @@ public class AdaptiveSimpleGovernorRunnable implements Runnable {
         this.adaptiveTestListener = adaptiveTestListener;
     }
 
-    public void run() {
+    public void runStressTest() {
         log.info("-----------------------");
         log.info("Stress Test Started");
         log.info("-----------------------");
