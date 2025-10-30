@@ -14,7 +14,7 @@ import org.andreidodu.nocconvert.gui.controller.PathSelectionController;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
-import org.andreidodu.nocconvert.util.performance.AdaptiveGovernorRunnable;
+import org.andreidodu.nocconvert.listener.AdaptiveTestListener;
 import org.andreidodu.nocconvert.util.performance.PerformanceUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -70,10 +70,10 @@ public class GUIOrchestrator extends JFrame {
 
         JPopupMenu menu = new JPopupMenu("Main Menu");
         JMenuItem about = new JMenuItem("About");
-        about.addActionListener((e) -> SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null,
-                "NoCloud Bulk Image Converter\nv. 2.0.21\nby Andrei Dodu",
+        about.addActionListener((e) -> JOptionPane.showMessageDialog(null,
+                "NoCloud Bulk Image Converter\nv. 2.0.22\nby Andrei Dodu",
                 "About",
-                JOptionPane.INFORMATION_MESSAGE)));
+                JOptionPane.INFORMATION_MESSAGE));
 
 
         menu.add(about);
@@ -98,10 +98,13 @@ public class GUIOrchestrator extends JFrame {
             applicationStatusLabel.setText(messageFull);
             secondaryApplicationStatusLabel.setText(messageShort);
             scrollPanePanel.setVisible(false);
+
+            convertComponent.getDropdownToggleButton().setEnabled(false);
+            convertComponent.getMainActionButton().setEnabled(false);
         });
 
 
-        PerformanceUtil.checkVThreadPerformance(new AdaptiveGovernorRunnable.AdaptiveTestListener() {
+        PerformanceUtil.checkVThreadPerformance(new AdaptiveTestListener() {
 
             @Override
             public void onOptimizationStart() {
@@ -115,9 +118,8 @@ public class GUIOrchestrator extends JFrame {
             @Override
             public void onOptimizationProgress(String statusMessage, int currentLimit, double cpuLoad) {
                 SwingUtilities.invokeLater(() -> {
-                    String message = "<html>Performance test in progress, please wait 10 seconds.<br/>" + currentLimit + " V-Threads | CPU usage: " + (int) cpuLoad + "%</html>";
+                    String message = "<html>Performance test in progress, please wait about 20 seconds.<br/>" + currentLimit + " V-Threads | CPU usage: " + (int) cpuLoad + "%</html>";
                     secondaryApplicationStatusLabel.setText(message);
-                    secondaryApplicationStatusLabel.repaint();
                 });
                 log.info(messageFull);
             }
@@ -136,11 +138,7 @@ public class GUIOrchestrator extends JFrame {
     }
 
     private void preInitialization() {
-        SwingUtilities.invokeLater(() -> {
-            convertComponent = new SplitButtonComponent(this);
-            convertComponent.getDropdownToggleButton().setEnabled(false);
-            convertComponent.getMainActionButton().setEnabled(false);
-        });
+        convertComponent = new SplitButtonComponent(this);
     }
 
     private PathSelectionController initializePathSelectionController() {
@@ -265,7 +263,7 @@ public class GUIOrchestrator extends JFrame {
         Font label1Font = this.$$$getFont$$$(null, Font.BOLD, 14, label1.getFont());
         if (label1Font != null) label1.setFont(label1Font);
         label1.setForeground(new Color(-8289660));
-        label1.setText("noc-convert v.2.0.21");
+        label1.setText("noc-convert v.2.0.22");
         panel5.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         Font label2Font = this.$$$getFont$$$(null, -1, 12, label2.getFont());

@@ -1,9 +1,10 @@
 package org.andreidodu.nocconvert.util.performance;
 
+import org.andreidodu.nocconvert.listener.AdaptiveTestListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class AdaptiveTestListenerImpl implements AdaptiveGovernorRunnable.AdaptiveTestListener {
+public class AdaptiveTestListenerImpl implements AdaptiveTestListener {
     private static final Logger log = LogManager.getLogger(AdaptiveTestListenerImpl.class);
 
     @Override

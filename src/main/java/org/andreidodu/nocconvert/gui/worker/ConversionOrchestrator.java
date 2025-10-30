@@ -2,7 +2,7 @@ package org.andreidodu.nocconvert.gui.worker;
 
 import lombok.Getter;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
-import org.andreidodu.nocconvert.util.performance.AdaptiveGovernorRunnable;
+import org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,7 +37,7 @@ public class ConversionOrchestrator {
         this.onAllTasksComplete = onAllTasksComplete;
         this.conversionItemDTOList = conversionItemDTOList;
         executorService = Executors.newVirtualThreadPerTaskExecutor();
-        semaphore = new Semaphore(AdaptiveGovernorRunnable.VT_OPTIMAL_LIMIT);
+        semaphore = new Semaphore(AdaptiveSimpleGovernorRunnable.IDEAL_NUM_OF_THREADS.get());
     }
 
     public void startConversion() {
