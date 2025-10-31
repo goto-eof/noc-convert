@@ -223,17 +223,13 @@ public class ConversionController {
         this.processedItems = 0;
         this.past = new Date();
 
-        conversionWorker = new ConversionWorker(list, this::updateList, this::onConversionDone, this::onItemCompleted, this::onAllTasksComplete);
+        conversionWorker = new ConversionWorker(list, this::updateList, this::onConversionDone, this::onItemCompleted);
         conversionWorker.execute();
         conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(list.size());
     }
 
     public boolean isWorking() {
         return SplitButtonComponent.Action.STOP.equals(conversionDTO.convertComponent().getAction());
-    }
-
-    private void onAllTasksComplete() {
-        conversionDTO.guiOrchestrator().onConversionDone();
     }
 
     private void onItemCompleted(ConversionItemDTO item) {
@@ -281,6 +277,7 @@ public class ConversionController {
 
     private void onConversionDone() {
         conversionWorker = null;
+        conversionDTO.guiOrchestrator().onConversionDone();
         SwingUtilities.invokeLater(() -> {
             conversionDTO.guiOrchestrator().setEnableSearchStepComponents(true);
             conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(true);

@@ -12,22 +12,20 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
     private static final Logger log = LogManager.getLogger(ConversionWorker.class);
     private final List<ConversionItemDTO> list;
     private final Consumer<List<ConversionItemDTO>> updateGui;
-    private final Runnable onConversionDone;
-    private final Consumer<ConversionItemDTO> onItemCompleted;
-    private ConversionOrchestrator conversionOrchestrator;
     private final Runnable onAllTasksComplete;
+    private final Consumer<ConversionItemDTO> completeItem;
+    private ConversionOrchestrator conversionOrchestrator;
 
-    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui, Runnable onConversionDone, Consumer<ConversionItemDTO> onItemCompleted, Runnable onAllTasksComplete) {
+    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui, Runnable onAllTasksComplete, Consumer<ConversionItemDTO> completeItem) {
         this.list = list;
         this.updateGui = updateGui;
-        this.onConversionDone = onConversionDone;
-        this.onItemCompleted = onItemCompleted;
         this.onAllTasksComplete = onAllTasksComplete;
+        this.completeItem = completeItem;
     }
 
     @Override
     protected Void doInBackground() {
-        conversionOrchestrator = new ConversionOrchestrator(list, this::publishItem, onItemCompleted, onAllTasksComplete);
+        conversionOrchestrator = new ConversionOrchestrator(list, this::publishItemUpdate, completeItem, onAllTasksComplete);
         conversionOrchestrator.startConversion();
         return null;
     }
@@ -52,7 +50,7 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
         this.updateGui.accept(chunks);
     }
 
-    private void publishItem(ConversionItemDTO conversionItemDTO) {
+    private void publishItemUpdate(ConversionItemDTO conversionItemDTO) {
         publish(conversionItemDTO);
     }
 
@@ -61,13 +59,13 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
         if (isCancelled()) {
             log.debug("Conversion Worker cancelled.");
         }
-        this.onConversionDone.run();
+        this.onAllTasksComplete.run();
     }
 
     public void shutdown(boolean shutdown) {
         cancelOrchestratorJob();
         this.cancel(shutdown);
-        this.onConversionDone.run();
+        this.onAllTasksComplete.run();
     }
 
 }

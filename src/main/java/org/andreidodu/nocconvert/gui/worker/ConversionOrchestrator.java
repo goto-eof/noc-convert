@@ -18,8 +18,8 @@ import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorR
 
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
-    private final Consumer<ConversionItemDTO> publish;
-    private final Consumer<ConversionItemDTO> onItemCompleted;
+    private final Consumer<ConversionItemDTO> publishItemUpdate;
+    private final Consumer<ConversionItemDTO> setItemAsCompleted;
     private final ExecutorService virtualThreadExecutor;
     private final List<ConversionItemDTO> conversionItemDTOList;
     private List<ConvertSingleItemTask> virtualTaskList;
@@ -35,13 +35,13 @@ public class ConversionOrchestrator {
 
     public ConversionOrchestrator(
             List<ConversionItemDTO> conversionItemDTOList,
-            Consumer<ConversionItemDTO> publish,
-            Consumer<ConversionItemDTO> onItemCompleted,
+            Consumer<ConversionItemDTO> publishItemUpdate,
+            Consumer<ConversionItemDTO> setItemAsCompleted,
             Runnable onAllTasksComplete
     ) {
 
-        this.publish = publish;
-        this.onItemCompleted = onItemCompleted;
+        this.publishItemUpdate = publishItemUpdate;
+        this.setItemAsCompleted = setItemAsCompleted;
         this.onAllTasksComplete = onAllTasksComplete;
         this.conversionItemDTOList = conversionItemDTOList;
         virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
@@ -57,7 +57,7 @@ public class ConversionOrchestrator {
     public void startConversion() {
         virtualTaskList = new ArrayList<>();
         for (ConversionItemDTO conversionItemDTO : conversionItemDTOList) {
-            ConvertSingleItemTask task = new ConvertSingleItemTask(conversionItemDTO, publish, onItemCompleted, semaphore, platformExecutorService);
+            ConvertSingleItemTask task = new ConvertSingleItemTask(conversionItemDTO, publishItemUpdate, setItemAsCompleted, semaphore, platformExecutorService);
             virtualTaskList.add(task);
             virtualThreadExecutor.submit(task);
         }
