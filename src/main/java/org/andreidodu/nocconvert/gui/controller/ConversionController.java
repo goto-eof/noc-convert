@@ -117,7 +117,11 @@ public class ConversionController {
         @Override
         public void onDirectoryProcessed(long totalFiles, Path directory, long filesInDirectory) {
             SwingUtilities.invokeLater(() -> {
-                applicationStatusLabel.setText("found " + filesInDirectory + " file(s) in " + normalizeString(directory.getFileName().toString()));
+                if (filesInDirectory > 0) {
+                    applicationStatusLabel.setText("found " + filesInDirectory + " file(s) in " + normalizeString(directory.getFileName().toString()));
+                } else {
+                    applicationStatusLabel.setText("Searching...");
+                }
             });
         }
 
