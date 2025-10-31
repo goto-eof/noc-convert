@@ -9,10 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
@@ -23,9 +20,10 @@ public class ConversionOrchestrator {
     private final Consumer<ConversionItemDTO> setItemAsCompleted;
     private final ExecutorService virtualThreadExecutor;
     private final List<ConversionItemDTO> conversionItemDTOList;
+    private final List<ConversionItemDTO> updatedConversionItemDTOList = new CopyOnWriteArrayList<>();
     private List<ConvertSingleItemTask> virtualTaskList;
     private static Semaphore semaphore;
-    private final Runnable onAllTasksComplete;
+    private final Consumer<List<ConversionItemDTO>> onAllTasksComplete;
     private final ExecutorService platformExecutorService;
     @Getter
     private final int platformThreadsPermits;
@@ -38,7 +36,7 @@ public class ConversionOrchestrator {
             List<ConversionItemDTO> conversionItemDTOList,
             Consumer<ConversionItemDTO> publishItemUpdate,
             Consumer<ConversionItemDTO> setItemAsCompleted,
-            Runnable onAllTasksComplete
+            Consumer<List<ConversionItemDTO>> onAllTasksComplete
     ) {
 
         this.publishItemUpdate = publishItemUpdate;
@@ -59,11 +57,16 @@ public class ConversionOrchestrator {
         virtualTaskList = new ArrayList<>();
         for (ConversionItemDTO conversionItemDTO : conversionItemDTOList) {
             conversionItemDTO.setStatus(ConversionStatus.QUEUED);
-            ConvertSingleItemTask task = new ConvertSingleItemTask(conversionItemDTO, publishItemUpdate, setItemAsCompleted, semaphore, platformExecutorService);
+            ConvertSingleItemTask task = new ConvertSingleItemTask(conversionItemDTO, publishItemUpdate, this::setItemAsCompletedOverride, semaphore, platformExecutorService);
             virtualTaskList.add(task);
             virtualThreadExecutor.submit(task);
         }
         onCompleteAll();
+    }
+
+    private void setItemAsCompletedOverride(ConversionItemDTO conversionItemDTO) {
+        updatedConversionItemDTOList.add(conversionItemDTO);
+        setItemAsCompleted.accept(conversionItemDTO);
     }
 
     private void onCompleteAll() {
@@ -89,8 +92,12 @@ public class ConversionOrchestrator {
             Thread.currentThread().interrupt();
         } finally {
             shutdown();
-            onAllTasksComplete.run();
+            onAllTasksComplete();
         }
+    }
+
+    public void onAllTasksComplete() {
+        onAllTasksComplete.accept(updatedConversionItemDTOList);
     }
 
     public void shutdown() {

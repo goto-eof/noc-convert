@@ -8,6 +8,7 @@ public interface ImageConverterService {
 
     void convertImage(Path sourceFile, Path destinationPath, String targetExtension, Runnable onStart, Consumer<Float> onProgress) throws IOException;
 
-    void cancelTask();
+    void cancelTask(boolean interrupt);
 
+    void interruptTask();
 }

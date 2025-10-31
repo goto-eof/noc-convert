@@ -7,6 +7,7 @@ import org.andreidodu.nocconvert.dto.ImageHeaderDTO;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.exception.InvalidFileFormatException;
 import org.andreidodu.nocconvert.service.ImageConverterService;
+import org.andreidodu.nocconvert.util.ImageUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,6 +28,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
@@ -143,11 +145,22 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     private void writeImageOuter(String newFileFormat, File outputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image, Consumer<Float> updateProgressFloatValue) throws Exception {
         try {
             writeImageInner(newFileFormat, updateProgressFloatValue, outputFile, totalReadPercentageDTO, image);
-        } catch (Exception e) {
+            Optional<String> imageValid = tryToReadImageAndGetError(outputFile);
+            if (imageValid.isPresent()) {
+                throw new RuntimeException(imageValid.orElse("Unknown error"));
+            }
+        } catch (Throwable e) {
             deleteBrokenFileIfExists(outputFile);
-            throw e;
-        } finally {
-            cancelTask();
+            throw new RuntimeException(getRootCauseMessage(e), e);
+        }
+    }
+
+    private Optional<String> tryToReadImageAndGetError(File outputFile) {
+        try {
+            ImageUtil.getImageHeaders(outputFile);
+            return Optional.empty();
+        } catch (IOException e) {
+            return Optional.of(getRootCauseMessage(e));
         }
     }
 
@@ -186,7 +199,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
             throw e;
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            deleteBrokenFileIfExists(outputFile);
             if (Thread.currentThread().isInterrupted()) {
                 log.warn("Conversion failed, but thread was interrupted. Treating as cancelled.");
                 throw new ConversionManualAbortedException("Conversion aborted by thread interruption.");
@@ -382,7 +394,15 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     }
 
     @Override
-    public void cancelTask() {
+    public void cancelTask(boolean interrupt) {
+        setCanceled(true);
+        if (interrupt) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    @Override
+    public void interruptTask() {
         setCanceled(true);
         Thread.currentThread().interrupt();
     }

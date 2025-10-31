@@ -12,6 +12,7 @@ import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
@@ -62,15 +63,12 @@ public class ImageUtil {
         return newImage;
     }
 
-    public static ImageHeaderDTO getImageHeaders(File file) {
+    public static ImageHeaderDTO getImageHeaders(File file) throws IOException {
         Objects.requireNonNull(file);
 
         try (ImageInputStream iis = ImageIO.createImageInputStream(file)) {
             Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
             if (!readers.hasNext()) {
-//                return ImageHeaderDTO.builder()
-//                        .isHeaderFound(false)
-//                        .build();
                 throw new IllegalArgumentException("No reader found for " + file.getAbsolutePath());
             }
 
@@ -79,7 +77,20 @@ public class ImageUtil {
 
             int width = reader.getWidth(0);
             int height = reader.getHeight(0);
+
+            if (width <= 0 || height <= 0) {
+                throw new IllegalArgumentException("Invalid image size: " + width + "x" + height);
+            }
+
             String format = reader.getFormatName();
+
+            if (format == null || new ImageConverterUtil().getAvailableReadFormatList()
+                    .stream()
+                    .map(dtoFormat -> dtoFormat.getFormat().toLowerCase())
+                    .noneMatch(formatFromList -> formatFromList.equalsIgnoreCase(format))) {
+            throw new IllegalArgumentException("Invalid image format: " + format);
+            }
+
             reader.dispose();
 
             return ImageHeaderDTO.builder()
@@ -89,9 +100,6 @@ public class ImageUtil {
                     .format(format)
                     .build();
         } catch (Exception e) {
-//            return ImageHeaderDTO.builder()
-//                    .isHeaderFound(false)
-//                    .build();
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }

@@ -2,11 +2,13 @@ package org.andreidodu.nocconvert.gui.worker;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
+import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
 import org.andreidodu.nocconvert.service.ImageConverterService;
 import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.imageio.ImageIO;
 import java.time.LocalDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
@@ -32,7 +34,7 @@ public class ConvertSingleItemTask implements Runnable {
             Semaphore semaphore,
             ExecutorService platformExecutorService
     ) {
-        this.conversionItemDTO = conversionItemDTO;
+        this.conversionItemDTO = new ConversionItemDTOMapper().clone(conversionItemDTO);
         this.publishItemUpdate = publishItemUpdate;
         this.platformExecutorService = platformExecutorService;
         this.imageConverterService = new ImageConverterServiceImpl(this.platformExecutorService);
@@ -41,9 +43,11 @@ public class ConvertSingleItemTask implements Runnable {
     }
 
     private void onStart() {
-        conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
-        conversionItemDTO.setProgressPercentage(0f);
-        publishItemUpdate.accept(conversionItemDTO);
+        if (!conversionItemDTO.isReadOnly()) {
+            conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
+            conversionItemDTO.setProgressPercentage(0f);
+            publishItemUpdate.accept(conversionItemDTO);
+        }
     }
 
 
@@ -79,38 +83,56 @@ public class ConvertSingleItemTask implements Runnable {
                     this::onStart,
                     this::updateProgressFloatValue
             );
-            conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
-            conversionItemDTO.setProgressPercentage(100f);
-            setItemAsCompleted.accept(conversionItemDTO);
+            if (!conversionItemDTO.isReadOnly()) {
+                sendSuccessfullDTO();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            conversionItemDTO.setStatus(ConversionStatus.FAILED);
-            conversionItemDTO.setProgressPercentage(100f);
-            conversionItemDTO.setErrorMessage(getRootCauseMessage(e));
-            setItemAsCompleted.accept(conversionItemDTO);
+            if (!conversionItemDTO.isReadOnly()) {
+                sendFailedDTO(e);
+            }
         } finally {
             semaphore.release();
         }
     }
 
-    private void updateAsCancelled() {
+    private void sendFailedDTO(Exception e) {
         conversionItemDTO.setStatus(ConversionStatus.FAILED);
         conversionItemDTO.setProgressPercentage(100f);
-        conversionItemDTO.setErrorMessage("cancelled");
+        conversionItemDTO.setErrorMessage(getRootCauseMessage(e));
+        conversionItemDTO.setReadOnly(true);
         setItemAsCompleted.accept(conversionItemDTO);
+    }
+
+    private void sendSuccessfullDTO() {
+        conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
+        conversionItemDTO.setProgressPercentage(100f);
+        conversionItemDTO.setReadOnly(true);
+        setItemAsCompleted.accept(conversionItemDTO);
+    }
+
+    private void updateAsCancelled() {
+        if (!conversionItemDTO.isReadOnly()) {
+            conversionItemDTO.setStatus(ConversionStatus.FAILED);
+            conversionItemDTO.setProgressPercentage(100f);
+            conversionItemDTO.setErrorMessage("cancelled");
+            setItemAsCompleted.accept(conversionItemDTO);
+        }
     }
 
     private void updateProgressFloatValue(float progress) {
         // if ((progress == 1 || progress % 3 == 0) && Duration.between(lastCall, LocalDateTime.now()).toMillis() >= 1000) {
-        conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
-        conversionItemDTO.setProgressPercentage(progress);
+        if (!conversionItemDTO.isReadOnly()) {
+            conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
+            conversionItemDTO.setProgressPercentage(progress);
 //        lastCall = LocalDateTime.now();
-        publishItemUpdate.accept(conversionItemDTO);
+            publishItemUpdate.accept(conversionItemDTO);
+        }
         //}
     }
 
     public void closeStreams() {
         this.canceled = true;
-        imageConverterService.cancelTask();
+        imageConverterService.interruptTask();
     }
 }

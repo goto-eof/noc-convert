@@ -12,11 +12,11 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
     private static final Logger log = LogManager.getLogger(ConversionWorker.class);
     private final List<ConversionItemDTO> list;
     private final Consumer<List<ConversionItemDTO>> updateGui;
-    private final Runnable onAllTasksComplete;
+    private final Consumer<List<ConversionItemDTO>> onAllTasksComplete;
     private final Consumer<ConversionItemDTO> completeItem;
     private ConversionOrchestrator conversionOrchestrator;
 
-    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui, Runnable onAllTasksComplete, Consumer<ConversionItemDTO> completeItem) {
+    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui, Consumer<List<ConversionItemDTO>> onAllTasksComplete, Consumer<ConversionItemDTO> completeItem) {
         this.list = list;
         this.updateGui = updateGui;
         this.onAllTasksComplete = onAllTasksComplete;
@@ -59,13 +59,15 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
         if (isCancelled()) {
             log.debug("Conversion Worker cancelled.");
         }
-        this.onAllTasksComplete.run();
+        this.conversionOrchestrator.onAllTasksComplete();
     }
 
     public void shutdown(boolean shutdown) {
         cancelOrchestratorJob();
         this.cancel(shutdown);
-        this.onAllTasksComplete.run();
+        this.conversionOrchestrator.onAllTasksComplete();
     }
 
+    public void onAllItemsCompleted() {
+    }
 }
