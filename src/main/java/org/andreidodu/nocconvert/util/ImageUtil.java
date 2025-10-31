@@ -12,7 +12,6 @@ import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
@@ -21,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 
 import static java.awt.image.BufferedImage.TYPE_4BYTE_ABGR;
 import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class ImageUtil {
     private static final Logger log = LogManager.getLogger(ImageUtil.class);
@@ -68,9 +68,10 @@ public class ImageUtil {
         try (ImageInputStream iis = ImageIO.createImageInputStream(file)) {
             Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
             if (!readers.hasNext()) {
-                return ImageHeaderDTO.builder()
-                        .isHeaderFound(false)
-                        .build();
+//                return ImageHeaderDTO.builder()
+//                        .isHeaderFound(false)
+//                        .build();
+                throw new IllegalArgumentException("No reader found for " + file.getAbsolutePath());
             }
 
             ImageReader reader = readers.next();
@@ -87,10 +88,11 @@ public class ImageUtil {
                     .height(height)
                     .format(format)
                     .build();
-        } catch (IOException e) {
-            return ImageHeaderDTO.builder()
-                    .isHeaderFound(false)
-                    .build();
+        } catch (Exception e) {
+//            return ImageHeaderDTO.builder()
+//                    .isHeaderFound(false)
+//                    .build();
+            throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }
 
@@ -160,7 +162,7 @@ public class ImageUtil {
 
         try {
             return adaptImageForTheOutputFormat(sourceFile, newFileFormat, image, cpuPool);
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
         }
     }

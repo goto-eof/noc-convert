@@ -32,6 +32,7 @@ import java.util.function.Consumer;
 
 import static org.andreidodu.nocconvert.util.FileUtil.deleteBrokenFileIfExists;
 import static org.andreidodu.nocconvert.util.ImageUtil.*;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class ImageConverterServiceImpl implements ImageConverterService {
     private static final Logger log = LogManager.getLogger(ImageConverterServiceImpl.class);
@@ -59,8 +60,8 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         updateProgressFloatValue.accept(1f);
 
         File file = sourceFile.toFile();
-        ImageHeaderDTO sourceFileHeaders = getImageHeaders(file);
 
+        ImageHeaderDTO sourceFileHeaders = getImageHeaders(file);
         String sourceFileFormat = sourceFileHeaders.format();
         List<String> validInputFormatListInLowerCase = Arrays.stream(ImageIO.getReaderFormatNames()).toList();
         validateInputImage(sourceFile, sourceFileFormat, validInputFormatListInLowerCase);
@@ -89,10 +90,9 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             interruptIfNecessary();
 
-
             writeImageOuter(newFileFormat, outputFile, totalReadPercentageDTO, image, updateProgressFloatValue);
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage(), e);
+            throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }
 
@@ -169,8 +169,11 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                 log.error("Operation aborted 4");
                 throw new ConversionManualAbortedException("Operation aborted");
             }
-
-            writer.write(null, new IIOImage(image, null, null), null);
+            try {
+                writer.write(null, new IIOImage(image, null, null), null);
+            } catch (Exception e) {
+                throw new RuntimeException(getRootCauseMessage(e), e);
+            }
 
             if (writerListener.getException() != null) {
                 throw writerListener.getException();

@@ -20,7 +20,7 @@ public class ConvertSingleItemTask implements Runnable {
     private final ConversionItemDTO conversionItemDTO;
     private final ImageConverterService imageConverterService;
     private final Consumer<ConversionItemDTO> setItemAsCompleted;
-    private LocalDateTime lastCall = LocalDateTime.now();
+    private final LocalDateTime lastCall = LocalDateTime.now();
     private boolean canceled = false;
     private final Semaphore semaphore;
     private final ExecutorService platformExecutorService;
@@ -58,14 +58,17 @@ public class ConvertSingleItemTask implements Runnable {
 
     public void run() {
         if (canceled) {
+            updateAsCancelled();
             return;
         }
         try {
             semaphore.acquire();
         } catch (InterruptedException e) {
+            updateAsCancelled();
             return;
         }
         if (canceled) {
+            updateAsCancelled();
             return;
         }
         try {
@@ -77,9 +80,8 @@ public class ConvertSingleItemTask implements Runnable {
                     this::updateProgressFloatValue
             );
             conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
-            setItemAsCompleted.accept(conversionItemDTO);
             conversionItemDTO.setProgressPercentage(100f);
-            publishItemUpdate.accept(conversionItemDTO);
+            setItemAsCompleted.accept(conversionItemDTO);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             conversionItemDTO.setStatus(ConversionStatus.FAILED);
@@ -89,6 +91,13 @@ public class ConvertSingleItemTask implements Runnable {
         } finally {
             semaphore.release();
         }
+    }
+
+    private void updateAsCancelled() {
+        conversionItemDTO.setStatus(ConversionStatus.FAILED);
+        conversionItemDTO.setProgressPercentage(100f);
+        conversionItemDTO.setErrorMessage("cancelled");
+        setItemAsCompleted.accept(conversionItemDTO);
     }
 
     private void updateProgressFloatValue(float progress) {

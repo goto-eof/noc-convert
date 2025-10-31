@@ -298,6 +298,7 @@ public class ConversionController {
         long success = list.stream().filter(dto -> ConversionStatus.COMPLETED.equals(dto.getStatus())).count();
         long queued = list.stream().filter(dto -> ConversionStatus.QUEUED.equals(dto.getStatus())).count();
         long processing = list.stream().filter(dto -> ConversionStatus.PROCESSING.equals(dto.getStatus())).count();
+        log.debug("Processing " + processing + " Images.");
 
         long other = list.stream()
                 .filter(item -> !List.of(ConversionStatus.FAILED, ConversionStatus.COMPLETED, ConversionStatus.QUEUED, ConversionStatus.PROCESSING).contains(item.getStatus()))
