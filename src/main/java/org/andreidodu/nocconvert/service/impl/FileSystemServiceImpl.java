@@ -54,7 +54,9 @@ public class FileSystemServiceImpl implements FileSystemService {
                     }
                 }
                 totalFiles += filesInThisDir;
-                listener.onDirectoryProcessed(totalFiles, currentDir, filesInThisDir);
+                if (filesInThisDir>0) {
+                    listener.onDirectoryProcessed(totalFiles, currentDir, filesInThisDir);
+                }
             } catch (IOException e) {
                 log.warn("unaccessible directory: {}", currentDir);
             }

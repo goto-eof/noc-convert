@@ -308,7 +308,7 @@ public class ConversionController {
         SwingUtilities.invokeLater(() -> {
 
             String colorSuccess = success > 0 ? "green" : "white";
-            String colorUnprocessed = queued + processing > 0 ? "#CCCC00" : "white";
+            String colorUnprocessed = queued > 0 ? "#CCCC00" : "white";
             String colorFailed = failed > 0 ? "red" : "white";
 
             String coloredMessage = String.format("<html><div style='text-align:center;'>" +

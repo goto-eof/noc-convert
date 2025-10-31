@@ -21,7 +21,9 @@ import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -63,6 +65,14 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         List<String> validInputFormatListInLowerCase = Arrays.stream(ImageIO.getReaderFormatNames()).toList();
         validateInputImage(sourceFile, sourceFileFormat, validInputFormatListInLowerCase);
 
+        File outputFile = calculateOutputFile(sourceFile, destinationPath, newFileFormat);
+
+        if (sourceFileHeaders.format().equalsIgnoreCase(newFileFormat)) {
+            log.info("No need to convert image {} from {} to {}. I will just copy it.", sourceFile, sourceFileHeaders.format(), newFileFormat);
+            Files.copy(sourceFile, outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            return;
+        }
+
         try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(file)) {
 
             Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
@@ -79,7 +89,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             interruptIfNecessary();
 
-            File outputFile = calculateOutputFile(sourceFile, destinationPath, newFileFormat);
 
             writeImageOuter(newFileFormat, outputFile, totalReadPercentageDTO, image, updateProgressFloatValue);
         } catch (Exception e) {
@@ -94,7 +103,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     }
 
     private static File calculateOutputFile(Path sourceFile, Path destinationPath, String newFileFormat) {
-        String fileName = sourceFile.getFileName().toString();
+        String fileName = System.currentTimeMillis() + "-" + sourceFile.getFileName().toString();
         Path outputFilePath = destinationPath.resolve(renameFileExtension(fileName, newFileFormat));
         int i = 1;
         while (outputFilePath.toFile().exists()) {
@@ -167,7 +176,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                 throw writerListener.getException();
             }
 
-            //updateProgressFloatValue.accept(100f);
         } catch (IOException e) {
             if (Thread.currentThread().isInterrupted()) {
                 throw new ConversionManualAbortedException("Conversion aborted by thread interruption.");
@@ -208,18 +216,24 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             @Override
             public void imageStarted(ImageWriter source, int imageIndex) {
-                if (Thread.currentThread().isInterrupted()) {
-                    log.error("Operation aborted 1");
-                    exception = new ConversionManualAbortedException("Conversion aborted by thread interruption.");
+                if (isInterrupted()) {
+                    return;
                 }
                 updateProgressFloatValue.accept(1f);
             }
 
+            private boolean isInterrupted() {
+                if (Thread.currentThread().isInterrupted() && exception == null) {
+                    log.error("Operation aborted 1");
+                    exception = new ConversionManualAbortedException("Conversion aborted by thread interruption.");
+                    return true;
+                }
+                return false;
+            }
+
             @Override
             public void imageProgress(ImageWriter source, float percentageDone) {
-                if (Thread.currentThread().isInterrupted()) {
-                    log.error("Operation aborted 2");
-                    exception = new ConversionManualAbortedException("Conversion aborted by thread interruption.");
+                if (isInterrupted()) {
                     return;
                 }
                 updateProgressFloatValue.accept(50 + percentageDone / 2);
@@ -227,22 +241,41 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             @Override
             public void imageComplete(ImageWriter source) {
+                if (isInterrupted()) {
+                    return;
+                }
+                log.trace("Write image complete");
             }
 
             @Override
             public void thumbnailStarted(ImageWriter source, int imageIndex, int thumbnailIndex) {
+                if (isInterrupted()) {
+                    return;
+                }
+                log.trace("Write thumbnail started");
             }
 
             @Override
             public void thumbnailProgress(ImageWriter source, float percentageDone) {
+                if (isInterrupted()) {
+                    return;
+                }
+                log.trace("Write thumbnail progress");
             }
 
             @Override
             public void thumbnailComplete(ImageWriter source) {
+                if (isInterrupted()) {
+                    return;
+                }
+                log.trace("Write thumbnail complete");
             }
 
             @Override
             public void writeAborted(ImageWriter source) {
+                if (isInterrupted()) {
+                    return;
+                }
                 log.error("Operation aborted 3");
                 this.exception = new RuntimeException("Write aborted 3");
             }
@@ -271,48 +304,67 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             @Override
             public void sequenceStarted(ImageReader source, int minIndex) {
+                if (isInterrupted()) {
+                }
             }
 
             @Override
             public void sequenceComplete(ImageReader source) {
+                if (isInterrupted()) {
+                }
             }
 
             @Override
             public void imageStarted(ImageReader source, int imageIndex) {
+                if (isInterrupted()) return;
                 totalReadPercentageDTO.setTotalReadPercentage(1);
                 onProgress.accept(1f);
             }
 
             @Override
             public void imageProgress(ImageReader source, float percentageDone) {
-                if (Thread.currentThread().isInterrupted()) {
-                    log.error("Operation aborted 5");
-                    this.exception = new ConversionManualAbortedException("Conversion aborted by thread interruption.");
-                    return;
-                }
+                if (isInterrupted()) return;
                 totalReadPercentageDTO.setTotalReadPercentage(percentageDone / 2);
                 onProgress.accept(totalReadPercentageDTO.getTotalReadPercentage());
 
             }
 
+            private boolean isInterrupted() {
+                if (Thread.currentThread().isInterrupted() && exception == null) {
+                    log.error("Operation aborted 5");
+                    this.exception = new ConversionManualAbortedException("Conversion aborted by thread interruption.");
+                    return true;
+                }
+                return false;
+            }
+
             @Override
             public void imageComplete(ImageReader source) {
+                if (isInterrupted()) {
+                }
             }
 
             @Override
             public void thumbnailStarted(ImageReader source, int imageIndex, int thumbnailIndex) {
+                if (isInterrupted()) {
+                }
             }
 
             @Override
             public void thumbnailProgress(ImageReader source, float percentageDone) {
+                if (isInterrupted()) {
+                }
             }
 
             @Override
             public void thumbnailComplete(ImageReader source) {
+                if (isInterrupted()) {
+                }
             }
 
             @Override
             public void readAborted(ImageReader source) {
+                if (isInterrupted()) return;
                 totalPercentage = 0;
                 this.exception = new RuntimeException("Read aborted");
             }

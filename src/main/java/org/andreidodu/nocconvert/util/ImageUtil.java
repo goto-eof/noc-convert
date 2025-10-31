@@ -187,7 +187,8 @@ public class ImageUtil {
     }
 
     private static boolean isIsNotCompatibleWithIcoFormat(String newFileFormat, BufferedImage image) {
-        return ICO_FORMAT.equalsIgnoreCase(newFileFormat) && (image.getWidth() > ICO_MAX_SIZE || image.getHeight() > ICO_MAX_SIZE || image.getWidth() % 8 != 0);
+        return ICO_FORMAT.equalsIgnoreCase(newFileFormat) && (image.getWidth() > ICO_MAX_SIZE || image.getHeight() > ICO_MAX_SIZE || image.getWidth() % 8 != 0) ||
+                ICO_FORMAT.equalsIgnoreCase(newFileFormat) && image.getType() != TYPE_4BYTE_ABGR;
     }
 
     private static BufferedImage adaptForOpaqueFormat(BufferedImage image, String newFormat, ExecutorService cpuPool) throws InterruptedException, ExecutionException {

@@ -2,6 +2,7 @@ package org.andreidodu.nocconvert.gui.worker;
 
 import lombok.Getter;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,7 +50,7 @@ public class ConversionOrchestrator {
         platformThreadsPermits = permits;
         platformExecutorService = Executors.newFixedThreadPool(platformThreadsPermits);
 
-        virtualThreadsPermits = calculateSafeValueWithoutXPercent(permits, 30);
+        virtualThreadsPermits = calculateSafeValueWithoutXPercent(permits, 50);
         semaphore = new Semaphore(virtualThreadsPermits);
     }
 
@@ -57,6 +58,7 @@ public class ConversionOrchestrator {
     public void startConversion() {
         virtualTaskList = new ArrayList<>();
         for (ConversionItemDTO conversionItemDTO : conversionItemDTOList) {
+            conversionItemDTO.setStatus(ConversionStatus.QUEUED);
             ConvertSingleItemTask task = new ConvertSingleItemTask(conversionItemDTO, publishItemUpdate, setItemAsCompleted, semaphore, platformExecutorService);
             virtualTaskList.add(task);
             virtualThreadExecutor.submit(task);
