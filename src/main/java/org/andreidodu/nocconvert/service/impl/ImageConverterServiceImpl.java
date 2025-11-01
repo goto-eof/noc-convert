@@ -108,16 +108,16 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
     private static File calculateOutputFile(Path sourceFile, Path destinationPath, String newFileFormat, boolean isTemporary) {
         if (isTemporary) {
-            newFileFormat = newFileFormat.toLowerCase() + "-" + UUID.randomUUID() + ".tmp";
+            newFileFormat = newFileFormat.toLowerCase() + ".tmp";
         }
 
-        String fileName = sourceFile.getFileName().toString();
-        Path outputFilePath = destinationPath.resolve(renameFileExtension(fileName, newFileFormat));
-        int i = 1;
-        while (outputFilePath.toFile().exists()) {
-            fileName = "copy-" + (i++) + "-of-" + sourceFile.getFileName().toString();
+        String fileName;
+        Path outputFilePath;
+        do {
+            fileName = UUID.randomUUID() + "-" + sourceFile.getFileName().toString();
             outputFilePath = destinationPath.resolve(renameFileExtension(fileName, newFileFormat));
-        }
+        } while (outputFilePath.toFile().exists());
+
         String outputFileString = outputFilePath.toString();
         return new File(outputFileString);
     }
@@ -183,10 +183,8 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
     private static void validateFileCompletion(File tmpOutputFile, File outputFile, Runnable pass, Runnable fail) throws IOException {
         Files.move(tmpOutputFile.toPath(), outputFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
-        Files.move(outputFile.toPath(), tmpOutputFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
         validationSleep(fail);
-        ImageUtil.getImageHeaders(tmpOutputFile);
-        Files.move(tmpOutputFile.toPath(), outputFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        ImageUtil.getImageHeaders(outputFile);
         pass.run();
     }
 
