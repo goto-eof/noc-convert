@@ -13,7 +13,6 @@ import javax.swing.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearcherSwingWorker.ChunkDTO> {
     private static final Logger log = LogManager.getLogger(ImageSearcherSwingWorker.class);
@@ -21,13 +20,11 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
     private final Path sourceDirectory;
     private final FileSystemService fileSystemService;
     private final ImageConverterUtil imageConverterService;
-    private final Consumer<String> updateApplicationStatusLabel;
     private final FilesInDirectoryListener filesInDirectoryListener;
 
-    public ImageSearcherSwingWorker(Path sourceDirectory, Consumer<String> updateApplicationStatusLabel, FilesInDirectoryListener filesInDirectoryListener) {
+    public ImageSearcherSwingWorker(Path sourceDirectory, FilesInDirectoryListener filesInDirectoryListener) {
         super();
         this.sourceDirectory = sourceDirectory;
-        this.updateApplicationStatusLabel = updateApplicationStatusLabel;
         this.filesInDirectoryListener = filesInDirectoryListener;
 
         this.fileSystemService = new FileSystemServiceImpl();

@@ -106,7 +106,7 @@ public class ConversionController {
                         conversionDTO.guiOrchestrator().setEnableSearchStepComponents(false);
                         startSearchForImagesStep();
 
-                        imageSearcherSwingWorker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), this::updateApplicationStatus, new FilesInDirectoryListenerImpl());
+                        imageSearcherSwingWorker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), new FilesInDirectoryListenerImpl());
                         imageSearcherSwingWorker.execute();
                     } else if (SplitButtonComponent.Action.STOP.equals(conversionDTO.convertComponent().getAction())) {
                         cancelActiveProcess();
