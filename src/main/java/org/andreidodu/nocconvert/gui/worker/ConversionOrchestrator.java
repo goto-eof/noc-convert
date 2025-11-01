@@ -34,6 +34,7 @@ public class ConversionOrchestrator {
     private final int permits = AdaptiveSimpleGovernorRunnable.IDEAL_NUM_OF_THREADS.get();
     private final ConversionOrchestratorInputDTO conversionOrchestratorInputDTO;
     private Path tmpDirPath;
+    private Path tmpParentDirPath;
 
     public ConversionOrchestrator(ConversionOrchestratorInputDTO conversionOrchestratorInputDTO) {
         this.conversionOrchestratorInputDTO = conversionOrchestratorInputDTO;
@@ -51,7 +52,9 @@ public class ConversionOrchestrator {
     public void startConversion() {
         virtualTaskList = new ArrayList<>();
         try {
-            tmpDirPath = buildTmpPathAndReturn(conversionOrchestratorInputDTO.conversionItemDTOList().stream().findFirst().get().getDestinationDirectory());
+            Path conversionDestinationDirectory = conversionOrchestratorInputDTO.conversionItemDTOList().stream().findFirst().get().getDestinationDirectory();
+            tmpDirPath = buildTmpPathAndReturn(conversionDestinationDirectory);
+            tmpParentDirPath = buildParentTmpPathAndReturn(conversionDestinationDirectory);
             log.debug("Creating temporary directory: {}", tmpDirPath);
         } catch (IOException e) {
             log.error("Failed to build tmp dir for conversion orchestrator", e);
@@ -70,6 +73,12 @@ public class ConversionOrchestrator {
 
     private static Path buildTmpPathAndReturn(Path tmpOutputDirectory) throws IOException {
         Path tmpDirPath = Path.of(tmpOutputDirectory.toString(), "tmp", "attempt - " + System.currentTimeMillis());
+        Files.createDirectories(tmpDirPath);
+        return tmpDirPath;
+    }
+
+    private static Path buildParentTmpPathAndReturn(Path tmpOutputDirectory) throws IOException {
+        Path tmpDirPath = Path.of(tmpOutputDirectory.toString(), "tmp");
         Files.createDirectories(tmpDirPath);
         return tmpDirPath;
     }
@@ -110,9 +119,9 @@ public class ConversionOrchestrator {
 
             virtualThreadExecutor.shutdownNow();
 
-            if (tmpDirPath != null) {
+            if (tmpParentDirPath != null) {
                 try {
-                    FileUtils.deleteDirectory(tmpDirPath.toFile());
+                    FileUtils.deleteDirectory(tmpParentDirPath.toFile());
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

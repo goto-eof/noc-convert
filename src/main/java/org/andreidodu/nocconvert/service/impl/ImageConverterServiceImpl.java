@@ -162,11 +162,9 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         Thread.ofVirtual().start(() -> {
                     int i = 5;
 
-                    while (i-- > 0) {
+                    while (i > 0) {
                         try {
-                            ImageUtil.getImageHeaders(tmpOutputFile);
-                            Files.move(tmpOutputFile.toPath(), outputFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
-                            pass.run();
+                            validateFileCompletion(tmpOutputFile, outputFile, pass);
                             return;
                         } catch (Exception e) {
                             log.debug(getRootCauseMessage(e), e);
@@ -175,17 +173,27 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                                 return;
                             }
                         }
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                            fail.run();
-                            log.debug(getRootCauseMessage(e), e);
-                            throw new RuntimeException(e);
-                        }
-
+                        validationSleep(fail);
+                        i--;
                     }
                 }
         );
+    }
+
+    private static void validateFileCompletion(File tmpOutputFile, File outputFile, Runnable pass) throws IOException {
+        ImageUtil.getImageHeaders(tmpOutputFile);
+        Files.move(tmpOutputFile.toPath(), outputFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        pass.run();
+    }
+
+    private static void validationSleep(Runnable fail) {
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            fail.run();
+            log.debug(getRootCauseMessage(e), e);
+            throw new RuntimeException(e);
+        }
     }
 
     private void writeImageInner(String newFileFormat, Consumer<Float> updateProgressFloatValue, File outputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image) throws Exception {
