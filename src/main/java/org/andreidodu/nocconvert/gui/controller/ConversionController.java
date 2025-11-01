@@ -44,6 +44,7 @@ public class ConversionController {
 
     private final AtomicInteger passes = new AtomicInteger(0);
     private final AtomicInteger failures = new AtomicInteger(0);
+    private final AtomicInteger totalFound = new AtomicInteger(0);
 
     private String timeElapsed = "0s";
 
@@ -191,7 +192,7 @@ public class ConversionController {
 
     public void startSearchForImagesStep() {
         conversionDTO.guiOrchestrator().resetConversionItemList();
-
+        totalFound.set(0);
         SwingUtilities.invokeLater(() -> {
             conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.STOP);
             String message = "Searching for image...";
@@ -232,6 +233,7 @@ public class ConversionController {
 
         failures.set(0);
         passes.set(0);
+
 
         ConversionWorkerInputDTO conversionWorkerInputDTO = buildInput(list);
         conversionWorker = new ConversionWorker(conversionWorkerInputDTO);
@@ -320,38 +322,18 @@ public class ConversionController {
         conversionDTO.guiOrchestrator().hideProgressBar();
         conversionDTO.guiOrchestrator().onConversionDone();
 
-//        DefaultListModel<ConversionItemDTO> model = (DefaultListModel<ConversionItemDTO>) conversionDTO.conversionFileList().getModel();
-//
-//        List<ConversionItemDTO> list = new ArrayList<>();
-//        IntStream.range(0, model.getSize())
-//                .forEach(index -> {
-//                    list.add(model.get(index));
-//                });
-//
-//        long failed = list.stream().filter(dto -> ConversionStatus.FAILED.equals(dto.getStatus())).count();
-//        long success = list.stream().filter(dto -> ConversionStatus.COMPLETED.equals(dto.getStatus())).count();
-//        long queued = list.stream().filter(dto -> ConversionStatus.QUEUED.equals(dto.getStatus())).peek(item -> log.debug("QUEUED: {}", item)).count();
-//        long processing = list.stream().filter(dto -> ConversionStatus.PROCESSING.equals(dto.getStatus())).peek(item -> log.debug("PROCESSING: {}", item)).count();
-//        log.debug("Processing " + processing + " Images.");
-
-//        long other = list.stream()
-//                .filter(item -> !List.of(ConversionStatus.FAILED, ConversionStatus.COMPLETED, ConversionStatus.QUEUED, ConversionStatus.PROCESSING).contains(item.getStatus()))
-//                .count();
-//        log.debug("unknown status: {}", other);
-
-
         String colorSuccess = passes.get() > 0 ? "green" : "white";
-        //String colorUnprocessed = queued + processing > 0 ? "#CCCC00" : "white";
+        String colorUnprocessed = totalFound.get() - passes.get() - failures.get() > 0 ? "#CCCC00" : "white";
         String colorFailed = failures.get() > 0 ? "red" : "white";
 
-        int total = passes.get() + failures.get();
+        int total = totalFound.get();
         String coloredMessage = String.format("<html><div style='text-align:center;'>" +
                 "<span style='font-size:14pt;'>Conversion completed.</span><br/>" +
                 "<span style='font-size:14pt; font-weight:bold;'>Total: </span>" + "<span style='font-size:14pt; font-weight:bold;'>%s. </span>" +
                 "<span style='color:" + colorSuccess + "; font-weight:bold; font-size:14pt;'>Success: %s / </span>" +
-                // "<span style='color:" + colorUnprocessed + "; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" +
+                "<span style='color:" + colorUnprocessed + "; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" +
                 "<span style='color:" + colorFailed + "; font-weight:bold; font-size:14pt;'>Failed: %s</span>" +
-                "</div></html>", total, passes.get(), failures.get());
+                "</div></html>", total, passes.get(), totalFound.get() - failures.get() - passes.get(), failures.get());
 
         SwingUtilities.invokeLater(() -> {
             applicationStatusLabel.setText(coloredMessage);

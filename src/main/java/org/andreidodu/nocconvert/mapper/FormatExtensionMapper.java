@@ -28,6 +28,7 @@ public class FormatExtensionMapper {
             new FormatExtensionDTO("ppm", "ppm"),
             new FormatExtensionDTO("iff", "iff"),
             new FormatExtensionDTO("jpeg", "jpg"),
+            new FormatExtensionDTO("jpg", "jpg"),
             new FormatExtensionDTO("icns", "icns"),
             new FormatExtensionDTO("cur", "cur"),
             new FormatExtensionDTO("dcx", "dcx"),

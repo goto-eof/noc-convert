@@ -40,14 +40,13 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
     private List<String> getAvailableReadExtensions() {
         List<String> list = new ArrayList<>(imageConverterService.getAvailableReadFormatList()
                 .stream()
-                .map(format -> FormatExtensionMapper.getExtension(format.getFormat()))
+                .map(format -> FormatExtensionMapper.getExtension(format.getFormat().toLowerCase()))
                 .toList());
         if (list.stream().anyMatch(item -> item.equalsIgnoreCase("jpg"))) {
-            list.add("jpeg");
+            list.add(FormatExtensionMapper.getExtension("jpeg"));
         }
 
-        list = new ArrayList<>(list.stream().map(String::toLowerCase).distinct().toList());
-        list.addAll(list.stream().map(String::toUpperCase).distinct().toList());
+        list = list.stream().map(String::toLowerCase).distinct().toList();
 
         return list;
     }

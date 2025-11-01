@@ -73,7 +73,7 @@ public class FileSystemServiceImpl implements FileSystemService {
 
             String name = file.getFileName().toString().toLowerCase();
             return allowedFileExtensionList.stream()
-                    .anyMatch(name::endsWith);
+                    .anyMatch(ext -> name.endsWith("." + ext.toLowerCase()));
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return false;

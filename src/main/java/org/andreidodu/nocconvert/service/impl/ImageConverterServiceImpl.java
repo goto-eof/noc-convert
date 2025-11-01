@@ -48,13 +48,13 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     @Override
     public void convertImage(ConvertImageInputDTO convertImageInputDTO) throws IOException {
         if (canceled) {
-            convertImageInputDTO.fail().accept(new RuntimeException("Process interrupted"));
+            //convertImageInputDTO.fail().accept(new RuntimeException("Process interrupted"));
             throw new ConversionManualAbortedException();
         }
 
         log.debug("Converting image {} from {} to {}", convertImageInputDTO.sourceFile().getFileName(), convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension());
 
-        interruptIfNecessary(convertImageInputDTO.fail());
+        interruptIfNecessary(null);
 
         convertImageInputDTO.onStart().run();
         convertImageInputDTO.onProgress().accept(1f);
@@ -74,7 +74,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                 convertImageInputDTO.pass().run();
                 return;
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             convertImageInputDTO.fail().accept(e);
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
@@ -176,13 +176,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                             log.debug(getRootCauseMessage(e), e);
                             log.debug("validation i: " + i);
                             if (i == 1) {
-                                try {
-                                    Files.move(outputFile.toPath(), tmpOutputFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
-                                    fail.accept(new RuntimeException(getRootCauseMessage(e), e));
-                                } catch (IOException ex) {
-                                    fail.accept(new RuntimeException(getRootCauseMessage(e), ex));
-                                    throw new RuntimeException(ex);
-                                }
+                                moveFailedImageToTmp(tmpOutputFile, outputFile, fail, e);
                                 return;
                             }
                         }
@@ -191,6 +185,16 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                     }
                 }
         );
+    }
+
+    private static void moveFailedImageToTmp(File tmpOutputFile, File outputFile, Consumer<Exception> fail, Exception e) {
+        try {
+            Files.move(outputFile.toPath(), tmpOutputFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+            fail.accept(new RuntimeException(getRootCauseMessage(e), e));
+        } catch (IOException ex) {
+            fail.accept(new RuntimeException(getRootCauseMessage(e), ex));
+            throw new RuntimeException(ex);
+        }
     }
 
     private static void validateFileCompletion(File tmpOutputFile, File outputFile, Runnable pass) throws IOException {
