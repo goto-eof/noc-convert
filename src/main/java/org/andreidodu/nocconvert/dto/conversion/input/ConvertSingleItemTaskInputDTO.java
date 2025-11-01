@@ -19,6 +19,6 @@ public record ConvertSingleItemTaskInputDTO(
         ExecutorService platformExecutorService,
         Runnable incrementPasses,
         Runnable incrementFailures,
-        Consumer<File> addToFileRenameQueue
+        Consumer<Path> addToFileRenameQueue
 ) {
 }

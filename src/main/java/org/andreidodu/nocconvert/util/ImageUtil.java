@@ -11,7 +11,6 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
@@ -63,13 +62,13 @@ public class ImageUtil {
         return newImage;
     }
 
-    public static ImageHeaderDTO getImageHeaders(File file) throws IOException {
+    public static ImageHeaderDTO getImageHeaders(Path file) throws IOException {
         Objects.requireNonNull(file);
 
-        try (ImageInputStream iis = ImageIO.createImageInputStream(file)) {
+        try (ImageInputStream iis = ImageIO.createImageInputStream(file.toFile())) {
             Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
             if (!readers.hasNext()) {
-                throw new IllegalArgumentException("No reader found for " + file.getAbsolutePath());
+                throw new IllegalArgumentException("No reader found for " + file);
             }
 
             ImageReader reader = readers.next();
@@ -88,7 +87,7 @@ public class ImageUtil {
                     .stream()
                     .map(dtoFormat -> dtoFormat.getFormat().toLowerCase())
                     .noneMatch(formatFromList -> formatFromList.equalsIgnoreCase(format))) {
-            throw new IllegalArgumentException("Invalid image format: " + format);
+                throw new IllegalArgumentException("Invalid image format: " + format);
             }
 
             reader.dispose();

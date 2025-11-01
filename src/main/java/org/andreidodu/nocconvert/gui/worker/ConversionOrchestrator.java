@@ -12,7 +12,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,7 +38,7 @@ public class ConversionOrchestrator {
     private final ConversionOrchestratorInputDTO conversionOrchestratorInputDTO;
     private Path tmpDirPath;
     private Path tmpParentDirPath;
-    private final ConcurrentLinkedQueue<File> fileRenameQueue = new ConcurrentLinkedQueue<File>();
+    private final ConcurrentLinkedQueue<Path> fileRenameQueue = new ConcurrentLinkedQueue<>();
 
     public ConversionOrchestrator(ConversionOrchestratorInputDTO conversionOrchestratorInputDTO) {
         this.conversionOrchestratorInputDTO = conversionOrchestratorInputDTO;
@@ -102,7 +101,7 @@ public class ConversionOrchestrator {
                 .build();
     }
 
-    private void addToFileRenameQueue(File file) {
+    private void addToFileRenameQueue(Path file) {
         fileRenameQueue.add(file);
     }
 
@@ -148,8 +147,8 @@ public class ConversionOrchestrator {
     }
 
     private void renameFiles() {
-        for (File file : fileRenameQueue) {
-            Path cleanFileName = FileUtil.getCleanFileNameWithoutExtension(file.toPath());
+        for (Path file : fileRenameQueue) {
+            Path cleanFileName = FileUtil.getCleanFileNameWithoutExtension(file);
             String backupCleanFileName = cleanFileName.getFileName().toString();
             int i = 1;
             while (Files.exists(cleanFileName)) {
@@ -157,7 +156,7 @@ public class ConversionOrchestrator {
                 i++;
             }
             try {
-                Files.move(file.toPath(), cleanFileName, StandardCopyOption.REPLACE_EXISTING);
+                Files.move(file, cleanFileName, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
                 log.error(getRootCauseMessage(e), e);
             }

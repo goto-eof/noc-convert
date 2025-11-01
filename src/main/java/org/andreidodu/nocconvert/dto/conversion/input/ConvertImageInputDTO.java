@@ -2,7 +2,6 @@ package org.andreidodu.nocconvert.dto.conversion.input;
 
 import lombok.Builder;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
@@ -16,6 +15,6 @@ public record ConvertImageInputDTO(
         Consumer<Float> onProgress,
         Runnable pass,
         Consumer<Exception> fail,
-        Consumer<File> addToFileRenameQueue
+        Consumer<Path> addToFileRenameQueue
 ) {
 }
