@@ -184,7 +184,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                         }
 
                     }
-                    // deleteBrokenFileIfExists(tmpOutputFile);
                 }
         );
     }
