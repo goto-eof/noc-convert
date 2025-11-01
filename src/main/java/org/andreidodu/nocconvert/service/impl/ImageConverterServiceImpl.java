@@ -29,6 +29,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
@@ -107,7 +108,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
     private static File calculateOutputFile(Path sourceFile, Path destinationPath, String newFileFormat, boolean isTemporary) {
         if (isTemporary) {
-            newFileFormat = newFileFormat.toLowerCase() + ".tmp";
+            newFileFormat = newFileFormat.toLowerCase() + "-" + UUID.randomUUID() + ".tmp";
         }
 
         String fileName = sourceFile.getFileName().toString();
