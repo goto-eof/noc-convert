@@ -92,7 +92,7 @@ public class FileSystemServiceImpl implements FileSystemService {
     }
 
     private boolean isContainFiles(Path directoryPath) {
-        return directoryPath.toFile().list() != null && directoryPath.toFile().list().length > 0;
+        return directoryPath.toFile().list() != null && Objects.requireNonNull(directoryPath.toFile().list()).length > 0;
     }
 
 

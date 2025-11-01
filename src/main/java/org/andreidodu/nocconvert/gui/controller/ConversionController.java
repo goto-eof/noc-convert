@@ -230,6 +230,9 @@ public class ConversionController {
         this.processedItems = 0;
         this.past = new Date();
 
+        failures.set(0);
+        passes.set(0);
+
         ConversionWorkerInputDTO conversionWorkerInputDTO = buildInput(list);
         conversionWorker = new ConversionWorker(conversionWorkerInputDTO);
         conversionWorker.execute();
@@ -267,15 +270,15 @@ public class ConversionController {
         }
 
         Optional.ofNullable(paths).ifPresent(paths -> {
-            applicationStatusLabel.setText("Converted " + processedItems + " of " + paths.size() + " Images. Please wait.");
+            applicationStatusLabel.setText("Converted " + processedItems + " of " + paths.size() + " Images (" + passes.get() + " passed/" + failures.get() + " failed). Please wait.");
             long now = System.currentTimeMillis();
             if (now - lastTime >= 1000) {
                 lastTime = now;
                 this.cpuLoadPercentage = calculateCpuLoadPercentage();
                 this.timeElapsed = calculateTimeElapsed();
             }
-            if (ApplicationConfig.ADVANCED_MODE) {
-                conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | " + cpuLoadPercentage + "% CPU load | " + conversionWorker.getPlatformThreadsPermits() + " P-Threads | " + conversionWorker.getVirtualThreadsPermits() + " V-Threads | Processed " + processedItems + "/" + paths.size() + " Images");
+            if (ApplicationConfig.DEV_MODE) {
+                conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | " + cpuLoadPercentage + "% CPU load | " + (conversionWorker != null ? conversionWorker.getPlatformThreadsPermits() : -1) + " P-Threads | " + (conversionWorker != null ? conversionWorker.getVirtualThreadsPermits() : -1) + " V-Threads | Processed " + processedItems + "/" + paths.size() + " Images");
                 return;
             }
 

@@ -10,6 +10,9 @@ import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class ConvertSingleItemTask implements Runnable {
@@ -18,6 +21,7 @@ public class ConvertSingleItemTask implements Runnable {
     private final ImageConverterService imageConverterService;
     private boolean canceled = false;
     private final ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO;
+    LocalDateTime lastCall = LocalDateTime.now();
 
     public ConvertSingleItemTask(ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO) {
         this.convertSingleItemTaskInputDTO = convertSingleItemTaskInputDTO;
@@ -70,7 +74,7 @@ public class ConvertSingleItemTask implements Runnable {
 
     public void pass() {
         convertSingleItemTaskInputDTO.incrementPasses().run();
-        sendSuccessfullDTO();
+        sendSuccessfulDTO();
     }
 
     public void fail(Exception e) {
@@ -85,7 +89,7 @@ public class ConvertSingleItemTask implements Runnable {
         convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
     }
 
-    private void sendSuccessfullDTO() {
+    private void sendSuccessfulDTO() {
         conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
         conversionItemDTO.setProgressPercentage(100f);
         convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
@@ -99,12 +103,12 @@ public class ConvertSingleItemTask implements Runnable {
     }
 
     private void updateProgressFloatValue(float progress) {
-        // if ((progress == 1 || progress % 3 == 0) && Duration.between(lastCall, LocalDateTime.now()).toMillis() >= 1000) {
-        conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
-        conversionItemDTO.setProgressPercentage(progress);
-//        lastCall = LocalDateTime.now();
-        convertSingleItemTaskInputDTO.publishItemUpdate().accept(conversionItemDTO);
-        //}
+        if ((progress == 1 || progress % 3 == 0) && Duration.between(lastCall, LocalDateTime.now()).toMillis() >= 1000) {
+            conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
+            conversionItemDTO.setProgressPercentage(progress);
+            lastCall = LocalDateTime.now();
+            convertSingleItemTaskInputDTO.publishItemUpdate().accept(conversionItemDTO);
+        }
     }
 
     public void closeStreams() {

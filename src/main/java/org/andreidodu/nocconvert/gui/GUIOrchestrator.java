@@ -4,6 +4,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import lombok.Getter;
+import org.andreidodu.nocconvert.constants.ApplicationConfig;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.gui.components.ButtonComponent;
 import org.andreidodu.nocconvert.gui.components.ListItemRenderer;
@@ -199,7 +200,7 @@ public class GUIOrchestrator extends JFrame {
     }
 
     private void initializeWindow() {
-        setTitle("NoCloud Bulk Image Converter");
+        setTitle("NoCloud Bulk Image Converter" + (ApplicationConfig.DEV_MODE ? "(dev_mode)" : ""));
         setContentPane(mainPanel);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         revalidate();

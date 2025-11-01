@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -40,10 +41,18 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
     }
 
     private List<String> getAvailableReadExtensions() {
-        return imageConverterService.getAvailableReadFormatList()
+        List<String> list = new ArrayList<>(imageConverterService.getAvailableReadFormatList()
                 .stream()
                 .map(format -> FormatExtensionMapper.getExtension(format.getFormat()))
-                .toList();
+                .toList());
+        if (list.stream().anyMatch(item -> item.equalsIgnoreCase("jpg"))) {
+            list.add("jpeg");
+        }
+
+        list = new ArrayList<>(list.stream().map(String::toLowerCase).distinct().toList());
+        list.addAll(list.stream().map(String::toUpperCase).distinct().toList());
+
+        return list;
     }
 
     @Override

@@ -1,10 +1,12 @@
 package org.andreidodu.nocconvert.gui.dto;
 
+import lombok.Builder;
 import lombok.Getter;
 
 import java.util.Optional;
 
 @Getter
+@Builder
 public class FormatExtensionDTO {
     private final String format;
     private final String extension;

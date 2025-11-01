@@ -26,10 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
@@ -51,33 +48,39 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     @Override
     public void convertImage(ConvertImageInputDTO convertImageInputDTO) throws IOException {
         if (canceled) {
+            convertImageInputDTO.fail().accept(new RuntimeException("Process interrupted"));
             throw new ConversionManualAbortedException();
         }
 
         log.debug("Converting image {} from {} to {}", convertImageInputDTO.sourceFile().getFileName(), convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension());
 
-        interruptIfNecessary();
+        interruptIfNecessary(convertImageInputDTO.fail());
 
         convertImageInputDTO.onStart().run();
         convertImageInputDTO.onProgress().accept(1f);
 
         File file = convertImageInputDTO.sourceFile().toFile();
 
-        ImageHeaderDTO sourceFileHeaders = getImageHeaders(file);
-        String sourceFileFormat = sourceFileHeaders.format();
-        List<String> validInputFormatListInLowerCase = Arrays.stream(ImageIO.getReaderFormatNames()).toList();
-        validateInputImage(convertImageInputDTO.sourceFile(), sourceFileFormat, validInputFormatListInLowerCase);
+        try {
+            ImageHeaderDTO sourceFileHeaders = getImageHeaders(file);
+            String sourceFileFormat = sourceFileHeaders.format();
+            List<String> validInputFormatListInLowerCase = Arrays.stream(ImageIO.getReaderFormatNames()).toList();
+            validateInputImage(convertImageInputDTO.sourceFile(), sourceFileFormat, validInputFormatListInLowerCase, convertImageInputDTO.fail());
+            File outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
 
-        File outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
-        File tmpOutputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.tmpPath(), convertImageInputDTO.targetExtension(), true);
-
-        if (sourceFileHeaders.format().equalsIgnoreCase(convertImageInputDTO.targetExtension())) {
-            log.info("No need to convert image {} from {} to {}. I will just copy it.", convertImageInputDTO.sourceFile(), sourceFileHeaders.format(), convertImageInputDTO.targetExtension());
-            Files.copy(convertImageInputDTO.sourceFile(), outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            return;
+            if (sourceFileHeaders.format().equalsIgnoreCase(convertImageInputDTO.targetExtension())) {
+                log.info("No need to convert image {} from {} to {}. I will just copy it.", convertImageInputDTO.sourceFile(), sourceFileHeaders.format(), convertImageInputDTO.targetExtension());
+                Files.copy(convertImageInputDTO.sourceFile(), outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                convertImageInputDTO.pass().run();
+                return;
+            }
+        }catch (Exception e){
+            convertImageInputDTO.fail().accept(e);
+            throw new RuntimeException(getRootCauseMessage(e), e);
         }
 
         try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(file)) {
+            File tmpOutputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.tmpPath(), convertImageInputDTO.targetExtension(), true);
 
             Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
 
@@ -87,14 +90,15 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             BufferedImage image = readImage(imageInputStream, readers, totalReadPercentageDTO, convertImageInputDTO.onProgress());
 
-            interruptIfNecessary();
+            interruptIfNecessary(null);
 
             image = preprocessImage(convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension(), image, platformExecutorService);
 
-            interruptIfNecessary();
+            interruptIfNecessary(null);
 
             writeImageOuter(convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image);
         } catch (Exception e) {
+            convertImageInputDTO.fail().accept(e);
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }
@@ -132,12 +136,14 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
                 reader.addIIOReadProgressListener(readerListener);
 
-                interruptIfNecessary();
+                interruptIfNecessary(null);
                 var data = reader.read(0);
                 if (readerListener.getException() != null) {
                     throw readerListener.getException();
                 }
                 return data;
+            } catch (Exception e) {
+                throw e;
             } finally {
                 reader.dispose();
             }
@@ -151,11 +157,10 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     private void writeImageOuter(ConvertImageInputDTO convertImageInputDTO, File tmpOutputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image) throws Exception {
         try {
             writeImageInner(convertImageInputDTO.targetExtension(), convertImageInputDTO.onProgress(), tmpOutputFile, totalReadPercentageDTO, image);
-        } catch (Throwable e) {
-            throw new RuntimeException(getRootCauseMessage(e), e);
-        } finally {
             File outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
             asyncFileCompletionValidation(tmpOutputFile, outputFile, convertImageInputDTO.pass(), convertImageInputDTO.fail());
+        } catch (Throwable e) {
+            throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }
 
@@ -249,11 +254,13 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         }
     }
 
-    private static void validateInputImage(Path sourceFile, String sourceFileFormat, List<String> validInputFormatListInLowerCase) {
+    private static void validateInputImage(Path sourceFile, String sourceFileFormat, List<String> validInputFormatListInLowerCase, Consumer<Exception> fail) {
         if (sourceFileFormat != null && !validInputFormatListInLowerCase.contains(sourceFileFormat.toLowerCase())) {
             String message = "invalid file format even if the extension is correct: " + sourceFile;
             log.warn(message);
-            throw new InvalidFileFormatException(message);
+            InvalidFileFormatException e = new InvalidFileFormatException(message);
+            fail.accept(e);
+            throw e;
         }
     }
 
@@ -426,10 +433,12 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         };
     }
 
-    private static void interruptIfNecessary() {
+    private static void interruptIfNecessary(Consumer<Exception> fail) {
         if (Thread.currentThread().isInterrupted()) {
             log.error("Operation aborted 0");
-            throw new ConversionManualAbortedException("Operation aborted");
+            ConversionManualAbortedException e = new ConversionManualAbortedException("Operation aborted");
+            Optional.ofNullable(fail).ifPresent(callback -> callback.accept(e));
+            throw e;
         }
     }
 

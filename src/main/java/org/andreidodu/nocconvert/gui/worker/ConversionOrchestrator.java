@@ -1,6 +1,7 @@
 package org.andreidodu.nocconvert.gui.worker;
 
 import lombok.Getter;
+import org.andreidodu.nocconvert.constants.ApplicationConfig;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInputDTO;
@@ -120,7 +121,7 @@ public class ConversionOrchestrator {
 
             virtualThreadExecutor.shutdownNow();
 
-            if (tmpParentDirPath != null) {
+            if (!ApplicationConfig.DEV_MODE && tmpParentDirPath != null) {
                 try {
                     FileUtils.deleteDirectory(tmpParentDirPath.toFile());
                 } catch (IOException e) {
