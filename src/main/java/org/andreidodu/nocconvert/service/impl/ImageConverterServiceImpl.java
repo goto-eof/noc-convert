@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.andreidodu.nocconvert.dto.ImageHeaderDTO;
+import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.exception.InvalidFileFormatException;
 import org.andreidodu.nocconvert.service.ImageConverterService;
@@ -28,7 +29,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
@@ -49,30 +49,31 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     }
 
     @Override
-    public void convertImage(Path sourceFile, Path destinationPath, String newFileFormat, Runnable onStart, Consumer<Float> updateProgressFloatValue) throws IOException {
+    public void convertImage(ConvertImageInputDTO convertImageInputDTO) throws IOException {
         if (canceled) {
             throw new ConversionManualAbortedException();
         }
 
-        log.debug("Converting image {} from {} to {}", sourceFile.getFileName(), sourceFile, newFileFormat);
+        log.debug("Converting image {} from {} to {}", convertImageInputDTO.sourceFile().getFileName(), convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension());
 
         interruptIfNecessary();
 
-        onStart.run();
-        updateProgressFloatValue.accept(1f);
+        convertImageInputDTO.onStart().run();
+        convertImageInputDTO.onProgress().accept(1f);
 
-        File file = sourceFile.toFile();
+        File file = convertImageInputDTO.sourceFile().toFile();
 
         ImageHeaderDTO sourceFileHeaders = getImageHeaders(file);
         String sourceFileFormat = sourceFileHeaders.format();
         List<String> validInputFormatListInLowerCase = Arrays.stream(ImageIO.getReaderFormatNames()).toList();
-        validateInputImage(sourceFile, sourceFileFormat, validInputFormatListInLowerCase);
+        validateInputImage(convertImageInputDTO.sourceFile(), sourceFileFormat, validInputFormatListInLowerCase);
 
-        File outputFile = calculateOutputFile(sourceFile, destinationPath, newFileFormat);
+        File outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
+        File tmpOutputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.tmpPath(), convertImageInputDTO.targetExtension(), true);
 
-        if (sourceFileHeaders.format().equalsIgnoreCase(newFileFormat)) {
-            log.info("No need to convert image {} from {} to {}. I will just copy it.", sourceFile, sourceFileHeaders.format(), newFileFormat);
-            Files.copy(sourceFile, outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        if (sourceFileHeaders.format().equalsIgnoreCase(convertImageInputDTO.targetExtension())) {
+            log.info("No need to convert image {} from {} to {}. I will just copy it.", convertImageInputDTO.sourceFile(), sourceFileHeaders.format(), convertImageInputDTO.targetExtension());
+            Files.copy(convertImageInputDTO.sourceFile(), outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             return;
         }
 
@@ -84,19 +85,20 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             TotalReadPercentageDTO totalReadPercentageDTO = TotalReadPercentageDTO.builder().build();
 
-            BufferedImage image = readImage(imageInputStream, readers, totalReadPercentageDTO, updateProgressFloatValue);
+            BufferedImage image = readImage(imageInputStream, readers, totalReadPercentageDTO, convertImageInputDTO.onProgress());
 
             interruptIfNecessary();
 
-            image = preprocessImage(sourceFile, newFileFormat, image, platformExecutorService);
+            image = preprocessImage(convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension(), image, platformExecutorService);
 
             interruptIfNecessary();
 
-            writeImageOuter(newFileFormat, outputFile, totalReadPercentageDTO, image, updateProgressFloatValue);
+            writeImageOuter(convertImageInputDTO, tmpOutputFile, outputFile, totalReadPercentageDTO, image);
         } catch (Exception e) {
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }
+
 
     private static void validateReader(Iterator<ImageReader> readers, File file) {
         if (!readers.hasNext()) {
@@ -104,8 +106,12 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         }
     }
 
-    private static File calculateOutputFile(Path sourceFile, Path destinationPath, String newFileFormat) {
-        String fileName = System.currentTimeMillis() + "-" + sourceFile.getFileName().toString();
+    private static File calculateOutputFile(Path sourceFile, Path destinationPath, String newFileFormat, boolean isTemporary) {
+        if (isTemporary) {
+            newFileFormat = newFileFormat.toLowerCase() + ".tmp";
+        }
+
+        String fileName = sourceFile.getFileName().toString();
         Path outputFilePath = destinationPath.resolve(renameFileExtension(fileName, newFileFormat));
         int i = 1;
         while (outputFilePath.toFile().exists()) {
@@ -142,26 +148,39 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         }
     }
 
-    private void writeImageOuter(String newFileFormat, File outputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image, Consumer<Float> updateProgressFloatValue) throws Exception {
+    private void writeImageOuter(ConvertImageInputDTO convertImageInputDTO, File tmpOutputFile, File outputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image) throws Exception {
         try {
-            writeImageInner(newFileFormat, updateProgressFloatValue, outputFile, totalReadPercentageDTO, image);
-            Optional<String> imageValid = tryToReadImageAndGetError(outputFile);
-            if (imageValid.isPresent()) {
-                throw new RuntimeException(imageValid.orElse("Unknown error"));
-            }
+            writeImageInner(convertImageInputDTO.targetExtension(), convertImageInputDTO.onProgress(), tmpOutputFile, totalReadPercentageDTO, image);
         } catch (Throwable e) {
-            deleteBrokenFileIfExists(outputFile);
             throw new RuntimeException(getRootCauseMessage(e), e);
+        } finally {
+            asyncFileCompletionValidation(tmpOutputFile, outputFile, convertImageInputDTO.incrementPasses(), convertImageInputDTO.incrementFailures());
         }
     }
 
-    private Optional<String> tryToReadImageAndGetError(File outputFile) {
-        try {
-            ImageUtil.getImageHeaders(outputFile);
-            return Optional.empty();
-        } catch (IOException e) {
-            return Optional.of(getRootCauseMessage(e));
-        }
+    private void asyncFileCompletionValidation(File tmpOutputFile, File outputFile, Runnable pass, Runnable fail) {
+        Thread.ofVirtual().start(() -> {
+                    int i = 5;
+
+                    while (i-- > 0) {
+                        try {
+                            ImageUtil.getImageHeaders(tmpOutputFile);
+                            Files.move(tmpOutputFile.toPath(), outputFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+                            pass.run();
+                            return;
+                        } catch (Exception e) {
+                            log.debug(getRootCauseMessage(e), e);
+                        }
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    // deleteBrokenFileIfExists(tmpOutputFile);
+                    fail.run();
+                }
+        );
     }
 
     private void writeImageInner(String newFileFormat, Consumer<Float> updateProgressFloatValue, File outputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image) throws Exception {
@@ -390,14 +409,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         if (Thread.currentThread().isInterrupted()) {
             log.error("Operation aborted 0");
             throw new ConversionManualAbortedException("Operation aborted");
-        }
-    }
-
-    @Override
-    public void cancelTask(boolean interrupt) {
-        setCanceled(true);
-        if (interrupt) {
-            Thread.currentThread().interrupt();
         }
     }
 

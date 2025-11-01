@@ -1,33 +1,40 @@
 package org.andreidodu.nocconvert.gui.worker;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInputDTO;
+import org.andreidodu.nocconvert.dto.conversion.input.ConversionWorkerInputDTO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
     private static final Logger log = LogManager.getLogger(ConversionWorker.class);
-    private final List<ConversionItemDTO> list;
-    private final Consumer<List<ConversionItemDTO>> updateGui;
-    private final Consumer<List<ConversionItemDTO>> onAllTasksComplete;
-    private final Consumer<ConversionItemDTO> completeItem;
     private ConversionOrchestrator conversionOrchestrator;
+    private final ConversionWorkerInputDTO conversionWorkerInputDTO;
 
-    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui, Consumer<List<ConversionItemDTO>> onAllTasksComplete, Consumer<ConversionItemDTO> completeItem) {
-        this.list = list;
-        this.updateGui = updateGui;
-        this.onAllTasksComplete = onAllTasksComplete;
-        this.completeItem = completeItem;
+    public ConversionWorker(ConversionWorkerInputDTO conversionWorkerInputDTO) {
+        this.conversionWorkerInputDTO = conversionWorkerInputDTO;
     }
 
     @Override
     protected Void doInBackground() {
-        conversionOrchestrator = new ConversionOrchestrator(list, this::publishItemUpdate, completeItem, onAllTasksComplete);
+        ConversionOrchestratorInputDTO conversionOrchestratorInputDTO = buildInput();
+        conversionOrchestrator = new ConversionOrchestrator(conversionOrchestratorInputDTO);
         conversionOrchestrator.startConversion();
         return null;
+    }
+
+    private ConversionOrchestratorInputDTO buildInput() {
+        return ConversionOrchestratorInputDTO.builder()
+                .conversionItemDTOList(conversionWorkerInputDTO.list())
+                .setItemAsCompleted(conversionWorkerInputDTO.completeItem())
+                .onAllTasksComplete(conversionWorkerInputDTO.onAllTasksComplete())
+                .publishItemUpdate(this::publishItemUpdate)
+                .incrementFailures(conversionWorkerInputDTO.incrementFailures())
+                .incrementPasses(conversionWorkerInputDTO.incrementPasses())
+                .build();
     }
 
     public int getVirtualThreadsPermits() {
@@ -47,7 +54,7 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
 
     @Override
     protected void process(List<ConversionItemDTO> chunks) {
-        this.updateGui.accept(chunks);
+        conversionWorkerInputDTO.updateGui().accept(chunks);
     }
 
     private void publishItemUpdate(ConversionItemDTO conversionItemDTO) {

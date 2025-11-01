@@ -2,7 +2,7 @@ package org.andreidodu.nocconvert.gui.controller;
 
 import org.andreidodu.nocconvert.constants.ApplicationConfig;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
-import org.andreidodu.nocconvert.dto.ConversionStatus;
+import org.andreidodu.nocconvert.dto.conversion.input.ConversionWorkerInputDTO;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.andreidodu.nocconvert.util.CpuUtil.calculateCpuLoadPercentage;
 
@@ -40,6 +41,9 @@ public class ConversionController {
     private int cpuLoadPercentage;
     private long lastTime = System.currentTimeMillis();
     private Date past = new Date();
+
+    private final AtomicInteger passes = new AtomicInteger(0);
+    private final AtomicInteger failures = new AtomicInteger(0);
 
     private String timeElapsed = "0s";
 
@@ -226,9 +230,29 @@ public class ConversionController {
         this.processedItems = 0;
         this.past = new Date();
 
-        conversionWorker = new ConversionWorker(list, this::updateList, this::onAllItemsCompleted, this::onItemCompleted);
+        ConversionWorkerInputDTO conversionWorkerInputDTO = buildInput(list);
+        conversionWorker = new ConversionWorker(conversionWorkerInputDTO);
         conversionWorker.execute();
         conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(list.size());
+    }
+
+    private ConversionWorkerInputDTO buildInput(List<ConversionItemDTO> list) {
+        return ConversionWorkerInputDTO.builder()
+                .list(list)
+                .updateGui(this::updateList)
+                .onAllTasksComplete(this::onAllItemsCompleted)
+                .completeItem(this::onItemCompleted)
+                .incrementPasses(this::incrementPasses)
+                .incrementFailures(this::incrementFailures)
+                .build();
+    }
+
+    private void incrementFailures() {
+        this.failures.incrementAndGet();
+    }
+
+    private void incrementPasses() {
+        this.passes.incrementAndGet();
     }
 
     public boolean isWorking() {
@@ -300,36 +324,36 @@ public class ConversionController {
 //                .forEach(index -> {
 //                    list.add(model.get(index));
 //                });
+//
+//        long failed = list.stream().filter(dto -> ConversionStatus.FAILED.equals(dto.getStatus())).count();
+//        long success = list.stream().filter(dto -> ConversionStatus.COMPLETED.equals(dto.getStatus())).count();
+//        long queued = list.stream().filter(dto -> ConversionStatus.QUEUED.equals(dto.getStatus())).peek(item -> log.debug("QUEUED: {}", item)).count();
+//        long processing = list.stream().filter(dto -> ConversionStatus.PROCESSING.equals(dto.getStatus())).peek(item -> log.debug("PROCESSING: {}", item)).count();
+//        log.debug("Processing " + processing + " Images.");
 
-        long failed = list.stream().filter(dto -> ConversionStatus.FAILED.equals(dto.getStatus())).count();
-        long success = list.stream().filter(dto -> ConversionStatus.COMPLETED.equals(dto.getStatus())).count();
-        long queued = list.stream().filter(dto -> ConversionStatus.QUEUED.equals(dto.getStatus())).peek(item -> log.debug("QUEUED: {}", item)).count();
-        long processing = list.stream().filter(dto -> ConversionStatus.PROCESSING.equals(dto.getStatus())).peek(item -> log.debug("PROCESSING: {}", item)).count();
-        log.debug("Processing " + processing + " Images.");
-
-        long other = list.stream()
-                .filter(item -> !List.of(ConversionStatus.FAILED, ConversionStatus.COMPLETED, ConversionStatus.QUEUED, ConversionStatus.PROCESSING).contains(item.getStatus()))
-                .count();
-        log.debug("unknown status: {}", other);
+//        long other = list.stream()
+//                .filter(item -> !List.of(ConversionStatus.FAILED, ConversionStatus.COMPLETED, ConversionStatus.QUEUED, ConversionStatus.PROCESSING).contains(item.getStatus()))
+//                .count();
+//        log.debug("unknown status: {}", other);
 
 
         SwingUtilities.invokeLater(() -> {
 
-            String colorSuccess = success > 0 ? "green" : "white";
-            String colorUnprocessed = queued + processing > 0 ? "#CCCC00" : "white";
-            String colorFailed = failed > 0 ? "red" : "white";
+            String colorSuccess = passes.get() > 0 ? "green" : "white";
+            //String colorUnprocessed = queued + processing > 0 ? "#CCCC00" : "white";
+            String colorFailed = failures.get() > 0 ? "red" : "white";
 
             String coloredMessage = String.format("<html><div style='text-align:center;'>" +
                     "<span style='font-size:14pt;'>Conversion completed.</span><br/>" +
                     "<span style='font-size:14pt; font-weight:bold;'>Total: </span>" + "<span style='font-size:14pt; font-weight:bold;'>%s. </span>" +
                     "<span style='color:" + colorSuccess + "; font-weight:bold; font-size:14pt;'>Success: %s / </span>" +
-                    "<span style='color:" + colorUnprocessed + "; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" +
+                    // "<span style='color:" + colorUnprocessed + "; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" +
                     "<span style='color:" + colorFailed + "; font-weight:bold; font-size:14pt;'>Failed: %s</span>" +
-                    "</div></html>", list.size(), success, queued + processing, failed);
+                    "</div></html>", list.size(), passes.get(), 0, failures.get());
 
 
             applicationStatusLabel.setText(coloredMessage);
-            secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", success, failed));
+            secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", passes.get(), failures.get()));
             conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);
         });
         conversionWorker = null;

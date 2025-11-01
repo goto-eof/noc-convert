@@ -3,27 +3,27 @@ package org.andreidodu.nocconvert.gui.worker;
 import lombok.Getter;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
+import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInputDTO;
+import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
 import org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.function.Consumer;
 
 import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
 
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
-    private final Consumer<ConversionItemDTO> publishItemUpdate;
-    private final Consumer<ConversionItemDTO> setItemAsCompleted;
     private final ExecutorService virtualThreadExecutor;
-    private final List<ConversionItemDTO> conversionItemDTOList;
     private final List<ConversionItemDTO> updatedConversionItemDTOList = new CopyOnWriteArrayList<>();
     private List<ConvertSingleItemTask> virtualTaskList;
     private static Semaphore semaphore;
-    private final Consumer<List<ConversionItemDTO>> onAllTasksComplete;
     private final ExecutorService platformExecutorService;
     @Getter
     private final int platformThreadsPermits;
@@ -31,18 +31,11 @@ public class ConversionOrchestrator {
     private final int virtualThreadsPermits;
     @Getter
     private final int permits = AdaptiveSimpleGovernorRunnable.IDEAL_NUM_OF_THREADS.get();
+    private final ConversionOrchestratorInputDTO conversionOrchestratorInputDTO;
 
-    public ConversionOrchestrator(
-            List<ConversionItemDTO> conversionItemDTOList,
-            Consumer<ConversionItemDTO> publishItemUpdate,
-            Consumer<ConversionItemDTO> setItemAsCompleted,
-            Consumer<List<ConversionItemDTO>> onAllTasksComplete
-    ) {
+    public ConversionOrchestrator(ConversionOrchestratorInputDTO conversionOrchestratorInputDTO) {
+        this.conversionOrchestratorInputDTO = conversionOrchestratorInputDTO;
 
-        this.publishItemUpdate = publishItemUpdate;
-        this.setItemAsCompleted = setItemAsCompleted;
-        this.onAllTasksComplete = onAllTasksComplete;
-        this.conversionItemDTOList = conversionItemDTOList;
         virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
         platformThreadsPermits = permits;
@@ -55,18 +48,47 @@ public class ConversionOrchestrator {
 
     public void startConversion() {
         virtualTaskList = new ArrayList<>();
-        for (ConversionItemDTO conversionItemDTO : conversionItemDTOList) {
+        Path tmpDirPath;
+        try {
+            tmpDirPath = buildTmpPathAndReturn(conversionOrchestratorInputDTO.conversionItemDTOList().stream().findFirst().get().getDestinationDirectory());
+            log.debug("Creating temporary directory: {}", tmpDirPath);
+        } catch (IOException e) {
+            log.error("Failed to build tmp dir for conversion orchestrator", e);
+            throw new RuntimeException(e);
+        }
+        for (ConversionItemDTO conversionItemDTO : conversionOrchestratorInputDTO.conversionItemDTOList()) {
             conversionItemDTO.setStatus(ConversionStatus.QUEUED);
-            ConvertSingleItemTask task = new ConvertSingleItemTask(conversionItemDTO, publishItemUpdate, this::setItemAsCompletedOverride, semaphore, platformExecutorService);
+            ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO = buildInput(conversionItemDTO, tmpDirPath);
+            ConvertSingleItemTask task = new ConvertSingleItemTask(convertSingleItemTaskInputDTO);
             virtualTaskList.add(task);
             virtualThreadExecutor.submit(task);
         }
         onCompleteAll();
     }
 
+
+    private static Path buildTmpPathAndReturn(Path tmpOutputDirectory) throws IOException {
+        Path tmpDirPath = Path.of(tmpOutputDirectory.toString(), "tmp", "attempt - " + System.currentTimeMillis());
+        Files.createDirectories(tmpDirPath);
+        return tmpDirPath;
+    }
+
+    private ConvertSingleItemTaskInputDTO buildInput(ConversionItemDTO conversionItemDTO, Path tmpDir) {
+        return ConvertSingleItemTaskInputDTO.builder()
+                .conversionItemDTO(conversionItemDTO)
+                .tmpPath(tmpDir)
+                .publishItemUpdate(conversionOrchestratorInputDTO.publishItemUpdate())
+                .setItemAsCompleted(this::setItemAsCompletedOverride)
+                .semaphore(semaphore)
+                .platformExecutorService(platformExecutorService)
+                .incrementFailures(conversionOrchestratorInputDTO.incrementFailures())
+                .incrementPasses(conversionOrchestratorInputDTO.incrementPasses())
+                .build();
+    }
+
     private void setItemAsCompletedOverride(ConversionItemDTO conversionItemDTO) {
         updatedConversionItemDTOList.add(conversionItemDTO);
-        setItemAsCompleted.accept(conversionItemDTO);
+        conversionOrchestratorInputDTO.setItemAsCompleted().accept(conversionItemDTO);
     }
 
     private void onCompleteAll() {
@@ -97,7 +119,7 @@ public class ConversionOrchestrator {
     }
 
     public void onAllTasksComplete() {
-        onAllTasksComplete.accept(updatedConversionItemDTOList);
+        conversionOrchestratorInputDTO.onAllTasksComplete().accept(updatedConversionItemDTOList);
     }
 
     public void shutdown() {
