@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
-import static org.andreidodu.nocconvert.util.FileUtil.deleteBrokenFileIfExists;
 import static org.andreidodu.nocconvert.util.ImageUtil.*;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
@@ -93,7 +92,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             interruptIfNecessary();
 
-            writeImageOuter(convertImageInputDTO, tmpOutputFile, outputFile, totalReadPercentageDTO, image);
+            writeImageOuter(convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image);
         } catch (Exception e) {
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
@@ -148,12 +147,13 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         }
     }
 
-    private void writeImageOuter(ConvertImageInputDTO convertImageInputDTO, File tmpOutputFile, File outputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image) throws Exception {
+    private void writeImageOuter(ConvertImageInputDTO convertImageInputDTO, File tmpOutputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image) throws Exception {
         try {
             writeImageInner(convertImageInputDTO.targetExtension(), convertImageInputDTO.onProgress(), tmpOutputFile, totalReadPercentageDTO, image);
         } catch (Throwable e) {
             throw new RuntimeException(getRootCauseMessage(e), e);
         } finally {
+            File outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
             asyncFileCompletionValidation(tmpOutputFile, outputFile, convertImageInputDTO.incrementPasses(), convertImageInputDTO.incrementFailures());
         }
     }
@@ -170,15 +170,21 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                             return;
                         } catch (Exception e) {
                             log.debug(getRootCauseMessage(e), e);
+                            if (i == 1) {
+                                fail.run();
+                                return;
+                            }
                         }
                         try {
                             Thread.sleep(100);
                         } catch (InterruptedException e) {
+                            fail.run();
+                            log.debug(getRootCauseMessage(e), e);
                             throw new RuntimeException(e);
                         }
+
                     }
                     // deleteBrokenFileIfExists(tmpOutputFile);
-                    fail.run();
                 }
         );
     }

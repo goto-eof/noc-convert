@@ -6,6 +6,7 @@ import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
 import org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable;
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,6 +33,7 @@ public class ConversionOrchestrator {
     @Getter
     private final int permits = AdaptiveSimpleGovernorRunnable.IDEAL_NUM_OF_THREADS.get();
     private final ConversionOrchestratorInputDTO conversionOrchestratorInputDTO;
+    private Path tmpDirPath;
 
     public ConversionOrchestrator(ConversionOrchestratorInputDTO conversionOrchestratorInputDTO) {
         this.conversionOrchestratorInputDTO = conversionOrchestratorInputDTO;
@@ -48,7 +50,6 @@ public class ConversionOrchestrator {
 
     public void startConversion() {
         virtualTaskList = new ArrayList<>();
-        Path tmpDirPath;
         try {
             tmpDirPath = buildTmpPathAndReturn(conversionOrchestratorInputDTO.conversionItemDTOList().stream().findFirst().get().getDestinationDirectory());
             log.debug("Creating temporary directory: {}", tmpDirPath);
@@ -108,6 +109,14 @@ public class ConversionOrchestrator {
             }
 
             virtualThreadExecutor.shutdownNow();
+
+            if (tmpDirPath != null) {
+                try {
+                    FileUtils.deleteDirectory(tmpDirPath.toFile());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
 
         } catch (InterruptedException e) {
             log.warn("Conversion Worker interrupted (user STOP action). Forcing Orchestrator cancel.", e);
