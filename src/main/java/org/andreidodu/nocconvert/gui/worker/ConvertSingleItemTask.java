@@ -34,13 +34,14 @@ public class ConvertSingleItemTask implements Runnable {
     public void run() {
         if (canceled) {
             updateAsCancelled();
-            log.debug("CANCELED: {}", conversionItemDTO.getFileName());
+            log.debug("CANCELED: {}", conversionItemDTO.getSourceFile());
             return;
         }
         try {
             convertSingleItemTaskInputDTO.semaphore().acquire();
         } catch (InterruptedException e) {
             updateAsCancelled();
+            log.debug("CANCELED: {}", conversionItemDTO.getSourceFile());
             log.debug(getRootCauseMessage(e), e);
             return;
         }
