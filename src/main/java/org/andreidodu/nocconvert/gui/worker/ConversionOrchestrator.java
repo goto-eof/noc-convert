@@ -150,9 +150,10 @@ public class ConversionOrchestrator {
     private void renameFiles() {
         for (File file : fileRenameQueue) {
             Path cleanFileName = FileUtil.getCleanFileNameWithoutExtension(file.toPath());
+            String backupCleanFileName = cleanFileName.getFileName().toString();
             int i = 1;
             while (Files.exists(cleanFileName)) {
-                cleanFileName = calculateNewName(cleanFileName, i);
+                cleanFileName = calculateNewName(cleanFileName, i, backupCleanFileName);
                 i++;
             }
             try {
@@ -163,8 +164,8 @@ public class ConversionOrchestrator {
         }
     }
 
-    private static Path calculateNewName(Path cleanFilename, int i) {
-        return Path.of(cleanFilename.getParent().toString(), "duplicate-" + i + "-of-" + cleanFilename.getFileName());
+    private static Path calculateNewName(Path cleanFilename, int i, String cleanedFilename) {
+        return Path.of(cleanFilename.getParent().toString(), "duplicate-" + i + "-of-" + cleanedFilename);
     }
 
     public void onAllTasksComplete() {
