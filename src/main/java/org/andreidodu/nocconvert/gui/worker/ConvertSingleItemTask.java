@@ -26,11 +26,9 @@ public class ConvertSingleItemTask implements Runnable {
     }
 
     private void onStart() {
-        if (!conversionItemDTO.isReadOnly()) {
-            conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
-            conversionItemDTO.setProgressPercentage(0f);
-            convertSingleItemTaskInputDTO.publishItemUpdate().accept(conversionItemDTO);
-        }
+        conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
+        conversionItemDTO.setProgressPercentage(0f);
+        convertSingleItemTaskInputDTO.publishItemUpdate().accept(conversionItemDTO);
     }
 
     public void run() {
@@ -47,14 +45,10 @@ public class ConvertSingleItemTask implements Runnable {
         try {
             ConvertImageInputDTO convertImageInputDTO = buildInput();
             this.imageConverterService.convertImage(convertImageInputDTO);
-            if (!conversionItemDTO.isReadOnly()) {
-                sendSuccessfullDTO();
-            }
+            sendSuccessfullDTO();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            if (!conversionItemDTO.isReadOnly()) {
-                sendFailedDTO(e);
-            }
+            sendFailedDTO(e);
         } finally {
             convertSingleItemTaskInputDTO.semaphore().release();
         }
@@ -68,44 +62,47 @@ public class ConvertSingleItemTask implements Runnable {
                 .targetExtension(conversionItemDTO.getTargetExtension())
                 .onStart(this::onStart)
                 .onProgress(this::updateProgressFloatValue)
-                .incrementFailures(convertSingleItemTaskInputDTO.incrementFailures())
-                .incrementPasses(convertSingleItemTaskInputDTO.incrementPasses())
+                .fail(this::fail)
+                .pass(this::pass)
                 .build();
     }
 
+    public void pass() {
+        convertSingleItemTaskInputDTO.incrementPasses().run();
+        sendSuccessfullDTO();
+    }
+
+    public void fail(Exception e) {
+        convertSingleItemTaskInputDTO.incrementFailures().run();
+        sendFailedDTO(e);
+    }
 
     private void sendFailedDTO(Exception e) {
         conversionItemDTO.setStatus(ConversionStatus.FAILED);
         conversionItemDTO.setProgressPercentage(100f);
         conversionItemDTO.setErrorMessage(getRootCauseMessage(e));
-        conversionItemDTO.setReadOnly(true);
         convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
     }
 
     private void sendSuccessfullDTO() {
         conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
         conversionItemDTO.setProgressPercentage(100f);
-        conversionItemDTO.setReadOnly(true);
         convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
     }
 
     private void updateAsCancelled() {
-        if (!conversionItemDTO.isReadOnly()) {
-            conversionItemDTO.setStatus(ConversionStatus.FAILED);
-            conversionItemDTO.setProgressPercentage(100f);
-            conversionItemDTO.setErrorMessage("cancelled");
-            convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
-        }
+        conversionItemDTO.setStatus(ConversionStatus.FAILED);
+        conversionItemDTO.setProgressPercentage(100f);
+        conversionItemDTO.setErrorMessage("cancelled");
+        convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
     }
 
     private void updateProgressFloatValue(float progress) {
         // if ((progress == 1 || progress % 3 == 0) && Duration.between(lastCall, LocalDateTime.now()).toMillis() >= 1000) {
-        if (!conversionItemDTO.isReadOnly()) {
-            conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
-            conversionItemDTO.setProgressPercentage(progress);
+        conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
+        conversionItemDTO.setProgressPercentage(progress);
 //        lastCall = LocalDateTime.now();
-            convertSingleItemTaskInputDTO.publishItemUpdate().accept(conversionItemDTO);
-        }
+        convertSingleItemTaskInputDTO.publishItemUpdate().accept(conversionItemDTO);
         //}
     }
 

@@ -21,6 +21,5 @@ public class ConversionItemDTO {
     private Path sourceFile;
     private Path destinationDirectory;
     private Integer index;
-    private boolean readOnly;
 
 }

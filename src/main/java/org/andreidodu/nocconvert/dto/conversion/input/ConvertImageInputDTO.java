@@ -13,7 +13,7 @@ public record ConvertImageInputDTO(
         String targetExtension,
         Runnable onStart,
         Consumer<Float> onProgress,
-        Runnable incrementPasses,
-        Runnable incrementFailures
+        Runnable pass,
+        Consumer<Exception> fail
 ) {
 }

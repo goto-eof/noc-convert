@@ -155,17 +155,17 @@ public class ImageConverterServiceImpl implements ImageConverterService {
             throw new RuntimeException(getRootCauseMessage(e), e);
         } finally {
             File outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
-            asyncFileCompletionValidation(tmpOutputFile, outputFile, convertImageInputDTO.incrementPasses(), convertImageInputDTO.incrementFailures());
+            asyncFileCompletionValidation(tmpOutputFile, outputFile, convertImageInputDTO.pass(), convertImageInputDTO.fail());
         }
     }
 
-    private void asyncFileCompletionValidation(File tmpOutputFile, File outputFile, Runnable pass, Runnable fail) {
+    private void asyncFileCompletionValidation(File tmpOutputFile, File outputFile, Runnable pass, Consumer<Exception> fail) {
         Thread.ofVirtual().start(() -> {
                     int i = 5;
 
                     while (i > 0) {
                         try {
-                            validateFileCompletion(tmpOutputFile, outputFile, pass, fail);
+                            validateFileCompletion(tmpOutputFile, outputFile, pass);
                             return;
                         } catch (Exception e) {
                             log.debug(getRootCauseMessage(e), e);
@@ -173,9 +173,9 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                             if (i == 1) {
                                 try {
                                     Files.move(outputFile.toPath(), tmpOutputFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
-                                    fail.run();
+                                    fail.accept(new RuntimeException(getRootCauseMessage(e), e));
                                 } catch (IOException ex) {
-                                    fail.run();
+                                    fail.accept(new RuntimeException(getRootCauseMessage(e), ex));
                                     throw new RuntimeException(ex);
                                 }
                                 return;
@@ -188,17 +188,17 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         );
     }
 
-    private static void validateFileCompletion(File tmpOutputFile, File outputFile, Runnable pass, Runnable fail) throws IOException {
+    private static void validateFileCompletion(File tmpOutputFile, File outputFile, Runnable pass) throws IOException {
         Files.move(tmpOutputFile.toPath(), outputFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
         ImageUtil.getImageHeaders(outputFile);
         pass.run();
     }
 
-    private static void validationSleep(Runnable fail) {
+    private static void validationSleep(Consumer<Exception> fail) {
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {
-            fail.run();
+            fail.accept(new RuntimeException(getRootCauseMessage(e), e));
             log.debug(getRootCauseMessage(e), e);
             throw new RuntimeException(e);
         }
