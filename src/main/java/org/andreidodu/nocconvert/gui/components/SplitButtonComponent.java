@@ -91,7 +91,7 @@ public class SplitButtonComponent extends JPanel {
         dropdownToggleButton.setOpaque(false);
         dropdownToggleButton.putClientProperty("JPopupMenu.showSeparator", true);
         dropdownToggleButton.addActionListener(e -> {
-            menu.show(dropdownToggleButton, 0, dropdownToggleButton.getHeight());
+            menu.show(dropdownToggleButton, dropdownToggleButton.getWidth(), -300);
         });
         return dropdownToggleButton;
     }
