@@ -58,6 +58,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         convertImageInputDTO.onProgress().accept(1f);
 
         File file = convertImageInputDTO.sourceFile().toFile();
+        File tmpOutputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.tmpPath(), convertImageInputDTO.targetExtension(), true);
 
         try {
             ImageHeaderDTO sourceFileHeaders = getImageHeaders(file);
@@ -68,7 +69,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             if (sourceFileHeaders.format().equalsIgnoreCase(convertImageInputDTO.targetExtension())) {
                 log.info("No need to convert image {} from {} to {}. I will just copy it.", convertImageInputDTO.sourceFile(), sourceFileHeaders.format(), convertImageInputDTO.targetExtension());
-                Files.copy(convertImageInputDTO.sourceFile(), outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(convertImageInputDTO.sourceFile(), tmpOutputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 convertImageInputDTO.pass().run();
                 return;
             }
@@ -78,7 +79,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         }
 
         try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(file)) {
-            File tmpOutputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.tmpPath(), convertImageInputDTO.targetExtension(), true);
 
             Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
 
