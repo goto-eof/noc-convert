@@ -34,21 +34,21 @@ public class ConvertSingleItemTask implements Runnable {
     public void run() {
         if (canceled) {
             updateAsCancelled();
+            log.debug("CANCELED: {}", conversionItemDTO.getFileName());
             return;
         }
         try {
             convertSingleItemTaskInputDTO.semaphore().acquire();
         } catch (InterruptedException e) {
             updateAsCancelled();
+            log.debug(getRootCauseMessage(e), e);
             return;
         }
         try {
             ConvertImageInputDTO convertImageInputDTO = buildInput();
             this.imageConverterService.convertImage(convertImageInputDTO);
-            sendSuccessfullDTO();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            sendFailedDTO(e);
         } finally {
             convertSingleItemTaskInputDTO.semaphore().release();
         }
