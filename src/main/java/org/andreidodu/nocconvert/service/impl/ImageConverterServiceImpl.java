@@ -35,7 +35,6 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMess
 
 public class ImageConverterServiceImpl implements ImageConverterService {
     private static final Logger log = LogManager.getLogger(ImageConverterServiceImpl.class);
-    public static final String WEBP_FORMAT = "webp";
     int totalPercentage = 0;
     @Setter
     private boolean canceled = false;
@@ -48,7 +47,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     @Override
     public void convertImage(ConvertImageInputDTO convertImageInputDTO) throws IOException {
         if (canceled) {
-            //convertImageInputDTO.fail().accept(new RuntimeException("Process interrupted"));
             throw new ConversionManualAbortedException();
         }
 
@@ -96,7 +94,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
             interruptIfNecessary(null);
 
-            writeImageOuter(convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image);
+            writeImageOuter(convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image, convertImageInputDTO.addToFileRenameQueue());
         } catch (Exception e) {
             convertImageInputDTO.fail().accept(e);
             throw new RuntimeException(getRootCauseMessage(e), e);
@@ -118,7 +116,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         String fileName;
         Path outputFilePath;
         do {
-            fileName = UUID.randomUUID() + "-" + sourceFile.getFileName().toString();
+            fileName = UUID.randomUUID() + "." + sourceFile.getFileName().toString();
             outputFilePath = destinationPath.resolve(renameFileExtension(fileName, newFileFormat));
         } while (outputFilePath.toFile().exists());
 
@@ -154,23 +152,24 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         }
     }
 
-    private void writeImageOuter(ConvertImageInputDTO convertImageInputDTO, File tmpOutputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image) throws Exception {
+    private void writeImageOuter(ConvertImageInputDTO convertImageInputDTO, File tmpOutputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image, Consumer<File> addToFileRenameQueue) throws Exception {
         try {
             writeImageInner(convertImageInputDTO.targetExtension(), convertImageInputDTO.onProgress(), tmpOutputFile, totalReadPercentageDTO, image);
             File outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
-            asyncFileCompletionValidation(tmpOutputFile, outputFile, convertImageInputDTO.pass(), convertImageInputDTO.fail());
+            asyncFileCompletionValidation(tmpOutputFile, outputFile, convertImageInputDTO.pass(), convertImageInputDTO.fail(), addToFileRenameQueue);
         } catch (Throwable e) {
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }
 
-    private void asyncFileCompletionValidation(File tmpOutputFile, File outputFile, Runnable pass, Consumer<Exception> fail) {
+    private void asyncFileCompletionValidation(File tmpOutputFile, File outputFile, Runnable pass, Consumer<Exception> fail, Consumer<File> addToFileRenameQueue) {
         Thread.ofVirtual().start(() -> {
                     int i = 5;
 
                     while (i > 0) {
                         try {
                             validateFileCompletion(tmpOutputFile, outputFile, pass);
+                            addToFileRenameQueue.accept(outputFile);
                             return;
                         } catch (Exception e) {
                             log.debug(getRootCauseMessage(e), e);

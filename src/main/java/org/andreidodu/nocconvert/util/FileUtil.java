@@ -35,28 +35,53 @@ public class FileUtil {
 
     public static Path getCleanFileNameWithoutExtension(Path inputPath) {
         String fileNameWithExtension = inputPath.getFileName().toString();
+        int firstDotIndex = fileNameWithExtension.indexOf('.');
 
-        int lastDotIndex = fileNameWithExtension.lastIndexOf('.');
-        String baseName = (lastDotIndex == -1) ? fileNameWithExtension : fileNameWithExtension.substring(0, lastDotIndex);
+        String extractedName;
 
-        int firstDotIndex = baseName.indexOf('.');
-
-        String cleanedName = baseName;
         if (firstDotIndex != -1) {
-            cleanedName = baseName.substring(firstDotIndex + 1);
-            log.debug("Removed UUID prefix based on first dot: {} -> {}", baseName, cleanedName);
+            extractedName = fileNameWithExtension.substring(firstDotIndex + 1);
+            log.debug("Removed UUID prefix: {} -> {}", fileNameWithExtension, extractedName);
         } else {
-            log.debug("No UUID prefix found (no first dot in base name): {}", baseName);
+            extractedName = fileNameWithExtension;
+            log.debug("No dot found, keeping name: {}", extractedName);
         }
 
-        cleanedName = cleanedName.replaceAll("[^a-zA-Z0-9\\s_.-]", "");
-        cleanedName = cleanedName.trim().replaceAll("\\s+", "_");
+        String sanitizedName = extractedName
+                .replaceAll("[^a-zA-Z0-9\\s_.-]", "")
+                .trim()
+                .replaceAll("\\s+", "_");
 
-        if (cleanedName.length() > MAX_FILENAME_LENGTH) {
-            cleanedName = cleanedName.substring(0, MAX_FILENAME_LENGTH);
-            log.warn("Truncated file name to {} characters: {}", MAX_FILENAME_LENGTH, cleanedName);
+        int lastDotIndex = sanitizedName.lastIndexOf('.');
+        String baseName = sanitizedName;
+        String extension = "";
+
+        if (lastDotIndex != -1) {
+            baseName = sanitizedName.substring(0, lastDotIndex);
+            extension = sanitizedName.substring(lastDotIndex);
         }
 
-        return Path.of(inputPath.getParent().toString(), cleanedName);
+        if (baseName.length() > MAX_FILENAME_LENGTH) {
+            baseName = baseName.substring(0, MAX_FILENAME_LENGTH);
+            log.warn("Filename base truncated to {} characters: {}", MAX_FILENAME_LENGTH, baseName);
+        }
+
+        String finalName = baseName + extension;
+
+        if (finalName.isEmpty()) {
+            log.error("Sanitized name resulted in empty string. Using fallback name.");
+            finalName = "clean_file_fallback";
+            if (!extension.isEmpty()) {
+                finalName += extension;
+            }
+        }
+
+        Path parentDir = inputPath.getParent();
+
+        if (parentDir != null) {
+            return parentDir.resolve(finalName);
+        } else {
+            return Path.of(finalName);
+        }
     }
 }

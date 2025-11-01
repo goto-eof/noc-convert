@@ -6,22 +6,23 @@ import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
+import org.andreidodu.nocconvert.util.FileUtil;
 import org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
@@ -38,6 +39,7 @@ public class ConversionOrchestrator {
     private final ConversionOrchestratorInputDTO conversionOrchestratorInputDTO;
     private Path tmpDirPath;
     private Path tmpParentDirPath;
+    private final ConcurrentLinkedQueue<File> fileRenameQueue = new ConcurrentLinkedQueue<File>();
 
     public ConversionOrchestrator(ConversionOrchestratorInputDTO conversionOrchestratorInputDTO) {
         this.conversionOrchestratorInputDTO = conversionOrchestratorInputDTO;
@@ -96,7 +98,12 @@ public class ConversionOrchestrator {
                 .platformExecutorService(platformExecutorService)
                 .incrementFailures(conversionOrchestratorInputDTO.incrementFailures())
                 .incrementPasses(conversionOrchestratorInputDTO.incrementPasses())
+                .addToFileRenameQueue(this::addToFileRenameQueue)
                 .build();
+    }
+
+    private void addToFileRenameQueue(File file) {
+        fileRenameQueue.add(file);
     }
 
     private void setItemAsCompletedOverride(ConversionItemDTO conversionItemDTO) {
@@ -129,6 +136,8 @@ public class ConversionOrchestrator {
                 }
             }
 
+            renameFiles();
+
         } catch (InterruptedException e) {
             log.warn("Conversion Worker interrupted (user STOP action). Forcing Orchestrator cancel.", e);
             Thread.currentThread().interrupt();
@@ -136,6 +145,26 @@ public class ConversionOrchestrator {
             shutdown();
             onAllTasksComplete();
         }
+    }
+
+    private void renameFiles() {
+        for (File file : fileRenameQueue) {
+            Path cleanFileName = FileUtil.getCleanFileNameWithoutExtension(file.toPath());
+            int i = 1;
+            while (Files.exists(cleanFileName)) {
+                cleanFileName = calculateNewName(cleanFileName, i);
+                i++;
+            }
+            try {
+                Files.move(file.toPath(), cleanFileName, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                log.error(getRootCauseMessage(e), e);
+            }
+        }
+    }
+
+    private static Path calculateNewName(Path cleanFilename, int i) {
+        return Path.of(cleanFilename.getParent().toString(), "duplicate-" + i + "-of-" + cleanFilename.getFileName());
     }
 
     public void onAllTasksComplete() {
