@@ -4,7 +4,9 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import lombok.Getter;
+import org.andreidodu.nocconvert.constants.ApplicationConfig;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.gui.components.ButtonComponent;
 import org.andreidodu.nocconvert.gui.components.ListItemRenderer;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
@@ -53,6 +55,7 @@ public class GUIOrchestrator extends JFrame {
     private JPanel progressBarAndStatusPanel;
     private JLabel secondaryApplicationStatusLabel;
     private JPanel progressBarPanel;
+    private ButtonComponent openDestinationDirectoryButton;
 
     private final PathSelectionController pathSelectionController;
     private final ConvertionStatusController convertionStatusController;
@@ -71,7 +74,7 @@ public class GUIOrchestrator extends JFrame {
         JPopupMenu menu = new JPopupMenu("Main Menu");
         JMenuItem about = new JMenuItem("About");
         about.addActionListener((e) -> JOptionPane.showMessageDialog(null,
-                "NoCloud Bulk Image Converter\nv. 2.0.33\nby Andrei Dodu",
+                "NoCloud Bulk Image Converter\nv. 2.0.41\nby Andrei Dodu",
                 "About",
                 JOptionPane.INFORMATION_MESSAGE));
 
@@ -101,7 +104,11 @@ public class GUIOrchestrator extends JFrame {
         });
 
 
-        PerformanceUtil.checkVThreadPerformance(buildAdaptiveListener(messageFull));
+        PerformanceUtil.checkVThreadPerformance(buildAdaptiveListener(messageFull), this::shouldStressTestStop);
+    }
+
+    private boolean shouldStressTestStop() {
+        return conversionController.isWorking();
     }
 
     private AdaptiveTestListener buildAdaptiveListener(String messageFull) {
@@ -109,8 +116,10 @@ public class GUIOrchestrator extends JFrame {
 
             @Override
             public void onOptimizationStart() {
+                if (conversionController.isWorking()) {
+                    return;
+                }
                 SwingUtilities.invokeLater(() -> {
-                    // conversionController.enableConvertButtons(false);
                     secondaryApplicationStatusLabel.setText("Starting performance optimization...");
                 });
                 log.info("Running performance workload tests......");
@@ -118,6 +127,9 @@ public class GUIOrchestrator extends JFrame {
 
             @Override
             public void onOptimizationProgress(String statusMessage, int currentLimit, double cpuLoad) {
+                if (conversionController.isWorking()) {
+                    return;
+                }
                 SwingUtilities.invokeLater(() -> {
                     String message = "<html>Performance test in progress, please wait about 20 seconds.<br/>" + currentLimit + " V-Threads | CPU usage: " + (int) cpuLoad + "%</html>";
                     secondaryApplicationStatusLabel.setText(message);
@@ -127,10 +139,12 @@ public class GUIOrchestrator extends JFrame {
 
             @Override
             public void onOptimizationComplete(int finalOptimalLimit) {
+                if (conversionController.isWorking()) {
+                    return;
+                }
                 SwingUtilities.invokeLater(() -> {
-                    conversionController.enableConvertButtons(true);
-                    pathSelectionController.enableButtons(true);
                     String message = "Optimal configuration found. I will use " + finalOptimalLimit + " V-Threads";
+                    log.debug(message);
                     secondaryApplicationStatusLabel.setText(message);
                 });
                 log.info(messageFull);
@@ -140,6 +154,7 @@ public class GUIOrchestrator extends JFrame {
 
     private void preInitialization() {
         convertComponent = new SplitButtonComponent(this);
+        openDestinationDirectoryButton = new ButtonComponent("Open Destination Directory");
     }
 
     private PathSelectionController initializePathSelectionController() {
@@ -168,6 +183,10 @@ public class GUIOrchestrator extends JFrame {
         return pathSelectionController.getPathSelectionRawDTO().getSourceDirectory();
     }
 
+    public Path getDestinationDirectory() {
+        return pathSelectionController.getPathSelectionRawDTO().getDestinationDirectory();
+    }
+
     private ConversionController initializeConversionController() {
         ConversionDTO conversionDTO = ConversionDTO.builder()
                 .guiOrchestrator(this)
@@ -175,12 +194,13 @@ public class GUIOrchestrator extends JFrame {
                 .applicationStatusLabel(applicationStatusLabel)
                 .secondaryApplicationStatusLabel(secondaryApplicationStatusLabel)
                 .conversionFileList(conversionFileList)
+                .openDestinationDirectoryButton(openDestinationDirectoryButton)
                 .build();
         return new ConversionController(conversionDTO);
     }
 
     private void initializeWindow() {
-        setTitle("NoCloud Bulk Image Converter");
+        setTitle("NoCloud Bulk Image Converter" + (ApplicationConfig.DEV_MODE ? "(dev_mode)" : ""));
         setContentPane(mainPanel);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         revalidate();
@@ -247,7 +267,7 @@ public class GUIOrchestrator extends JFrame {
         fileFormatsJLabel.setVisible(false);
         fileFormatsJLabel.putClientProperty("html.disable", Boolean.FALSE);
         mainPanel.add(fileFormatsJLabel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        footerPanel.setLayout(new GridLayoutManager(2, 3, new Insets(10, 10, 10, 10), -1, -1));
+        footerPanel.setLayout(new GridLayoutManager(2, 4, new Insets(10, 10, 10, 10), -1, -1));
         footerPanel.setBackground(new Color(-13026240));
         footerPanel.setOpaque(true);
         mainPanel.add(footerPanel, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -255,7 +275,7 @@ public class GUIOrchestrator extends JFrame {
         footerPanel.add(spacer1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         convertComponent.setBackground(new Color(-13026240));
         convertComponent.setOpaque(false);
-        footerPanel.add(convertComponent, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        footerPanel.add(convertComponent, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel5.setBackground(new Color(-13026240));
@@ -264,7 +284,7 @@ public class GUIOrchestrator extends JFrame {
         Font label1Font = this.$$$getFont$$$(null, Font.BOLD, 14, label1.getFont());
         if (label1Font != null) label1.setFont(label1Font);
         label1.setForeground(new Color(-8289660));
-        label1.setText("noc-convert v.2.0.33");
+        label1.setText("noc-convert v.2.0.41");
         panel5.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         Font label2Font = this.$$$getFont$$$(null, -1, 12, label2.getFont());
@@ -273,18 +293,22 @@ public class GUIOrchestrator extends JFrame {
         label2.setText("by Andrei Dodu");
         panel5.add(label2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(2, 1, new Insets(0, 10, 10, 10), -1, -1));
-        panel6.setBackground(new Color(-14079186));
-        mainPanel.add(panel6, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        scrollPanePanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        footerPanel.add(panel6, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel6.add(openDestinationDirectoryButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel7 = new JPanel();
+        panel7.setLayout(new GridLayoutManager(2, 1, new Insets(0, 10, 10, 10), -1, -1));
+        panel7.setBackground(new Color(-14079186));
+        mainPanel.add(panel7, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        scrollPanePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         scrollPanePanel.setBackground(new Color(-13026240));
         scrollPanePanel.setEnabled(true);
         scrollPanePanel.setOpaque(false);
-        panel6.add(scrollPanePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel7.add(scrollPanePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         conversionFileListScrollPane.setBackground(new Color(-13026240));
         conversionFileListScrollPane.setForeground(new Color(-2038305));
         conversionFileListScrollPane.setOpaque(false);
-        scrollPanePanel.add(conversionFileListScrollPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        scrollPanePanel.add(conversionFileListScrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         conversionFileList.setBackground(new Color(-14408151));
         conversionFileList.setFocusable(false);
         conversionFileList.setOpaque(false);
@@ -294,26 +318,26 @@ public class GUIOrchestrator extends JFrame {
         conversionFileListScrollPane.setViewportView(conversionFileList);
         applicationStatusLabel = new JLabel();
         applicationStatusLabel.setText("Please select the Source and the Destination Directories and press on the Convert button.");
-        panel6.add(applicationStatusLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel7.add(applicationStatusLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         progressBarAndStatusPanel = new JPanel();
         progressBarAndStatusPanel.setLayout(new GridLayoutManager(2, 2, new Insets(10, 20, 10, 20), -1, -1));
         progressBarAndStatusPanel.setBackground(new Color(-14079186));
         mainPanel.add(progressBarAndStatusPanel, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JPanel panel7 = new JPanel();
-        panel7.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        Font panel7Font = this.$$$getFont$$$(null, Font.BOLD, 9, panel7.getFont());
-        if (panel7Font != null) panel7.setFont(panel7Font);
-        panel7.setOpaque(false);
-        progressBarAndStatusPanel.add(panel7, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JPanel panel8 = new JPanel();
+        panel8.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        Font panel8Font = this.$$$getFont$$$(null, Font.BOLD, 9, panel8.getFont());
+        if (panel8Font != null) panel8.setFont(panel8Font);
+        panel8.setOpaque(false);
+        progressBarAndStatusPanel.add(panel8, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         secondaryApplicationStatusLabel = new JLabel();
         secondaryApplicationStatusLabel.setBackground(new Color(-14079186));
         Font secondaryApplicationStatusLabelFont = this.$$$getFont$$$(null, Font.BOLD, 12, secondaryApplicationStatusLabel.getFont());
         if (secondaryApplicationStatusLabelFont != null)
             secondaryApplicationStatusLabel.setFont(secondaryApplicationStatusLabelFont);
-        secondaryApplicationStatusLabel.setText("Conversion Complete: 6 files converted / 1 error");
-        panel7.add(secondaryApplicationStatusLabel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        secondaryApplicationStatusLabel.setText("");
+        panel8.add(secondaryApplicationStatusLabel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
-        panel7.add(spacer2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel8.add(spacer2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         progressBarPanel = new JPanel();
         progressBarPanel.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
         progressBarPanel.setOpaque(false);
@@ -500,5 +524,9 @@ public class GUIOrchestrator extends JFrame {
 
     public void onConversionStart() {
         convertionStatusController.onConversionStart();
+    }
+
+    public void hideProgressBar() {
+        convertionStatusController.hideProgressBar();
     }
 }

@@ -1,20 +1,12 @@
 package org.andreidodu.nocconvert.service;
 
-import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
+import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.function.Consumer;
 
 public interface ImageConverterService {
 
-    void convertImage(Path sourceFile, Path destinationPath, String targetExtension, Runnable onStart, Consumer<Float> onProgress, Runnable onDone, Consumer<String> writeAborted) throws IOException;
+    void convertImage(ConvertImageInputDTO convertImageInputDTO) throws IOException;
 
-    List<FormatExtensionDTO> getAvailableWriteFormatList();
-
-    List<FormatExtensionDTO> getAvailableReadFormatList();
-
-    void cancelTask();
-
+    void interruptTask();
 }

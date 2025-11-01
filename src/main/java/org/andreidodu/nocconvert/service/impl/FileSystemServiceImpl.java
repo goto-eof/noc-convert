@@ -55,12 +55,13 @@ public class FileSystemServiceImpl implements FileSystemService {
                 }
                 totalFiles += filesInThisDir;
                 listener.onDirectoryProcessed(totalFiles, currentDir, filesInThisDir);
+
             } catch (IOException e) {
                 log.warn("unaccessible directory: {}", currentDir);
             }
             listener.onUpdateTotalFile(totalFiles);
         }
-        listener.onDone(result);
+        listener.onSearchDone(result);
         return result;
     }
 
@@ -72,7 +73,7 @@ public class FileSystemServiceImpl implements FileSystemService {
 
             String name = file.getFileName().toString().toLowerCase();
             return allowedFileExtensionList.stream()
-                    .anyMatch(name::endsWith);
+                    .anyMatch(ext -> name.endsWith("." + ext.toLowerCase()));
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return false;
@@ -91,7 +92,7 @@ public class FileSystemServiceImpl implements FileSystemService {
     }
 
     private boolean isContainFiles(Path directoryPath) {
-        return directoryPath.toFile().list() != null && directoryPath.toFile().list().length > 0;
+        return directoryPath.toFile().list() != null && Objects.requireNonNull(directoryPath.toFile().list()).length > 0;
     }
 
 

@@ -91,7 +91,7 @@ public class SplitButtonComponent extends JPanel {
         dropdownToggleButton.setOpaque(false);
         dropdownToggleButton.putClientProperty("JPopupMenu.showSeparator", true);
         dropdownToggleButton.addActionListener(e -> {
-            menu.show(dropdownToggleButton, 0, dropdownToggleButton.getHeight());
+            menu.show(dropdownToggleButton, dropdownToggleButton.getWidth(), -300);
         });
         return dropdownToggleButton;
     }
@@ -165,11 +165,11 @@ public class SplitButtonComponent extends JPanel {
             {
                 setContentAreaFilled(false);
                 setBorderPainted(false);
-                setPreferredSize(new Dimension(280, 40));
 
                 setForeground(TEXT_LIGHT);
                 setFont(getFont().deriveFont(Font.BOLD, 14f));
-                setBorder(new EmptyBorder(15, 15, 15, 15));
+                setBorder(new EmptyBorder(10, 15, 10, 15));
+                setPreferredSize(new Dimension(280, 40));
                 setFocusPainted(false);
                 setCursor(new Cursor(Cursor.HAND_CURSOR));
                 setOpaque(false);

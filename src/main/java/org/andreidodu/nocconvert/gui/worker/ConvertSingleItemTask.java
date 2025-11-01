@@ -2,6 +2,9 @@ package org.andreidodu.nocconvert.gui.worker;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
+import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
+import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
+import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
 import org.andreidodu.nocconvert.service.ImageConverterService;
 import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
 import org.apache.logging.log4j.LogManager;
@@ -9,101 +12,108 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.concurrent.Semaphore;
-import java.util.function.Consumer;
+
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class ConvertSingleItemTask implements Runnable {
     private static final Logger log = LogManager.getLogger(ConvertSingleItemTask.class);
-    private final Consumer<ConversionItemDTO> publish;
     private final ConversionItemDTO conversionItemDTO;
     private final ImageConverterService imageConverterService;
-    private final Consumer<ConversionItemDTO> onItemCompleted;
-    private LocalDateTime lastCall = LocalDateTime.now();
     private boolean canceled = false;
-    private final Semaphore semaphore;
+    private final ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO;
+    LocalDateTime lastCall = LocalDateTime.now();
 
-    public ConvertSingleItemTask(
-            ConversionItemDTO conversionItemDTO,
-            Consumer<ConversionItemDTO> publish,
-            Consumer<ConversionItemDTO> onItemCompleted,
-            Semaphore semaphore
-    ) {
-        this.conversionItemDTO = conversionItemDTO;
-        this.publish = publish;
-        this.imageConverterService = new ImageConverterServiceImpl();
-        this.onItemCompleted = onItemCompleted;
-        this.semaphore = semaphore;
+    public ConvertSingleItemTask(ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO) {
+        this.convertSingleItemTaskInputDTO = convertSingleItemTaskInputDTO;
+        this.conversionItemDTO = new ConversionItemDTOMapper().clone(convertSingleItemTaskInputDTO.conversionItemDTO());
+        this.imageConverterService = new ImageConverterServiceImpl(convertSingleItemTaskInputDTO.platformExecutorService());
     }
 
     private void onStart() {
         conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
         conversionItemDTO.setProgressPercentage(0f);
-        publish.accept(conversionItemDTO);
-    }
-
-
-    private void onProgress(Float progress) {
-        if (progress < 1 && conversionItemDTO.getProgressPercentage() == 0) {
-            progress = 1f;
-        }
-        conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
-        conversionItemDTO.setProgressPercentage(progress);
-        publish.accept(conversionItemDTO);
-    }
-
-    private void onDone() {
-        conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
-        conversionItemDTO.setProgressPercentage(100f);
-        publish.accept(conversionItemDTO);
+        convertSingleItemTaskInputDTO.publishItemUpdate().accept(conversionItemDTO);
     }
 
     public void run() {
         if (canceled) {
+            updateAsCancelled();
+            log.debug("CANCELED: {}", conversionItemDTO.getSourceFile());
             return;
         }
         try {
-            semaphore.acquire();
+            convertSingleItemTaskInputDTO.semaphore().acquire();
         } catch (InterruptedException e) {
-            return;
-        }
-        if (canceled) {
+            updateAsCancelled();
+            log.debug("CANCELED: {}", conversionItemDTO.getSourceFile());
+            log.debug(getRootCauseMessage(e), e);
             return;
         }
         try {
-            this.imageConverterService.convertImage(
-                    conversionItemDTO.getSourceFile(),
-                    conversionItemDTO.getDestinationDirectory(),
-                    conversionItemDTO.getTargetExtension(),
-                    this::onStart,
-                    this::onProgressController,
-                    this::onDone,
-                    this::writeAborted);
+            ConvertImageInputDTO convertImageInputDTO = buildInput();
+            this.imageConverterService.convertImage(convertImageInputDTO);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            conversionItemDTO.setStatus(ConversionStatus.FAILED);
-            conversionItemDTO.setProgressPercentage(100f);
-            conversionItemDTO.setErrorMessage(e.getMessage());
-            publish.accept(conversionItemDTO);
         } finally {
-            onItemCompleted.accept(conversionItemDTO);
-            semaphore.release();
+            convertSingleItemTaskInputDTO.semaphore().release();
         }
-
     }
 
-    private void onProgressController(float progress) {
+    private ConvertImageInputDTO buildInput() {
+        return ConvertImageInputDTO.builder()
+                .sourceFile(conversionItemDTO.getSourceFile())
+                .destinationPath(conversionItemDTO.getDestinationDirectory())
+                .tmpPath(convertSingleItemTaskInputDTO.tmpPath())
+                .targetExtension(conversionItemDTO.getTargetExtension())
+                .onStart(this::onStart)
+                .onProgress(this::updateProgressFloatValue)
+                .fail(this::fail)
+                .pass(this::pass)
+                .addToFileRenameQueue(convertSingleItemTaskInputDTO.addToFileRenameQueue())
+                .build();
+    }
+
+    public void pass() {
+        convertSingleItemTaskInputDTO.incrementPasses().run();
+        sendSuccessfulDTO();
+    }
+
+    public void fail(Exception e) {
+        convertSingleItemTaskInputDTO.incrementFailures().run();
+        sendFailedDTO(e);
+    }
+
+    private void sendFailedDTO(Exception e) {
+        conversionItemDTO.setStatus(ConversionStatus.FAILED);
+        conversionItemDTO.setProgressPercentage(100f);
+        conversionItemDTO.setErrorMessage(getRootCauseMessage(e));
+        convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
+    }
+
+    private void sendSuccessfulDTO() {
+        conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
+        conversionItemDTO.setProgressPercentage(100f);
+        convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
+    }
+
+    private void updateAsCancelled() {
+        conversionItemDTO.setStatus(ConversionStatus.FAILED);
+        conversionItemDTO.setProgressPercentage(100f);
+        conversionItemDTO.setErrorMessage("cancelled");
+        convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
+    }
+
+    private void updateProgressFloatValue(float progress) {
         if ((progress == 1 || progress % 3 == 0) && Duration.between(lastCall, LocalDateTime.now()).toMillis() >= 1000) {
-            this.onProgress(progress);
+            conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
+            conversionItemDTO.setProgressPercentage(progress);
             lastCall = LocalDateTime.now();
+            convertSingleItemTaskInputDTO.publishItemUpdate().accept(conversionItemDTO);
         }
     }
 
     public void closeStreams() {
         this.canceled = true;
-        imageConverterService.cancelTask();
-    }
-
-    public void writeAborted(String errorMessage) {
-
+        imageConverterService.interruptTask();
     }
 }

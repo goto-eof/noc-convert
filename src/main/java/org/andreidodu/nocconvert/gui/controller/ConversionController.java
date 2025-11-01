@@ -1,7 +1,8 @@
 package org.andreidodu.nocconvert.gui.controller;
 
+import org.andreidodu.nocconvert.constants.ApplicationConfig;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
-import org.andreidodu.nocconvert.dto.ConversionStatus;
+import org.andreidodu.nocconvert.dto.conversion.input.ConversionWorkerInputDTO;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
@@ -9,32 +10,47 @@ import org.andreidodu.nocconvert.gui.worker.ConversionWorker;
 import org.andreidodu.nocconvert.gui.worker.ImageSearcherSwingWorker;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
-import org.andreidodu.nocconvert.service.ImageConverterService;
-import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
+import org.andreidodu.nocconvert.util.ImageConverterUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.IntStream;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.andreidodu.nocconvert.util.CpuUtil.calculateCpuLoadPercentage;
 
 public class ConversionController {
     private static final Logger log = LogManager.getLogger(ConversionController.class);
     private final ConversionDTO conversionDTO;
-    private final ImageConverterService imageConverterService;
+    private final ImageConverterUtil imageConverterUtil;
     private final JLabel applicationStatusLabel;
     private final JLabel secondaryApplicationStatusLabel;
     private ConversionWorker conversionWorker;
     private ImageSearcherSwingWorker imageSearcherSwingWorker;
     private List<Path> paths;
     private int processedItems;
+    private int cpuLoadPercentage;
+    private long lastTime = System.currentTimeMillis();
+    private Date past = new Date();
+
+    private final AtomicInteger passes = new AtomicInteger(0);
+    private final AtomicInteger failures = new AtomicInteger(0);
+    private final AtomicInteger totalFound = new AtomicInteger(0);
+
+    private String timeElapsed = "0s";
 
     public ConversionController(ConversionDTO conversionDTO) {
         this.conversionDTO = conversionDTO;
-        this.imageConverterService = new ImageConverterServiceImpl();
+        this.imageConverterUtil = new ImageConverterUtil();
         this.applicationStatusLabel = conversionDTO.applicationStatusLabel();
         this.secondaryApplicationStatusLabel = conversionDTO.secondaryApplicationStatusLabel();
         initializeConvertComponent();
@@ -43,10 +59,35 @@ public class ConversionController {
     private void initializeConvertComponent() {
         populateConvertComponentDropdownMenu();
         addConvertComponentEventListener();
+        initializeDestinationDirectoryButton();
+    }
+
+    private void initializeDestinationDirectoryButton() {
+        SwingUtilities.invokeLater(() -> {
+            conversionDTO.openDestinationDirectoryButton().setVisible(false);
+        });
+
+        conversionDTO.openDestinationDirectoryButton().getButton().addActionListener(e -> {
+            Path destinationDirectory = conversionDTO.guiOrchestrator().getDestinationDirectory();
+            if (destinationDirectory == null || !destinationDirectory.toFile().exists()) {
+                JOptionPane.showMessageDialog(null, "Destination directory does not exist.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            File directory = destinationDirectory.toFile();
+
+            if (Desktop.isDesktopSupported()) {
+                try {
+                    Desktop.getDesktop().open(directory);
+                } catch (IOException ex) {
+                    log.error(ex.getMessage(), ex);
+                }
+            }
+        });
     }
 
     private void populateConvertComponentDropdownMenu() {
-        List<FormatExtensionDTO> imageFormatList = imageConverterService.getAvailableWriteFormatList();
+        List<FormatExtensionDTO> imageFormatList = imageConverterUtil.getAvailableWriteFormatList();
         FormatExtensionDTO preferredFormat = imageFormatList.stream().filter(format -> "webp".equals(format.getFormat())).findFirst().orElse(imageFormatList.getLast());
         conversionDTO.convertComponent().setImageList(imageFormatList);
         conversionDTO.convertComponent().setPreferredFormat(preferredFormat);
@@ -66,7 +107,7 @@ public class ConversionController {
                         conversionDTO.guiOrchestrator().setEnableSearchStepComponents(false);
                         startSearchForImagesStep();
 
-                        imageSearcherSwingWorker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), this::updateApplicationStatus, new FilesInDirectoryListenerImpl());
+                        imageSearcherSwingWorker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), new FilesInDirectoryListenerImpl());
                         imageSearcherSwingWorker.execute();
                     } else if (SplitButtonComponent.Action.STOP.equals(conversionDTO.convertComponent().getAction())) {
                         cancelActiveProcess();
@@ -80,7 +121,11 @@ public class ConversionController {
         @Override
         public void onDirectoryProcessed(long totalFiles, Path directory, long filesInDirectory) {
             SwingUtilities.invokeLater(() -> {
-                applicationStatusLabel.setText("found " + filesInDirectory + " file(s) in " + normalizeString(directory.getFileName().toString()));
+                if (filesInDirectory > 0) {
+                    applicationStatusLabel.setText("found " + filesInDirectory + " file(s) in " + normalizeString(directory.getFileName().toString()));
+                } else {
+                    applicationStatusLabel.setText("Searching...");
+                }
             });
         }
 
@@ -111,7 +156,7 @@ public class ConversionController {
         }
 
         @Override
-        public void onDone(List<Path> result) {
+        public void onSearchDone(List<Path> result) {
             onSearchComplete(result);
         }
 
@@ -135,18 +180,19 @@ public class ConversionController {
 
         if (imageSearcherSwingWorker != null && !imageSearcherSwingWorker.isDone()) {
             imageSearcherSwingWorker.shutdown(true);
-            onConversionDone();
         }
 
+        conversionWorker.onAllItemsCompleted();
     }
 
     private void onSearchComplete(List<Path> paths) {
         endSearchForImagesStep(paths);
+        imageSearcherSwingWorker = null;
     }
 
     public void startSearchForImagesStep() {
         conversionDTO.guiOrchestrator().resetConversionItemList();
-
+        totalFound.set(0);
         SwingUtilities.invokeLater(() -> {
             conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.STOP);
             String message = "Searching for image...";
@@ -163,6 +209,7 @@ public class ConversionController {
             conversionDTO.guiOrchestrator().noFilesFound();
             return;
         }
+        totalFound.set(paths.size());
         this.paths = paths;
         conversionDTO.guiOrchestrator().onSearchStepFinish(conversionDTO.convertComponent().getSelectedItem().getExtension(), paths);
     }
@@ -178,67 +225,127 @@ public class ConversionController {
         list = list.stream().map(conversionItemDTOMapper::clone).toList();
         conversionDTO.guiOrchestrator().onConversionStart();
 
-        this.processedItems = 0;
+        SwingUtilities.invokeLater(() -> {
+            conversionDTO.openDestinationDirectoryButton().setVisible(true);
+        });
 
-        conversionWorker = new ConversionWorker(list, this::updateList, this::onConversionDone, this::onItemCompleted, this::onAllTasksComplete);
+        this.processedItems = 0;
+        this.past = new Date();
+
+        failures.set(0);
+        passes.set(0);
+
+
+        ConversionWorkerInputDTO conversionWorkerInputDTO = buildInput(list);
+        conversionWorker = new ConversionWorker(conversionWorkerInputDTO);
         conversionWorker.execute();
         conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(list.size());
     }
 
-    private void onAllTasksComplete() {
-        conversionDTO.guiOrchestrator().onConversionDone();
+    private ConversionWorkerInputDTO buildInput(List<ConversionItemDTO> list) {
+        return ConversionWorkerInputDTO.builder()
+                .list(list)
+                .updateGui(this::updateList)
+                .onAllTasksComplete(this::onAllItemsCompleted)
+                .completeItem(this::onItemCompleted)
+                .incrementPasses(this::incrementPasses)
+                .incrementFailures(this::incrementFailures)
+                .build();
+    }
+
+    private void incrementFailures() {
+        this.failures.incrementAndGet();
+    }
+
+    private void incrementPasses() {
+        this.passes.incrementAndGet();
+    }
+
+    public boolean isWorking() {
+        return SplitButtonComponent.Action.STOP.equals(conversionDTO.convertComponent().getAction());
     }
 
     private void onItemCompleted(ConversionItemDTO item) {
         conversionDTO.guiOrchestrator().incrementMainProgressBarProgress();
         processedItems++;
+        if (!isWorking()) {
+            return;
+        }
 
         Optional.ofNullable(paths).ifPresent(paths -> {
-            applicationStatusLabel.setText("Converted " + processedItems + " of " + paths.size() + " Images. Please wait.");
-            conversionDTO.secondaryApplicationStatusLabel().setText("Processed " + processedItems + "/" + paths.size() + " Images...");
+            applicationStatusLabel.setText("Converted " + processedItems + " of " + paths.size() + " Images (" + passes.get() + " passed | " + failures.get() + " failed). Please wait.");
+            long now = System.currentTimeMillis();
+            if (now - lastTime >= 1000) {
+                lastTime = now;
+                this.cpuLoadPercentage = calculateCpuLoadPercentage();
+                this.timeElapsed = calculateTimeElapsed();
+            }
+            if (ApplicationConfig.DEV_MODE) {
+                conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | " + cpuLoadPercentage + "% CPU load | " + (conversionWorker != null ? conversionWorker.getPlatformThreadsPermits() : -1) + " P-Threads | " + (conversionWorker != null ? conversionWorker.getVirtualThreadsPermits() : -1) + " V-Threads | Processed " + processedItems + "/" + paths.size() + " Images");
+                return;
+            }
+
+            conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | Processed " + processedItems + " / " + paths.size() + "Images");
         });
     }
 
-    private void onConversionDone() {
+    private String calculateTimeElapsed() {
+        SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
+        Date now = new Date();
+
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(now.getTime() - past.getTime());
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(now.getTime() - past.getTime());
+        long hours = TimeUnit.MILLISECONDS.toMinutes(now.getTime() - past.getTime());
+        long days = TimeUnit.MILLISECONDS.toDays(now.getTime() - lastTime);
+
+        if (seconds < 60) {
+            return seconds + "s";
+        }
+
+        if (minutes < 60) {
+            return minutes + "m";
+        }
+
+        if (hours < 24) {
+            return hours + "h";
+        }
+
+        return days + "d";
+    }
+
+    private void onAllItemsCompleted() {
+        conversionDTO.guiOrchestrator().onConversionDone();
         SwingUtilities.invokeLater(() -> {
             conversionDTO.guiOrchestrator().setEnableSearchStepComponents(true);
             conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(true);
         });
 
+        conversionDTO.guiOrchestrator().hideProgressBar();
         conversionDTO.guiOrchestrator().onConversionDone();
 
-        DefaultListModel<ConversionItemDTO> model = (DefaultListModel<ConversionItemDTO>) conversionDTO.conversionFileList().getModel();
+        int total = totalFound.get();
+        int passed = passes.get();
+        int failed = failures.get();
+        int unprocessed = totalFound.get() - failed - passed;
 
-        List<ConversionItemDTO> list = new ArrayList<>();
-        IntStream.range(0, model.getSize())
-                .forEach(index -> {
-                    list.add(model.get(index));
-                });
+        String colorPassed = passed > 0 ? "green" : "white";
+        String colorUnprocessed = totalFound.get() - passed - failed > 0 ? "#CCCC00" : "white";
+        String colorFailed = failed > 0 ? "red" : "white";
 
-        long failed = list.stream().filter(dto -> ConversionStatus.FAILED.equals(dto.getStatus())).count();
-        long success = list.stream().filter(dto -> ConversionStatus.COMPLETED.equals(dto.getStatus())).count();
-        long queued = list.stream().filter(dto -> ConversionStatus.QUEUED.equals(dto.getStatus())).count();
-        long processing = list.stream().filter(dto -> ConversionStatus.PROCESSING.equals(dto.getStatus())).count();
+        String coloredMessage = String.format("<html><div style='text-align:center;'>" +
+                "<span style='font-size:14pt;'>Conversion completed.</span><br/>" +
+                "<span style='font-size:14pt; font-weight:bold;'>Total: </span>" + "<span style='font-size:14pt; font-weight:bold;'>%s. </span>" +
+                "<span style='color:" + colorPassed + "; font-weight:bold; font-size:14pt;'>Success: %s / </span>" +
+                "<span style='color:" + colorUnprocessed + "; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" +
+                "<span style='color:" + colorFailed + "; font-weight:bold; font-size:14pt;'>Failed: %s</span>" +
+                "</div></html>", total, passed, unprocessed, failed);
 
         SwingUtilities.invokeLater(() -> {
-
-            String colorSuccess = success > 0 ? "green" : "white";
-            String colorUnprocessed = queued + processing > 0 ? "#CCCC00" : "white";
-            String colorFailed = failed > 0 ? "red" : "white";
-
-            String coloredMessage = String.format("<html><div style='text-align:center;'>" +
-                    "<span style='font-size:14pt;'>Conversion completed.</span><br/>" +
-                    "<span style='font-size:14pt; font-weight:bold;'>Total: </span>" + "<span style='font-size:14pt; font-weight:bold;'>%s. </span>" +
-                    "<span style='color:" + colorSuccess + "; font-weight:bold; font-size:14pt;'>Success: %s / </span>" +
-                    "<span style='color:" + colorUnprocessed + "; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" +
-                    "<span style='color:" + colorFailed + "; font-weight:bold; font-size:14pt;'>Failed: %s</span>" +
-                    "</div></html>", list.size(), success, queued + processing, failed);
-
-
             applicationStatusLabel.setText(coloredMessage);
-            secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", success, failed));
+            secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", passed, failed));
             conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);
         });
+        conversionWorker = null;
 
     }
 

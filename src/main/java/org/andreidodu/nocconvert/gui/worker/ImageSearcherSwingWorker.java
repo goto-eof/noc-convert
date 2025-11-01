@@ -4,34 +4,31 @@ import lombok.Builder;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 import org.andreidodu.nocconvert.service.FileSystemService;
-import org.andreidodu.nocconvert.service.ImageConverterService;
 import org.andreidodu.nocconvert.service.impl.FileSystemServiceImpl;
-import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
+import org.andreidodu.nocconvert.util.ImageConverterUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearcherSwingWorker.ChunkDTO> {
     private static final Logger log = LogManager.getLogger(ImageSearcherSwingWorker.class);
 
     private final Path sourceDirectory;
     private final FileSystemService fileSystemService;
-    private final ImageConverterService imageConverterService;
-    private final Consumer<String> updateApplicationStatusLabel;
+    private final ImageConverterUtil imageConverterService;
     private final FilesInDirectoryListener filesInDirectoryListener;
 
-    public ImageSearcherSwingWorker(Path sourceDirectory, Consumer<String> updateApplicationStatusLabel, FilesInDirectoryListener filesInDirectoryListener) {
+    public ImageSearcherSwingWorker(Path sourceDirectory, FilesInDirectoryListener filesInDirectoryListener) {
         super();
         this.sourceDirectory = sourceDirectory;
-        this.updateApplicationStatusLabel = updateApplicationStatusLabel;
         this.filesInDirectoryListener = filesInDirectoryListener;
 
         this.fileSystemService = new FileSystemServiceImpl();
-        this.imageConverterService = new ImageConverterServiceImpl();
+        this.imageConverterService = new ImageConverterUtil();
     }
 
     @Override
@@ -41,10 +38,17 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
     }
 
     private List<String> getAvailableReadExtensions() {
-        return imageConverterService.getAvailableReadFormatList()
+        List<String> list = new ArrayList<>(imageConverterService.getAvailableReadFormatList()
                 .stream()
-                .map(format -> FormatExtensionMapper.getExtension(format.getFormat()))
-                .toList();
+                .map(format -> FormatExtensionMapper.getExtension(format.getFormat().toLowerCase()))
+                .toList());
+        if (list.stream().anyMatch(item -> item.equalsIgnoreCase("jpg"))) {
+            list.add(FormatExtensionMapper.getExtension("jpeg"));
+        }
+
+        list = list.stream().map(String::toLowerCase).distinct().toList();
+
+        return list;
     }
 
     @Override
@@ -88,8 +92,8 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
         }
 
         @Override
-        public void onDone(List<Path> result) {
-            filesInDirectoryListener.onDone(result);
+        public void onSearchDone(List<Path> result) {
+            filesInDirectoryListener.onSearchDone(result);
         }
 
         @Override

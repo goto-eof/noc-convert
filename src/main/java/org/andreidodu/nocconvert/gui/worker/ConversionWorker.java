@@ -1,37 +1,50 @@
 package org.andreidodu.nocconvert.gui.worker;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInputDTO;
+import org.andreidodu.nocconvert.dto.conversion.input.ConversionWorkerInputDTO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
     private static final Logger log = LogManager.getLogger(ConversionWorker.class);
-    private final List<ConversionItemDTO> list;
-    private final Consumer<List<ConversionItemDTO>> updateGui;
-    private final Runnable onDone;
-    private final Consumer<ConversionItemDTO> onItemCompleted;
     private ConversionOrchestrator conversionOrchestrator;
-    private final Runnable onAllTasksComplete;
+    private final ConversionWorkerInputDTO conversionWorkerInputDTO;
 
-    public ConversionWorker(List<ConversionItemDTO> list, Consumer<List<ConversionItemDTO>> updateGui, Runnable onDone, Consumer<ConversionItemDTO>  onItemCompleted, Runnable onAllTasksComplete) {
-        this.list = list;
-        this.updateGui = updateGui;
-        this.onDone = onDone;
-        this.onItemCompleted = onItemCompleted;
-        this.onAllTasksComplete = onAllTasksComplete;
+    public ConversionWorker(ConversionWorkerInputDTO conversionWorkerInputDTO) {
+        this.conversionWorkerInputDTO = conversionWorkerInputDTO;
     }
 
     @Override
-    protected Void doInBackground() throws Exception {
-        conversionOrchestrator = new ConversionOrchestrator(list, this::publishItem, onItemCompleted, onAllTasksComplete);
+    protected Void doInBackground() {
+        ConversionOrchestratorInputDTO conversionOrchestratorInputDTO = buildInput();
+        conversionOrchestrator = new ConversionOrchestrator(conversionOrchestratorInputDTO);
         conversionOrchestrator.startConversion();
         return null;
     }
 
+    private ConversionOrchestratorInputDTO buildInput() {
+        return ConversionOrchestratorInputDTO.builder()
+                .conversionItemDTOList(conversionWorkerInputDTO.list())
+                .setItemAsCompleted(conversionWorkerInputDTO.completeItem())
+                .onAllTasksComplete(conversionWorkerInputDTO.onAllTasksComplete())
+                .publishItemUpdate(this::publishItemUpdate)
+                .incrementFailures(conversionWorkerInputDTO.incrementFailures())
+                .incrementPasses(conversionWorkerInputDTO.incrementPasses())
+                .build();
+    }
+
+    public int getVirtualThreadsPermits() {
+        return conversionOrchestrator.getVirtualThreadsPermits();
+    }
+
+
+    public int getPlatformThreadsPermits() {
+        return conversionOrchestrator.getPlatformThreadsPermits();
+    }
 
     private void cancelOrchestratorJob() {
         if (conversionOrchestrator != null) {
@@ -41,10 +54,10 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
 
     @Override
     protected void process(List<ConversionItemDTO> chunks) {
-        this.updateGui.accept(chunks);
+        conversionWorkerInputDTO.updateGui().accept(chunks);
     }
 
-    private void publishItem(ConversionItemDTO conversionItemDTO) {
+    private void publishItemUpdate(ConversionItemDTO conversionItemDTO) {
         publish(conversionItemDTO);
     }
 
@@ -53,12 +66,15 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
         if (isCancelled()) {
             log.debug("Conversion Worker cancelled.");
         }
-        this.onDone.run();
+        this.conversionOrchestrator.onAllTasksComplete();
     }
 
     public void shutdown(boolean shutdown) {
         cancelOrchestratorJob();
         this.cancel(shutdown);
+        this.conversionOrchestrator.onAllTasksComplete();
+    }
 
+    public void onAllItemsCompleted() {
     }
 }

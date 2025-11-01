@@ -17,13 +17,14 @@ import java.util.List;
 public class ConvertionStatusController {
     private static final Logger log = LogManager.getLogger(ConvertionStatusController.class);
     private final ConvertionStatusDTO convertionStatusDTO;
+    private Path destinationDirectory;
 
     public ConvertionStatusController(ConvertionStatusDTO convertionStatusDTO) {
         this.convertionStatusDTO = convertionStatusDTO;
     }
 
     public void onSearchStepFinish(Path destinationDirectory, String targetFormat, List<Path> paths) {
-
+        this.destinationDirectory = destinationDirectory;
 
         SwingUtilities.invokeLater(() -> {
             convertionStatusDTO.conversionFileListScrollPane().setVisible(true);
@@ -140,5 +141,9 @@ public class ConvertionStatusController {
         SwingUtilities.invokeLater(() -> {
             convertionStatusDTO.progressBar().setForeground(Colors.ACCENT_BLUE);
         });
+    }
+
+    public void hideProgressBar() {
+        convertionStatusDTO.progressBarAndStatusPanel().setVisible(false);
     }
 }

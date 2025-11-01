@@ -4,10 +4,12 @@ import org.andreidodu.nocconvert.listener.AdaptiveTestListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.function.Supplier;
+
 public class PerformanceUtil {
     private static final Logger log = LogManager.getLogger(PerformanceUtil.class);
 
-    public static void checkVThreadPerformance(AdaptiveTestListener input) {
-        new AdaptiveSimpleGovernorRunnable(input).runStressTest();
+    public static void checkVThreadPerformance(AdaptiveTestListener input, Supplier<Boolean> isStopCommandFromParent) {
+        new AdaptiveSimpleGovernorRunnable(input, isStopCommandFromParent).runStressTest();
     }
 }
