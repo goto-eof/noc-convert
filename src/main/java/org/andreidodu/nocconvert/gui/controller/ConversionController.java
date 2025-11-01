@@ -337,21 +337,20 @@ public class ConversionController {
 //        log.debug("unknown status: {}", other);
 
 
+        String colorSuccess = passes.get() > 0 ? "green" : "white";
+        //String colorUnprocessed = queued + processing > 0 ? "#CCCC00" : "white";
+        String colorFailed = failures.get() > 0 ? "red" : "white";
+
+        int total = passes.get() + failures.get();
+        String coloredMessage = String.format("<html><div style='text-align:center;'>" +
+                "<span style='font-size:14pt;'>Conversion completed.</span><br/>" +
+                "<span style='font-size:14pt; font-weight:bold;'>Total: </span>" + "<span style='font-size:14pt; font-weight:bold;'>%s. </span>" +
+                "<span style='color:" + colorSuccess + "; font-weight:bold; font-size:14pt;'>Success: %s / </span>" +
+                // "<span style='color:" + colorUnprocessed + "; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" +
+                "<span style='color:" + colorFailed + "; font-weight:bold; font-size:14pt;'>Failed: %s</span>" +
+                "</div></html>", total, passes.get(), failures.get());
+
         SwingUtilities.invokeLater(() -> {
-
-            String colorSuccess = passes.get() > 0 ? "green" : "white";
-            //String colorUnprocessed = queued + processing > 0 ? "#CCCC00" : "white";
-            String colorFailed = failures.get() > 0 ? "red" : "white";
-
-            String coloredMessage = String.format("<html><div style='text-align:center;'>" +
-                    "<span style='font-size:14pt;'>Conversion completed.</span><br/>" +
-                    "<span style='font-size:14pt; font-weight:bold;'>Total: </span>" + "<span style='font-size:14pt; font-weight:bold;'>%s. </span>" +
-                    "<span style='color:" + colorSuccess + "; font-weight:bold; font-size:14pt;'>Success: %s / </span>" +
-                    // "<span style='color:" + colorUnprocessed + "; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" +
-                    "<span style='color:" + colorFailed + "; font-weight:bold; font-size:14pt;'>Failed: %s</span>" +
-                    "</div></html>", passes.get() + failures.get(), passes.get(), 0, failures.get());
-
-
             applicationStatusLabel.setText(coloredMessage);
             secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", passes.get(), failures.get()));
             conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);
