@@ -8,7 +8,6 @@ import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.exception.InvalidFileFormatException;
 import org.andreidodu.nocconvert.service.ImageConverterService;
-import org.andreidodu.nocconvert.util.FileUtil;
 import org.andreidodu.nocconvert.util.ImageUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,14 +64,13 @@ public class ImageConverterServiceImpl implements ImageConverterService {
             String sourceFileFormat = sourceFileHeaders.format();
             List<String> validInputFormatListInLowerCase = Arrays.stream(ImageIO.getReaderFormatNames()).toList();
             validateInputImage(convertImageInputDTO.sourceFile(), sourceFileFormat, validInputFormatListInLowerCase, convertImageInputDTO.fail());
-            Path outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
-
-            Path outputPath = FileUtil.getCleanFileNameWithoutExtension(outputFile);
 
             if (sourceFileHeaders.format().equalsIgnoreCase(convertImageInputDTO.targetExtension())) {
                 log.info("No need to convert image {} from {} to {}. I will just copy it.", convertImageInputDTO.sourceFile(), sourceFileHeaders.format(), convertImageInputDTO.targetExtension());
-                outputPath = calculateOutputFile(convertImageInputDTO.sourceFile(), outputPath, convertImageInputDTO.targetExtension(), true);
-                Files.copy(convertImageInputDTO.sourceFile(), outputPath, StandardCopyOption.REPLACE_EXISTING);
+                Path outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
+                Files.copy(sourceFile, outputFile, StandardCopyOption.REPLACE_EXISTING);
+                convertImageInputDTO.addToFileRenameQueue().accept(outputFile);
+
                 convertImageInputDTO.pass().run();
                 return;
             }
