@@ -164,7 +164,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
                     while (i > 0) {
                         try {
-                            validateFileCompletion(tmpOutputFile, outputFile, pass);
+                            validateFileCompletion(tmpOutputFile, outputFile, pass, fail);
                             return;
                         } catch (Exception e) {
                             log.debug(getRootCauseMessage(e), e);
@@ -180,7 +180,10 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         );
     }
 
-    private static void validateFileCompletion(File tmpOutputFile, File outputFile, Runnable pass) throws IOException {
+    private static void validateFileCompletion(File tmpOutputFile, File outputFile, Runnable pass, Runnable fail) throws IOException {
+        Files.move(tmpOutputFile.toPath(), outputFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        Files.move(outputFile.toPath(), tmpOutputFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        validationSleep(fail);
         ImageUtil.getImageHeaders(tmpOutputFile);
         Files.move(tmpOutputFile.toPath(), outputFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
         pass.run();

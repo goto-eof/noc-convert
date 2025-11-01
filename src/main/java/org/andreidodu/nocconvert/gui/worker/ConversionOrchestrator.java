@@ -6,7 +6,6 @@ import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
 import org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable;
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,14 +14,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
 
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
     private final ExecutorService virtualThreadExecutor;
-    private final List<ConversionItemDTO> updatedConversionItemDTOList = new CopyOnWriteArrayList<>();
     private List<ConvertSingleItemTask> virtualTaskList;
     private static Semaphore semaphore;
     private final ExecutorService platformExecutorService;
@@ -97,7 +98,6 @@ public class ConversionOrchestrator {
     }
 
     private void setItemAsCompletedOverride(ConversionItemDTO conversionItemDTO) {
-        updatedConversionItemDTOList.add(conversionItemDTO);
         conversionOrchestratorInputDTO.setItemAsCompleted().accept(conversionItemDTO);
     }
 
@@ -119,13 +119,14 @@ public class ConversionOrchestrator {
 
             virtualThreadExecutor.shutdownNow();
 
-            if (tmpParentDirPath != null) {
-                try {
-                    FileUtils.deleteDirectory(tmpParentDirPath.toFile());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
+            // TODO uncomment
+//            if (tmpParentDirPath != null) {
+//                try {
+//                    FileUtils.deleteDirectory(tmpParentDirPath.toFile());
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
 
         } catch (InterruptedException e) {
             log.warn("Conversion Worker interrupted (user STOP action). Forcing Orchestrator cancel.", e);
@@ -137,7 +138,7 @@ public class ConversionOrchestrator {
     }
 
     public void onAllTasksComplete() {
-        conversionOrchestratorInputDTO.onAllTasksComplete().accept(updatedConversionItemDTOList);
+        conversionOrchestratorInputDTO.onAllTasksComplete().run();
     }
 
     public void shutdown() {

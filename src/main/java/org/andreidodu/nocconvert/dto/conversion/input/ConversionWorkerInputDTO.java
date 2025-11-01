@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 public record ConversionWorkerInputDTO(
         List<ConversionItemDTO> list,
         Consumer<List<ConversionItemDTO>> updateGui,
-        Consumer<List<ConversionItemDTO>> onAllTasksComplete,
+        Runnable onAllTasksComplete,
         Consumer<ConversionItemDTO> completeItem,
         Runnable incrementPasses,
         Runnable incrementFailures

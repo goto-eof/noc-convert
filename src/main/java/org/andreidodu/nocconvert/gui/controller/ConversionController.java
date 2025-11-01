@@ -307,7 +307,7 @@ public class ConversionController {
         return days + "d";
     }
 
-    private void onAllItemsCompleted(List<ConversionItemDTO> list) {
+    private void onAllItemsCompleted() {
         conversionDTO.guiOrchestrator().onConversionDone();
         SwingUtilities.invokeLater(() -> {
             conversionDTO.guiOrchestrator().setEnableSearchStepComponents(true);
@@ -349,7 +349,7 @@ public class ConversionController {
                     "<span style='color:" + colorSuccess + "; font-weight:bold; font-size:14pt;'>Success: %s / </span>" +
                     // "<span style='color:" + colorUnprocessed + "; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" +
                     "<span style='color:" + colorFailed + "; font-weight:bold; font-size:14pt;'>Failed: %s</span>" +
-                    "</div></html>", list.size(), passes.get(), 0, failures.get());
+                    "</div></html>", passes.get() + failures.get(), passes.get(), 0, failures.get());
 
 
             applicationStatusLabel.setText(coloredMessage);
