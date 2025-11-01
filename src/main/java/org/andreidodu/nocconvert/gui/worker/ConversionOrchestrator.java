@@ -6,6 +6,7 @@ import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
 import org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable;
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -119,14 +120,13 @@ public class ConversionOrchestrator {
 
             virtualThreadExecutor.shutdownNow();
 
-            // TODO uncomment
-//            if (tmpParentDirPath != null) {
-//                try {
-//                    FileUtils.deleteDirectory(tmpParentDirPath.toFile());
-//                } catch (IOException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            }
+            if (tmpParentDirPath != null) {
+                try {
+                    FileUtils.deleteDirectory(tmpParentDirPath.toFile());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
 
         } catch (InterruptedException e) {
             log.warn("Conversion Worker interrupted (user STOP action). Forcing Orchestrator cancel.", e);
