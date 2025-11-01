@@ -209,6 +209,7 @@ public class ConversionController {
             conversionDTO.guiOrchestrator().noFilesFound();
             return;
         }
+        totalFound.set(paths.size());
         this.paths = paths;
         conversionDTO.guiOrchestrator().onSearchStepFinish(conversionDTO.convertComponent().getSelectedItem().getExtension(), paths);
     }
@@ -322,22 +323,26 @@ public class ConversionController {
         conversionDTO.guiOrchestrator().hideProgressBar();
         conversionDTO.guiOrchestrator().onConversionDone();
 
-        String colorSuccess = passes.get() > 0 ? "green" : "white";
-        String colorUnprocessed = totalFound.get() - passes.get() - failures.get() > 0 ? "#CCCC00" : "white";
-        String colorFailed = failures.get() > 0 ? "red" : "white";
-
         int total = totalFound.get();
+        int passed = passes.get();
+        int failed = failures.get();
+        int unprocessed = totalFound.get() - failed - passed;
+
+        String colorPassed = passed > 0 ? "green" : "white";
+        String colorUnprocessed = totalFound.get() - passed - failed > 0 ? "#CCCC00" : "white";
+        String colorFailed = failed > 0 ? "red" : "white";
+
         String coloredMessage = String.format("<html><div style='text-align:center;'>" +
                 "<span style='font-size:14pt;'>Conversion completed.</span><br/>" +
                 "<span style='font-size:14pt; font-weight:bold;'>Total: </span>" + "<span style='font-size:14pt; font-weight:bold;'>%s. </span>" +
-                "<span style='color:" + colorSuccess + "; font-weight:bold; font-size:14pt;'>Success: %s / </span>" +
+                "<span style='color:" + colorPassed + "; font-weight:bold; font-size:14pt;'>Success: %s / </span>" +
                 "<span style='color:" + colorUnprocessed + "; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" +
                 "<span style='color:" + colorFailed + "; font-weight:bold; font-size:14pt;'>Failed: %s</span>" +
-                "</div></html>", total, passes.get(), totalFound.get() - failures.get() - passes.get(), failures.get());
+                "</div></html>", total, passed, unprocessed, failed);
 
         SwingUtilities.invokeLater(() -> {
             applicationStatusLabel.setText(coloredMessage);
-            secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", passes.get(), failures.get()));
+            secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", passed, failed));
             conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);
         });
         conversionWorker = null;
