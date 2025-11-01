@@ -70,7 +70,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                 Path outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
                 Files.copy(sourceFile, outputFile, StandardCopyOption.REPLACE_EXISTING);
                 convertImageInputDTO.addToFileRenameQueue().accept(outputFile);
-
                 convertImageInputDTO.pass().run();
                 return;
             }
