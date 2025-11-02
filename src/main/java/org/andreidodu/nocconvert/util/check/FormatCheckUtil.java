@@ -26,15 +26,15 @@ public class FormatCheckUtil {
                 return false;
             }
             log.debug("format testing: format {} tested successfully", format);
-            return canWrite;
+            return true;
         } catch (Throwable e) {
-            log.debug("unable to write in the following format: {}, so I will hide this feature.", format);
+            log.warn("unable to write in the following format: {}, so I will hide this feature. More info: {}", format, e.getMessage(), e);
             return false;
         }
     }
 
     private static BufferedImage createTestImage() {
-        BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(64, 64, BufferedImage.TYPE_INT_RGB);
         image.setRGB(0, 0, Color.GREEN.getRGB());
         return image;
     }
