@@ -198,7 +198,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
 
     private static void validateFileCompletion(Path tmpOutputFile, Path outputFile, Runnable pass) throws IOException {
         boolean isMoved = false;
-        for (int i = 0; i < 150 && !isMoved; i++) {
+        for (int i = 0; i < 50 && !isMoved; i++) {
             try {
                 Files.move(tmpOutputFile, outputFile, StandardCopyOption.ATOMIC_MOVE);
                 isMoved = true;
@@ -229,8 +229,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         }
 
         ImageWriter writer = writers.next();
-        try {
-            ImageOutputStream currentOutputStream = ImageIO.createImageOutputStream(outputFile.toFile());
+        try (ImageOutputStream currentOutputStream = ImageIO.createImageOutputStream(outputFile.toFile())) {
             writer.setOutput(currentOutputStream);
             ExtendedIIOWriteProgressListener writerListener = getWriterListener(updateProgressFloatValue);
             writer.addIIOWriteProgressListener(writerListener);
