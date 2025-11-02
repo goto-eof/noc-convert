@@ -109,7 +109,7 @@ public class FileUtil {
                     break;
                 }
             }
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             log.error(getRootCauseMessage(e), e);
             throw new RuntimeException(e);
         } finally {
