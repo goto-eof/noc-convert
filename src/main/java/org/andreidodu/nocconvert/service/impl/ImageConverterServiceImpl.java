@@ -197,7 +197,16 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     }
 
     private static void validateFileCompletion(Path tmpOutputFile, Path outputFile, Runnable pass) throws IOException {
-        Files.move(tmpOutputFile, outputFile, StandardCopyOption.ATOMIC_MOVE);
+        boolean isMoved = false;
+        for (int i = 0; i < 50 && !isMoved; i++) {
+            try {
+                Files.move(tmpOutputFile, outputFile, StandardCopyOption.ATOMIC_MOVE);
+                isMoved = true;
+            } catch (IOException ex) {
+                log.warn("tried to move the file and failed: {}", getRootCauseMessage(ex), ex);
+                sleep();
+            }
+        }
         ImageUtil.getImageHeaders(outputFile);
         pass.run();
     }
