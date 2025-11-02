@@ -23,6 +23,7 @@ public class FileSystemServiceImpl implements FileSystemService {
     ) throws IOException {
         Objects.requireNonNull(directoryPath, "Directory path must not be null");
 
+        // check if access allowed or denied
         try (var stream = Files.newDirectoryStream(directoryPath)) {
             stream.iterator().next();
         }
@@ -62,9 +63,9 @@ public class FileSystemServiceImpl implements FileSystemService {
                 listener.onDirectoryProcessed(totalFiles, currentDir, filesInThisDir);
 
             } catch (AccessDeniedException ee) {
-                log.warn("unaccessible directory: {}", currentDir);
+                log.warn("unaccessible directory: {} because {}", currentDir, ee.getMessage(), ee);
             } catch (IOException e) {
-                log.warn("IOException directory: {}", currentDir);
+                log.error("IOException directory: {} because {}", currentDir, e.getMessage(), e);
             } catch (Throwable t) {
                 log.error(t.getMessage(), t);
             }
