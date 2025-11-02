@@ -12,6 +12,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.*;
 
 import static org.andreidodu.nocconvert.util.FileUtil.deleteFileIfExists;
+import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.IDEAL_NUM_OF_THREADS;
 import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
@@ -128,13 +130,7 @@ public class ConversionOrchestrator {
 
             virtualThreadExecutor.shutdownNow();
 
-            if (!ApplicationConfig.DEV_MODE && tmpParentDirPath != null) {
-                try {
-                    FileUtils.deleteDirectory(tmpParentDirPath.toFile());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
+            deleteTemporaryDirectory(!ApplicationConfig.DEV_MODE && tmpParentDirPath != null, tmpDirPath);
 
             renameFiles();
 
@@ -186,17 +182,50 @@ public class ConversionOrchestrator {
     }
 
     public void manualShutdownExtension() {
-        Thread.ofVirtual().start(()->{
-            if (tmpParentDirPath != null) {
-                try {
-                    FileUtils.deleteDirectory(tmpParentDirPath.toFile());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+
+        try (ExecutorService vtExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
+
+            Semaphore vtSemaphore = new Semaphore(IDEAL_NUM_OF_THREADS.get());
+
+            vtExecutor.submit(deleteTemporaryDirectoryTask(vtSemaphore));
+
+            fileRenameQueue.forEach((path) -> vtExecutor.submit(() -> deleteFileTask(vtSemaphore, path.toFile())));
+        }
+
+    }
+
+    private static void deleteFileTask(Semaphore vtSemaphore, File file) {
+        try {
+            vtSemaphore.acquire();
+            deleteFileIfExists(file);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            vtSemaphore.release();
+        }
+    }
+
+    private Runnable deleteTemporaryDirectoryTask(Semaphore vtSemaphore) {
+        return () -> {
+            try {
+                vtSemaphore.acquire();
+                deleteTemporaryDirectory(tmpParentDirPath != null, tmpDirPath);
+            } catch (InterruptedException e) {
+                log.error(getRootCauseMessage(e), e);
+                throw new RuntimeException(e);
+            } finally {
+                vtSemaphore.release();
             }
-            fileRenameQueue.forEach(item -> {
-                deleteFileIfExists(item.toFile());
-            });
-        });
+        };
+    }
+
+    private void deleteTemporaryDirectory(boolean tmpParentDirPath, Path path) {
+        if (tmpParentDirPath) {
+            try {
+                FileUtils.deleteDirectory(path.toFile());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }
