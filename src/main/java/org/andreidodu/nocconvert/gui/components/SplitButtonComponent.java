@@ -101,16 +101,19 @@ public class SplitButtonComponent extends JPanel {
             private boolean isHover;
 
             {
-                setForeground(TEXT_LIGHT);
-                setContentAreaFilled(false);
-                setBorderPainted(true);
-                setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createMatteBorder(0, 1, 0, 0, new Color(255, 255, 255, 50)),
-                        new EmptyBorder(8, 10, 8, 10)
-                ));
-                setFocusPainted(false);
-                setCursor(new Cursor(Cursor.HAND_CURSOR));
-                setOpaque(false);
+                SwingUtilities.invokeLater(() -> {
+                    setForeground(TEXT_LIGHT);
+                    setContentAreaFilled(false);
+                    setBorderPainted(true);
+                    setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createMatteBorder(0, 1, 0, 0, new Color(255, 255, 255, 50)),
+                            new EmptyBorder(8, 10, 8, 10)
+                    ));
+                    setFocusPainted(false);
+                    setCursor(new Cursor(Cursor.HAND_CURSOR));
+                    setOpaque(false);
+                });
+
                 addMouseListener(new java.awt.event.MouseAdapter() {
                     @Override
                     public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -163,16 +166,18 @@ public class SplitButtonComponent extends JPanel {
             private boolean isHover;
 
             {
-                setContentAreaFilled(false);
-                setBorderPainted(false);
+                SwingUtilities.invokeLater(() -> {
+                    setContentAreaFilled(false);
+                    setBorderPainted(false);
+                    setForeground(TEXT_LIGHT);
+                    setFont(getFont().deriveFont(Font.BOLD, 14f));
+                    setBorder(new EmptyBorder(10, 15, 10, 15));
+                    setPreferredSize(new Dimension(280, 40));
+                    setFocusPainted(false);
+                    setCursor(new Cursor(Cursor.HAND_CURSOR));
+                    setOpaque(false);
+                });
 
-                setForeground(TEXT_LIGHT);
-                setFont(getFont().deriveFont(Font.BOLD, 14f));
-                setBorder(new EmptyBorder(10, 15, 10, 15));
-                setPreferredSize(new Dimension(280, 40));
-                setFocusPainted(false);
-                setCursor(new Cursor(Cursor.HAND_CURSOR));
-                setOpaque(false);
                 addMouseListener(new java.awt.event.MouseAdapter() {
                     @Override
                     public void mouseEntered(java.awt.event.MouseEvent evt) {

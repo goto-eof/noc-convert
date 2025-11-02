@@ -2,6 +2,7 @@ package org.andreidodu.nocconvert.gui.controller;
 
 import lombok.Getter;
 import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
+import org.andreidodu.nocconvert.gui.components.TextfieldDoubleButtonComponent;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionRawDTO;
 import org.andreidodu.nocconvert.service.FileSystemService;
@@ -13,11 +14,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class PathSelectionController {
     private static final Logger log = LogManager.getLogger(PathSelectionController.class);
@@ -37,17 +43,47 @@ public class PathSelectionController {
         validationService = new ValidationServiceImpl();
         fileSystemService = new FileSystemServiceImpl();
 
+        pathSelectionDTO.destinationComponent().getSecondaryButton().setVisible(false);
+        pathSelectionDTO.sourceComponent().getSecondaryButton().setVisible(false);
         addEventListeners();
     }
 
     private void addEventListeners() {
         addEventListenersForSourceComponent();
         addEventListenersForDestinationComponent();
+        addEventOpenDirectoryListeners(pathSelectionDTO.destinationComponent().getSecondaryButton(), pathSelectionDTO.guiOrchestrator()::getDestinationDirectory);
+        addEventOpenDirectoryListeners(pathSelectionDTO.sourceComponent().getSecondaryButton(), pathSelectionDTO.guiOrchestrator()::getSourceDirectory);
+    }
+
+    private void addEventOpenDirectoryListeners(JButton button, Supplier<Path> supplier) {
+        button.addActionListener(e -> {
+            Path destinationDirectory = supplier.get();
+            if (destinationDirectory == null) {
+                return;
+            }
+            if (destinationDirectory != null && !Files.exists(destinationDirectory)) {
+                JOptionPane.showMessageDialog(null, "Directory does not exist.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+
+            }
+
+            File directory = destinationDirectory.toFile();
+
+            if (Desktop.isDesktopSupported()) {
+                try {
+                    Desktop.getDesktop().open(directory);
+                } catch (IOException ex) {
+                    log.error(ex.getMessage(), ex);
+                }
+            }
+        });
     }
 
     private void addEventListenersForSourceComponent() {
-        TextfieldButtonComponent sourceComponent = pathSelectionDTO.sourceComponent();
-        addBrowseDirectoryEventListener(sourceComponent, pathSelectionRawDTO::setSourceDirectory, this::isValidPath);
+        TextfieldDoubleButtonComponent sourceComponent = pathSelectionDTO.sourceComponent();
+        addBrowseDirectoryEventListener(sourceComponent, pathSelectionRawDTO::setSourceDirectory, this::isValidPath, () -> {
+            sourceComponent.getSecondaryButton().setVisible(true);
+        });
     }
 
     private boolean isValidPath(Path path) {
@@ -59,8 +95,10 @@ public class PathSelectionController {
     }
 
     private void addEventListenersForDestinationComponent() {
-        TextfieldButtonComponent destinationComponent = pathSelectionDTO.destinationComponent();
-        addBrowseDirectoryEventListener(destinationComponent, pathSelectionRawDTO::setDestinationDirectory, this::isAllowOverrideIfNecessary);
+        TextfieldDoubleButtonComponent destinationComponent = pathSelectionDTO.destinationComponent();
+        addBrowseDirectoryEventListener(destinationComponent, pathSelectionRawDTO::setDestinationDirectory, this::isAllowOverrideIfNecessary, () -> {
+            destinationComponent.getSecondaryButton().setVisible(true);
+        });
     }
 
     private boolean isAllowOverrideIfNecessary(Path path) {
@@ -79,7 +117,7 @@ public class PathSelectionController {
         return response == JOptionPane.YES_OPTION;
     }
 
-    private void addBrowseDirectoryEventListener(TextfieldButtonComponent component, Consumer<Path> pathConsumer, Predicate<Path> isAllowOverrideIfNecessary) {
+    private void addBrowseDirectoryEventListener(TextfieldButtonComponent component, Consumer<Path> pathConsumer, Predicate<Path> isAllowOverrideIfNecessary, Runnable callback) {
         component.getButton()
                 .addActionListener(e -> fileSystemSupportGuiUtil.selectDirectory()
                         .ifPresent(text -> {
@@ -89,6 +127,7 @@ public class PathSelectionController {
                             }
                             pathConsumer.accept(path);
                             component.getTextField().setText(path.getFileName().toString());
+                            callback.run();
                         })
                 );
     }

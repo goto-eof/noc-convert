@@ -61,7 +61,7 @@
                         </properties>
                         <border type="none"/>
                         <children>
-                          <component id="87770" class="org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent" binding="sourceComponent" custom-create="true">
+                          <component id="87770" class="org.andreidodu.nocconvert.gui.components.TextfieldDoubleButtonComponent" binding="sourceComponent" custom-create="true">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                                 <preferred-size width="150" height="-1"/>
@@ -93,7 +93,7 @@
                         </properties>
                         <border type="none"/>
                         <children>
-                          <component id="c408b" class="org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent" binding="destinationComponent" custom-create="true">
+                          <component id="c408b" class="org.andreidodu.nocconvert.gui.components.TextfieldDoubleButtonComponent" binding="destinationComponent" custom-create="true">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                                 <preferred-size width="150" height="-1"/>
@@ -126,7 +126,7 @@
           <html.disable class="java.lang.Boolean" value="false"/>
         </clientProperties>
       </component>
-      <grid id="db7a0" binding="footerPanel" custom-create="true" layout-manager="GridLayoutManager" row-count="2" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="db7a0" binding="footerPanel" custom-create="true" layout-manager="GridLayoutManager" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="10" left="10" bottom="10" right="10"/>
         <constraints>
           <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -144,7 +144,7 @@
           </hspacer>
           <component id="b6988" class="org.andreidodu.nocconvert.gui.components.SplitButtonComponent" binding="convertComponent" custom-create="true">
             <constraints>
-              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <background color="-13026240"/>
@@ -168,7 +168,7 @@
                 <properties>
                   <font size="14" style="1"/>
                   <foreground color="-8289660"/>
-                  <text value="noc-convert v.2.0.55"/>
+                  <text value="noc-convert v.2.0.56"/>
                 </properties>
               </component>
               <component id="b9c57" class="javax.swing.JLabel">
@@ -179,24 +179,6 @@
                   <font size="12"/>
                   <foreground color="-8421246"/>
                   <text value="by Andrei Dodu"/>
-                </properties>
-              </component>
-            </children>
-          </grid>
-          <grid id="1e661" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
-            <constraints>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties/>
-            <border type="none"/>
-            <children>
-              <component id="542d4" class="org.andreidodu.nocconvert.gui.components.ButtonComponent" binding="openDestinationDirectoryButton" custom-create="true" default-binding="true">
-                <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text value="Open Destination directory"/>
                 </properties>
               </component>
             </children>

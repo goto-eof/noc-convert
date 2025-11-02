@@ -1,8 +1,8 @@
 package org.andreidodu.nocconvert.dto;
 
 import lombok.Builder;
-import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
+import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
 
 import javax.swing.*;
 
@@ -15,7 +15,7 @@ public record GUIControllerComponentsDTO(JFrame frame,
                                          JButton chooseDestinationDirectoryButton,
                                          JButton convertButton,
                                          JList<String> errorsJList,
-                                        SplitButtonComponent targetFileFormatComboBox,
+                                         SplitButtonComponent targetFileFormatComboBox,
                                          JPanel errorListPanel,
                                          JLabel fileFormatsJLabel) {
 }

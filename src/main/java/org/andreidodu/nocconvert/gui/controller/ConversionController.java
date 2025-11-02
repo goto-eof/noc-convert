@@ -16,9 +16,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
-import java.awt.*;
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -60,31 +57,6 @@ public class ConversionController {
     private void initializeConvertComponent() {
         populateConvertComponentDropdownMenu();
         addConvertComponentEventListener();
-        initializeDestinationDirectoryButton();
-    }
-
-    private void initializeDestinationDirectoryButton() {
-        SwingUtilities.invokeLater(() -> {
-            conversionDTO.openDestinationDirectoryButton().setVisible(false);
-        });
-
-        conversionDTO.openDestinationDirectoryButton().getButton().addActionListener(e -> {
-            Path destinationDirectory = conversionDTO.guiOrchestrator().getDestinationDirectory();
-            if (destinationDirectory == null || !destinationDirectory.toFile().exists()) {
-                JOptionPane.showMessageDialog(null, "Destination directory does not exist.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            File directory = destinationDirectory.toFile();
-
-            if (Desktop.isDesktopSupported()) {
-                try {
-                    Desktop.getDesktop().open(directory);
-                } catch (IOException ex) {
-                    log.error(ex.getMessage(), ex);
-                }
-            }
-        });
     }
 
     private void populateConvertComponentDropdownMenu() {
@@ -287,7 +259,7 @@ public class ConversionController {
         }
 
         Optional.ofNullable(paths).ifPresent(paths -> {
-            applicationStatusLabel.setText("Converted " + processedItems + " of " + paths.size() + " Images (" + passes.get() + " passed | " + failures.get() + " failed). Please wait.");
+            applicationStatusLabel.setText("Converted " + processedItems + " of " + paths.size() + " Images (" + passes.get() + " success | " + failures.get() + " failures). Please wait.");
             long now = System.currentTimeMillis();
             if (now - lastTime >= 1000) {
                 lastTime = now;
@@ -299,7 +271,7 @@ public class ConversionController {
                 return;
             }
 
-            conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | Processed " + processedItems + " / " + paths.size() + "Images");
+            conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | Processed " + processedItems + " / " + paths.size() + " Images");
         });
     }
 

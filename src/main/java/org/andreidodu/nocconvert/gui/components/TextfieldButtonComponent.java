@@ -22,6 +22,8 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
     @Getter
     private final JButton button;
 
+    @Getter
+    private JPanel onlyButtonsPanel;
 
     public TextfieldButtonComponent() {
         textField = new JTextField("");
@@ -70,7 +72,13 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
         separator.setMaximumSize(new Dimension(1, Integer.MAX_VALUE));
         separator.setPreferredSize(new Dimension(1, Integer.MAX_VALUE));
         buttonPanel.add(separator, BorderLayout.CENTER);
-        buttonPanel.add(button, BorderLayout.EAST);
+
+
+        onlyButtonsPanel = new JPanel(new BorderLayout(5, 0));
+        onlyButtonsPanel.add(button, BorderLayout.EAST);
+
+        buttonPanel.add(onlyButtonsPanel, BorderLayout.EAST);
+
         button.setVerticalAlignment(SwingConstants.CENTER);
         button.setHorizontalAlignment(SwingConstants.CENTER);
 
