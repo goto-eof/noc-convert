@@ -72,7 +72,7 @@ public class GUIOrchestrator extends JFrame {
         JPopupMenu menu = new JPopupMenu("Main Menu");
         JMenuItem about = new JMenuItem("About");
         about.addActionListener((e) -> JOptionPane.showMessageDialog(null,
-                "NoCloud Bulk Image Converter\nv. 2.0.57\nby Andrei Dodu",
+                "NoCloud Bulk Image Converter\nv. 2.0.58\nby Andrei Dodu",
                 "About",
                 JOptionPane.INFORMATION_MESSAGE));
 
@@ -280,7 +280,7 @@ public class GUIOrchestrator extends JFrame {
         Font label1Font = this.$$$getFont$$$(null, Font.BOLD, 14, label1.getFont());
         if (label1Font != null) label1.setFont(label1Font);
         label1.setForeground(new Color(-8289660));
-        label1.setText("noc-convert v.2.0.57");
+        label1.setText("noc-convert v.2.0.58");
         panel5.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         Font label2Font = this.$$$getFont$$$(null, -1, 12, label2.getFont());
