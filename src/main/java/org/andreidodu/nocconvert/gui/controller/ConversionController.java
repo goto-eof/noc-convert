@@ -27,6 +27,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.andreidodu.nocconvert.util.CpuUtil.calculateCpuLoadPercentage;
 import static org.andreidodu.nocconvert.util.FileUtil.deleteFileTask;
 import static org.andreidodu.nocconvert.util.FileUtil.deleteTemporaryDirectoryTask;
+import static org.andreidodu.nocconvert.util.PathNameUtil.normalizePath;
+import static org.andreidodu.nocconvert.util.PathNameUtil.normalizePathAdvanced;
 import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.IDEAL_NUM_OF_THREADS;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
@@ -107,36 +109,28 @@ public class ConversionController {
         public void onDirectoryProcessed(long totalFiles, Path directory, long filesInDirectory) {
             SwingUtilities.invokeLater(() -> {
                 if (filesInDirectory > 0) {
-                    applicationStatusLabel.setText("found " + filesInDirectory + " file(s) in " + normalizeString(directory.getFileName().toString()));
+                    applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" +
+                            "<span style=\"color: #007bff;\">Found " + filesInDirectory + " file(s) in " + normalizePath(directory.getFileName().toString(), 30) + "</span></html>");
                 } else {
-                    applicationStatusLabel.setText("Searching...");
+                    applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" +
+                            "<span style=\"color: #007bff;\">" + normalizePathAdvanced(directory.toString(), 100) + "</spa></html>");
                 }
             });
         }
 
-        private String normalizeString(String string) {
-            if (string == null || string.isEmpty()) {
-                return "";
-            }
-
-            if (string.length() > 30) {
-                return string.substring(0, 30);
-            }
-
-            return string;
-        }
 
         @Override
         public void onFileFound(Path filename) {
             SwingUtilities.invokeLater(() -> {
-                applicationStatusLabel.setText("File: " + filename.getFileName().toString());
+                applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" +
+                        "<span style=\"color: #007bff;\">" + normalizePathAdvanced(filename.getParent().toString(), 60) + " &#8658; " + normalizePath(filename.getFileName().toString(), 30) + "</span></html>");
             });
         }
 
         @Override
         public void onUpdateTotalFile(Long numberOfFiles) {
             SwingUtilities.invokeLater(() -> {
-                secondaryApplicationStatusLabel.setText(numberOfFiles + " Total Images");
+                secondaryApplicationStatusLabel.setText("<html><span style=\"font-weight: bold;\">" + numberOfFiles + " Total Images</span></html>");
             });
         }
 

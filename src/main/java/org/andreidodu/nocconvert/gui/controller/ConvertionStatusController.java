@@ -84,19 +84,18 @@ public class ConvertionStatusController {
         });
     }
 
-    public void enableProgressBar() {
+    public void enableProgressBar(boolean bool) {
         SwingUtilities.invokeLater(() -> {
             convertionStatusDTO.conversionFileList().setModel(new DefaultListModel<>());
-            convertionStatusDTO.conversionFileListScrollPane().setVisible(false);
-            convertionStatusDTO.progressBarAndStatusPanel().setVisible(true);
-            convertionStatusDTO.progressBar().setVisible(true);
+            convertionStatusDTO.conversionFileListScrollPane().setVisible(bool);
+            convertionStatusDTO.progressBarAndStatusPanel().setVisible(bool);
+            convertionStatusDTO.progressBar().setVisible(bool);
         });
     }
 
     public void updateMainProgressBarMaxValue(int size) {
         SwingUtilities.invokeLater(() -> {
             convertionStatusDTO.progressBar().setMaximum(size);
-            convertionStatusDTO.progressBar().setStringPainted(true);
         });
     }
 
@@ -145,5 +144,9 @@ public class ConvertionStatusController {
 
     public void hideProgressBar() {
         convertionStatusDTO.progressBarAndStatusPanel().setVisible(false);
+    }
+
+    public void disableProgressBar() {
+        enableProgressBar(false);
     }
 }

@@ -16,6 +16,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
+
 public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearcherSwingWorker.ChunkDTO> {
     private static final Logger log = LogManager.getLogger(ImageSearcherSwingWorker.class);
 
@@ -40,10 +42,10 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
         try {
             return fileSystemService.getAllFilesInDirectory(sourceDirectory, getAvailableReadExtensions(), listener, super::isCancelled);
         } catch (AccessDeniedException e) {
-            log.error(e.getMessage(), e);
+            log.error(getRootCauseMessage(e), e);
             listener.onAccessDenied();
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
+        } catch (Exception e) {
+            log.error(getRootCauseMessage(e), e);
             listener.onUpdateTotalFile(0L);
             listener.onSearchDone(new ArrayList<>());
         }

@@ -2,6 +2,7 @@ package org.andreidodu.nocconvert.service.impl;
 
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.service.FileSystemService;
+import org.andreidodu.nocconvert.util.ThreadUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,6 +37,8 @@ public class FileSystemServiceImpl implements FileSystemService {
         Queue<Path> queueOfDirectories = new LinkedList<>();
         queueOfDirectories.add(directoryPath);
 
+        long counter = 0;
+
         long totalFiles = 0;
         while (!queueOfDirectories.isEmpty()) {
             Path currentDir = queueOfDirectories.remove();
@@ -51,9 +54,12 @@ public class FileSystemServiceImpl implements FileSystemService {
                             listener.onFileFound(entry);
                             filesInThisDir++;
                         }
-                        if (isCancelled.get()) {
-                            listener.onOperationAborted();
-                            return result;
+                        if (counter++ % 6 == 0) {
+                            if (isCancelled.get() || Thread.currentThread().isInterrupted()) {
+                                listener.onOperationAborted();
+                                return result;
+                            }
+                            ThreadUtil.yieldCooperatively();
                         }
                     } catch (Exception e) {
                         log.warn("not valid path: {}", entry);
