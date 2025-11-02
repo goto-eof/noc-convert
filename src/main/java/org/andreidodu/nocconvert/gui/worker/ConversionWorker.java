@@ -77,4 +77,11 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
 
     public void onAllItemsCompleted() {
     }
+
+    public void manualShutdown(boolean b) {
+        this.shutdown(b);
+        if (conversionOrchestrator != null) {
+            conversionOrchestrator.manualShutdownExtension();
+        }
+    }
 }

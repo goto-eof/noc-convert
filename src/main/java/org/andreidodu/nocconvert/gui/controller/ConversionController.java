@@ -161,7 +161,7 @@ public class ConversionController {
 
         if (conversionWorker != null && !conversionWorker.isDone()) {
             log.info("Cancelling active conversion process.");
-            conversionWorker.shutdown(true);
+            conversionWorker.manualShutdown(true);
         }
 
         if (imageSearcherSwingWorker != null && !imageSearcherSwingWorker.isDone()) {

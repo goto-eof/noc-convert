@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
+import static org.andreidodu.nocconvert.util.FileUtil.deleteFileIfExists;
 import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
@@ -182,5 +183,18 @@ public class ConversionOrchestrator {
             this.virtualThreadExecutor.shutdownNow();
         }
 
+    }
+
+    public void manualShutdownExtension() {
+        if (tmpParentDirPath != null) {
+            try {
+                FileUtils.deleteDirectory(tmpParentDirPath.toFile());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        fileRenameQueue.forEach(item -> {
+            deleteFileIfExists(item.toFile());
+        });
     }
 }

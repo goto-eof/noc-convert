@@ -23,7 +23,7 @@ public class FileUtil {
         return String.format("%.2f %s", size, units[unitIndex]);
     }
 
-    public static void deleteBrokenFileIfExists(File outputFile) {
+    public static void deleteFileIfExists(File outputFile) {
         if (outputFile.exists()) {
             if (outputFile.delete()) {
                 log.debug("'Partial file' removed: {}", outputFile.getName());
