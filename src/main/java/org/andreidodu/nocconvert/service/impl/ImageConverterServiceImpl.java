@@ -197,6 +197,12 @@ public class ImageConverterServiceImpl implements ImageConverterService {
     }
 
     private static void validateFileCompletion(Path tmpOutputFile, Path outputFile, Runnable pass) throws IOException {
+        Files.move(tmpOutputFile, outputFile, StandardCopyOption.ATOMIC_MOVE);
+        ImageUtil.getImageHeaders(outputFile);
+        pass.run();
+    }
+
+    private static void retrableMove(Path tmpOutputFile, Path outputFile) {
         boolean isMoved = false;
         for (int i = 0; i < 50 && !isMoved; i++) {
             try {
@@ -207,8 +213,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                 sleep();
             }
         }
-        ImageUtil.getImageHeaders(outputFile);
-        pass.run();
     }
 
     private static void validationSleep(Consumer<Exception> fail) {
