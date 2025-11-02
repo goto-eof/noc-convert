@@ -14,6 +14,8 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMess
 public class FileUtil {
     private static final Logger log = LogManager.getLogger(FileUtil.class);
     private static final int MAX_FILENAME_LENGTH = 150;
+    private static final int MAX_DELETE_ATTEMPTS = 5;
+    private static final long SLEEP_TIME_MS = 100;
 
     public static String getHumanableFileSize(File file) {
         if (file == null || !file.exists()) return "0 B";
@@ -28,13 +30,14 @@ public class FileUtil {
         return String.format("%.2f %s", size, units[unitIndex]);
     }
 
-    public static void deleteFileIfExists(File outputFile) {
-        if (outputFile.exists()) {
-            if (outputFile.delete()) {
-                log.debug("'Partial file' removed: {}", outputFile.getName());
-            } else {
-                log.warn("Unable to remove the 'partial file': {}", outputFile.getName());
-            }
+
+    private static boolean deleteFile(File outputFile) {
+        if (outputFile.delete()) {
+            log.debug("'Partial file' removed: {}", outputFile.getName());
+            return true;
+        } else {
+            log.warn("Unable to remove the 'partial file': {}", outputFile.getName());
+            return false;
         }
     }
 
@@ -93,13 +96,31 @@ public class FileUtil {
     public static void deleteFileTask(Semaphore vtSemaphore, File file) {
         try {
             vtSemaphore.acquire();
-            deleteFileIfExists(file);
+            int attempt = 0;
+            boolean isDone = false;
+
+            while (!isDone && attempt < MAX_DELETE_ATTEMPTS) {
+                isDone = deleteFileIfExists(file);
+                attempt++;
+                try {
+                    Thread.sleep(SLEEP_TIME_MS);
+                } catch (InterruptedException e) {
+                    throw e;
+                }
+            }
         } catch (InterruptedException e) {
             log.error(getRootCauseMessage(e), e);
             throw new RuntimeException(e);
         } finally {
             vtSemaphore.release();
         }
+    }
+
+    public static boolean deleteFileIfExists(File outputFile) {
+        if (outputFile.exists()) {
+            return deleteFile(outputFile);
+        }
+        return true;
     }
 
     public static void deleteTemporaryDirectoryTask(Semaphore vtSemaphore, Path tmpParentDirPath) {
