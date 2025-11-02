@@ -149,6 +149,9 @@ public class ImageUtil {
                 .distinct()
                 .sorted()
                 .toArray(String[]::new);
+
+        FormatExtensionDTO.reset();
+
         for (String format : arrayString) {
             imageFormatList.add(new FormatExtensionDTO(format, FormatExtensionMapper.getExtension(format)));
         }

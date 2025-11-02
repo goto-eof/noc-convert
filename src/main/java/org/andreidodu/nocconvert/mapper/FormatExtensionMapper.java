@@ -1,5 +1,6 @@
 package org.andreidodu.nocconvert.mapper;
 
+import lombok.Getter;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.function.Function;
 
 public class FormatExtensionMapper {
 
+    @Getter
     private static final List<FormatExtensionDTO> formatExtensionSTOList = List.of(
             new FormatExtensionDTO("bmp", "bmp"),
             new FormatExtensionDTO("wbmp", "wbmp"),
