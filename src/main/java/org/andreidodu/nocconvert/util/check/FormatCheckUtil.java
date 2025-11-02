@@ -26,9 +26,9 @@ public class FormatCheckUtil {
                 return false;
             }
             log.debug("format testing: format {} tested successfully", format);
-            return canWrite;
+            return true;
         } catch (Throwable e) {
-            log.debug("unable to write in the following format: {}, so I will hide this feature.", format);
+            log.warn("unable to write in the following format: {}, so I will hide this feature. More info: {}", format, e.getMessage(), e);
             return false;
         }
     }
