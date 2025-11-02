@@ -8,7 +8,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.List;
 
 public class FormatCheckUtil {
@@ -31,7 +30,7 @@ public class FormatCheckUtil {
             }
             log.debug("format testing: format {} tested successfully", format);
             return true;
-        } catch (IOException ioException) {
+        } catch (Exception ioException) {
             log.debug("format testing: failed to test {} format. More info: {}", format, ioException.getMessage(), ioException);
             return true;
         } catch (Error e) {
@@ -41,7 +40,7 @@ public class FormatCheckUtil {
     }
 
     private static BufferedImage createTestImage(int type) {
-        BufferedImage image = new BufferedImage(1, 1, type);
+        BufferedImage image = new BufferedImage(16, 16, type);
         image.setRGB(0, 0, Color.GREEN.getRGB());
         return image;
     }
