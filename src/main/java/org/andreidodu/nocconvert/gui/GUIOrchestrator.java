@@ -80,7 +80,7 @@ public class GUIOrchestrator extends JFrame {
         menu.add(about);
         JMenuItem exit = new JMenuItem("Exit");
         exit.addActionListener((e) -> SwingUtilities.invokeLater(() -> {
-            conversionController.shutdown();
+            conversionController.manualShutdown();
             exit(0);
         }));
         menu.add(exit);

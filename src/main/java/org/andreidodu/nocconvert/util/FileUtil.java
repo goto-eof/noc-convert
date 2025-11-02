@@ -1,10 +1,15 @@
 package org.andreidodu.nocconvert.util;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.concurrent.Semaphore;
+
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class FileUtil {
     private static final Logger log = LogManager.getLogger(FileUtil.class);
@@ -82,6 +87,42 @@ public class FileUtil {
             return parentDir.resolve(finalName);
         } else {
             return Path.of(finalName);
+        }
+    }
+
+    public static void deleteFileTask(Semaphore vtSemaphore, File file) {
+        try {
+            vtSemaphore.acquire();
+            deleteFileIfExists(file);
+        } catch (InterruptedException e) {
+            log.error(getRootCauseMessage(e), e);
+            throw new RuntimeException(e);
+        } finally {
+            vtSemaphore.release();
+        }
+    }
+
+    public static void deleteTemporaryDirectoryTask(Semaphore vtSemaphore, Path tmpParentDirPath) {
+        try {
+            vtSemaphore.acquire();
+            deleteTemporaryDirectory(tmpParentDirPath != null, tmpParentDirPath);
+        } catch (InterruptedException e) {
+            log.error(getRootCauseMessage(e), e);
+            throw new RuntimeException(e);
+        } finally {
+            vtSemaphore.release();
+        }
+    }
+
+
+    public static void deleteTemporaryDirectory(boolean isPathExists, Path toDeletePath) {
+        if (isPathExists) {
+            try {
+                FileUtils.deleteDirectory(toDeletePath.toFile());
+            } catch (IOException e) {
+                log.debug(getRootCauseMessage(e), e);
+                throw new RuntimeException(e);
+            }
         }
     }
 }

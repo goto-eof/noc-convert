@@ -8,11 +8,9 @@ import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInpu
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
 import org.andreidodu.nocconvert.util.FileUtil;
 import org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable;
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,8 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
-import static org.andreidodu.nocconvert.util.FileUtil.deleteFileIfExists;
-import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.IDEAL_NUM_OF_THREADS;
+import static org.andreidodu.nocconvert.util.FileUtil.deleteTemporaryDirectory;
 import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
@@ -40,7 +37,9 @@ public class ConversionOrchestrator {
     private final int permits = AdaptiveSimpleGovernorRunnable.IDEAL_NUM_OF_THREADS.get();
     private final ConversionOrchestratorInputDTO conversionOrchestratorInputDTO;
     private Path tmpDirPath;
+    @Getter
     private Path tmpParentDirPath;
+    @Getter
     private final ConcurrentLinkedQueue<Path> fileRenameQueue = new ConcurrentLinkedQueue<>();
 
     public ConversionOrchestrator(ConversionOrchestratorInputDTO conversionOrchestratorInputDTO) {
@@ -181,51 +180,4 @@ public class ConversionOrchestrator {
 
     }
 
-    public void manualShutdownExtension() {
-
-        try (ExecutorService vtExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
-
-            Semaphore vtSemaphore = new Semaphore(IDEAL_NUM_OF_THREADS.get());
-
-            vtExecutor.submit(deleteTemporaryDirectoryTask(vtSemaphore));
-
-            fileRenameQueue.forEach((path) -> vtExecutor.submit(() -> deleteFileTask(vtSemaphore, path.toFile())));
-        }
-
-    }
-
-    private static void deleteFileTask(Semaphore vtSemaphore, File file) {
-        try {
-            vtSemaphore.acquire();
-            deleteFileIfExists(file);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally {
-            vtSemaphore.release();
-        }
-    }
-
-    private Runnable deleteTemporaryDirectoryTask(Semaphore vtSemaphore) {
-        return () -> {
-            try {
-                vtSemaphore.acquire();
-                deleteTemporaryDirectory(tmpParentDirPath != null, tmpDirPath);
-            } catch (InterruptedException e) {
-                log.error(getRootCauseMessage(e), e);
-                throw new RuntimeException(e);
-            } finally {
-                vtSemaphore.release();
-            }
-        };
-    }
-
-    private void deleteTemporaryDirectory(boolean tmpParentDirPath, Path path) {
-        if (tmpParentDirPath) {
-            try {
-                FileUtils.deleteDirectory(path.toFile());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
 }

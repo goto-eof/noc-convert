@@ -1,5 +1,6 @@
 package org.andreidodu.nocconvert.gui.worker;
 
+import lombok.Getter;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConversionWorkerInputDTO;
@@ -11,6 +12,7 @@ import java.util.List;
 
 public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
     private static final Logger log = LogManager.getLogger(ConversionWorker.class);
+    @Getter
     private ConversionOrchestrator conversionOrchestrator;
     private final ConversionWorkerInputDTO conversionWorkerInputDTO;
 
@@ -69,19 +71,13 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
         this.conversionOrchestrator.onAllTasksComplete();
     }
 
-    public void shutdown(boolean shutdown) {
+    public void shutdownThreads(boolean shutdown) {
+        conversionOrchestrator.onAllTasksComplete();
         cancelOrchestratorJob();
-        this.cancel(shutdown);
-        this.conversionOrchestrator.onAllTasksComplete();
+        cancel(shutdown);
     }
 
     public void onAllItemsCompleted() {
     }
 
-    public void manualShutdown(boolean b) {
-        this.shutdown(b);
-        if (conversionOrchestrator != null) {
-            conversionOrchestrator.manualShutdownExtension();
-        }
-    }
 }
