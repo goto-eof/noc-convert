@@ -34,7 +34,7 @@ public class FormatCheckUtil {
     }
 
     private static BufferedImage createTestImage() {
-        BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(64, 64, BufferedImage.TYPE_INT_RGB);
         image.setRGB(0, 0, Color.GREEN.getRGB());
         return image;
     }
