@@ -186,15 +186,17 @@ public class ConversionOrchestrator {
     }
 
     public void manualShutdownExtension() {
-        if (tmpParentDirPath != null) {
-            try {
-                FileUtils.deleteDirectory(tmpParentDirPath.toFile());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        Thread.ofVirtual().start(()->{
+            if (tmpParentDirPath != null) {
+                try {
+                    FileUtils.deleteDirectory(tmpParentDirPath.toFile());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
-        }
-        fileRenameQueue.forEach(item -> {
-            deleteFileIfExists(item.toFile());
+            fileRenameQueue.forEach(item -> {
+                deleteFileIfExists(item.toFile());
+            });
         });
     }
 }

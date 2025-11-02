@@ -168,12 +168,13 @@ public class ConversionController {
             imageSearcherSwingWorker.shutdown(true);
         }
 
-        conversionWorker.onAllItemsCompleted();
+        if (conversionWorker != null) {
+            conversionWorker.onAllItemsCompleted();
+        }
     }
 
     private void onSearchComplete(List<Path> paths) {
         endSearchForImagesStep(paths);
-        imageSearcherSwingWorker = null;
     }
 
     public void startSearchForImagesStep() {
@@ -210,10 +211,6 @@ public class ConversionController {
         ConversionItemDTOMapper conversionItemDTOMapper = new ConversionItemDTOMapper();
         list = list.stream().map(conversionItemDTOMapper::clone).toList();
         conversionDTO.guiOrchestrator().onConversionStart();
-
-        SwingUtilities.invokeLater(() -> {
-            conversionDTO.openDestinationDirectoryButton().setVisible(true);
-        });
 
         this.processedItems = 0;
         this.past = new Date();
@@ -331,8 +328,6 @@ public class ConversionController {
             secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", passed, failed));
             conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);
         });
-        conversionWorker = null;
-
     }
 
     private void updateList(List<ConversionItemDTO> list) {
