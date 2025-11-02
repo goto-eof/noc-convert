@@ -15,11 +15,18 @@ public class FormatCheckUtil {
     private static final Logger log = LogManager.getLogger(FormatCheckUtil.class);
 
     public static List<FormatExtensionDTO> testAvailableFormatsAndGet(List<FormatExtensionDTO> imageFormatList) {
-        BufferedImage bufferedImage = createTestImage(BufferedImage.TYPE_INT_RGB);
-        BufferedImage bufferedImageIco = createTestImage(BufferedImage.TYPE_4BYTE_ABGR);
+
         return imageFormatList.stream()
-                .filter(format -> isPassTest("ico".equalsIgnoreCase(format.getFormat()) ? bufferedImageIco : bufferedImage, format.getFormat()))
+                .filter(format -> isPassTest(buildImage(format), format.getFormat()))
                 .toList();
+    }
+
+    private static BufferedImage buildImage(FormatExtensionDTO format) {
+
+        if ("ico".equalsIgnoreCase(format.getFormat())) return createTestImage(BufferedImage.TYPE_4BYTE_ABGR);
+        if ("wbmp".equalsIgnoreCase(format.getFormat())) return createTestImage(BufferedImage.TYPE_BYTE_BINARY);
+
+        return createTestImage(BufferedImage.TYPE_INT_RGB);
     }
 
     private static boolean isPassTest(BufferedImage image, String format) {
