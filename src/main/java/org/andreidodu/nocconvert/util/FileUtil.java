@@ -105,7 +105,8 @@ public class FileUtil {
                 try {
                     Thread.sleep(SLEEP_TIME_MS);
                 } catch (InterruptedException e) {
-                    throw e;
+                    Thread.currentThread().interrupt();
+                    break;
                 }
             }
         } catch (InterruptedException e) {
