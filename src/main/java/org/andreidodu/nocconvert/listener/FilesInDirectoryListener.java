@@ -13,4 +13,6 @@ public interface FilesInDirectoryListener {
     void onSearchDone(List<Path> result);
 
     void onOperationAborted();
+
+    void onAccessDenied();
 }

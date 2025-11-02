@@ -122,7 +122,7 @@ public class ConvertionStatusController {
         });
     }
 
-    public void noFileFound() {
+    public void disableProcessStatus() {
         SwingUtilities.invokeLater(() -> {
             convertionStatusDTO.conversionFileListScrollPane().setVisible(false);
             convertionStatusDTO.progressBarAndStatusPanel().setVisible(false);

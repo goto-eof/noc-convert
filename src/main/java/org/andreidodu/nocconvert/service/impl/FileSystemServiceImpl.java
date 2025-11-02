@@ -20,8 +20,12 @@ public class FileSystemServiceImpl implements FileSystemService {
                                              List<String> allowedFileExtensionList,
                                              FilesInDirectoryListener listener,
                                              Supplier<Boolean> isCancelled
-    ) {
+    ) throws IOException {
         Objects.requireNonNull(directoryPath, "Directory path must not be null");
+
+        try (var stream = Files.newDirectoryStream(directoryPath)) {
+            stream.iterator().next();
+        }
 
         if (!Files.isDirectory(directoryPath) || !isContainFiles(directoryPath)) {
             return new ArrayList<>();
@@ -61,6 +65,8 @@ public class FileSystemServiceImpl implements FileSystemService {
                 log.warn("unaccessible directory: {}", currentDir);
             } catch (IOException e) {
                 log.warn("IOException directory: {}", currentDir);
+            } catch (Throwable t) {
+                log.error(t.getMessage(), t);
             }
             listener.onUpdateTotalFile(totalFiles);
         }

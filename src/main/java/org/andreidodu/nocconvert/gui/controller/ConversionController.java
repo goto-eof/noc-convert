@@ -173,6 +173,11 @@ public class ConversionController {
         public void onOperationAborted() {
             ConversionController.this.onOperationAborted();
         }
+
+        @Override
+        public void onAccessDenied() {
+            conversionDTO.guiOrchestrator().onAccessDenied();
+        }
     }
 
     private void onOperationAborted() {
@@ -367,7 +372,7 @@ public class ConversionController {
         cancelActiveProcess();
     }
 
-    public void noFileFound() {
+    public void resetConversionButton() {
         SwingUtilities.invokeLater(() -> {
             enableConvertButtons(true);
             conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);

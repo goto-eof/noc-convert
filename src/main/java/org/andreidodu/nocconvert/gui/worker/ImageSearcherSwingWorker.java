@@ -10,6 +10,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
+import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +36,18 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
     @Override
     protected List<Path> doInBackground() {
         log.debug("Starting to search image from directory {}", sourceDirectory);
-        return fileSystemService.getAllFilesInDirectory(sourceDirectory, getAvailableReadExtensions(), new FilesInDirectoryListenerImpl(), super::isCancelled);
+        FilesInDirectoryListenerImpl listener = new FilesInDirectoryListenerImpl();
+        try {
+            return fileSystemService.getAllFilesInDirectory(sourceDirectory, getAvailableReadExtensions(), listener, super::isCancelled);
+        } catch (AccessDeniedException e) {
+            log.error(e.getMessage(), e);
+            listener.onAccessDenied();
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+            listener.onUpdateTotalFile(0L);
+            listener.onSearchDone(new ArrayList<>());
+        }
+        return new ArrayList<>();
     }
 
     private List<String> getAvailableReadExtensions() {
@@ -49,14 +62,6 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
         list = list.stream().map(String::toLowerCase).distinct().toList();
 
         return list;
-    }
-
-    @Override
-    protected void process(List<ChunkDTO> chunks) {
-//        chunks.forEach(chunk -> {
-//            String message = String.format("Searching for images: the directory %s contains %s processable images", chunk.directory.getFileName().toString(), chunk.numFiles);
-//            updateApplicationStatusLabel.accept(message);
-//        });
     }
 
     @Override
@@ -99,6 +104,11 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
         @Override
         public void onOperationAborted() {
             filesInDirectoryListener.onOperationAborted();
+        }
+
+        @Override
+        public void onAccessDenied() {
+            filesInDirectoryListener.onAccessDenied();
         }
     }
 
