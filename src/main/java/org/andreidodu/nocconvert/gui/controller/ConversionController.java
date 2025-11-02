@@ -11,6 +11,7 @@ import org.andreidodu.nocconvert.gui.worker.ImageSearcherSwingWorker;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
 import org.andreidodu.nocconvert.util.ImageConverterUtil;
+import org.andreidodu.nocconvert.util.OSUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -88,7 +89,13 @@ public class ConversionController {
 
     private void populateConvertComponentDropdownMenu() {
         List<FormatExtensionDTO> imageFormatList = imageConverterUtil.getAvailableWriteFormatList();
-        FormatExtensionDTO preferredFormat = imageFormatList.stream().filter(format -> "webp".equals(format.getFormat())).findFirst().orElse(imageFormatList.getLast());
+        imageFormatList = imageFormatList.stream().filter(format -> {
+            if (OSUtils.isMacOS() && "webp".equalsIgnoreCase(format.getFormat())){
+                return false;
+            };
+            return true;
+        }).toList();
+        FormatExtensionDTO preferredFormat = imageFormatList.stream().filter(format -> "png".equalsIgnoreCase(format.getFormat())).findFirst().orElse(imageFormatList.getLast());
         conversionDTO.convertComponent().setImageList(imageFormatList);
         conversionDTO.convertComponent().setPreferredFormat(preferredFormat);
         conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);

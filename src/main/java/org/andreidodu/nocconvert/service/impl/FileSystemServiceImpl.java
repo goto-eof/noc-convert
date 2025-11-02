@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -56,8 +57,10 @@ public class FileSystemServiceImpl implements FileSystemService {
                 totalFiles += filesInThisDir;
                 listener.onDirectoryProcessed(totalFiles, currentDir, filesInThisDir);
 
-            } catch (IOException e) {
+            } catch (AccessDeniedException ee) {
                 log.warn("unaccessible directory: {}", currentDir);
+            } catch (IOException e) {
+                log.warn("IOException directory: {}", currentDir);
             }
             listener.onUpdateTotalFile(totalFiles);
         }
