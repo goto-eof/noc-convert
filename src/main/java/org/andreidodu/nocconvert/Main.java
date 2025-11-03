@@ -7,17 +7,12 @@ import org.apache.logging.log4j.Logger;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import java.io.File;
 
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class);
 
     public static void main(String[] args) {
         log.info("Application is starting");
-
-//        IIORegistry registry = IIORegistry.getDefaultInstance();
-//        registry.registerServiceProvider(new PDFImageReaderSpi());
-//        registry.registerServiceProvider(new PDFImageWriterSpi());
 
         ImageIO.scanForPlugins();
 

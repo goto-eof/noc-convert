@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.service.impl;
+package org.andreidodu.nocconvert.task;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -7,7 +7,6 @@ import org.andreidodu.nocconvert.dto.ImageHeaderDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.exception.InvalidFileFormatException;
-import org.andreidodu.nocconvert.service.ImageConverterService;
 import org.andreidodu.nocconvert.util.ImageUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,13 +31,13 @@ import java.util.function.Consumer;
 import static org.andreidodu.nocconvert.util.ImageUtil.*;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
-public class ImageConverterServiceImpl implements ImageConverterService {
-    private static final Logger log = LogManager.getLogger(ImageConverterServiceImpl.class);
+public class ImageConverterTaskImpl implements ImageConverterTask {
+    private static final Logger log = LogManager.getLogger(ImageConverterTaskImpl.class);
     @Setter
     private boolean canceled = false;
     private final ExecutorService platformExecutorService;
 
-    public ImageConverterServiceImpl(ExecutorService platformExecutorService) {
+    public ImageConverterTaskImpl(ExecutorService platformExecutorService) {
         this.platformExecutorService = platformExecutorService;
     }
 
