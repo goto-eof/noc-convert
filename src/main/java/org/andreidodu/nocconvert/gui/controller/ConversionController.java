@@ -274,7 +274,7 @@ public class ConversionController {
         }
 
         Optional.ofNullable(paths).ifPresent(paths -> {
-            applicationStatusLabel.setText("Converted " + processedItems + " of " + paths.size() + " Images (" + passes.get() + " successes | " + failures.get() + " failures). Please wait.");
+            applicationStatusLabel.setText("Converted " + processedItems + " of " + paths.size() + " Images (" + failures.get() + " failures). Please wait.");
             long now = System.currentTimeMillis();
             if (now - lastTime >= 1000) {
                 lastTime = now;
