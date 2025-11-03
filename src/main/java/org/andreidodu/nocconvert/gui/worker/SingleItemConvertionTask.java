@@ -6,8 +6,7 @@ import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
-import org.andreidodu.nocconvert.task.ImageConverterTask;
-import org.andreidodu.nocconvert.task.ImageConverterTaskImpl;
+import org.andreidodu.nocconvert.task.SingleImageConverter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,18 +15,18 @@ import java.time.LocalDateTime;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
-public class ConvertSingleItemTask implements Runnable {
-    private static final Logger log = LogManager.getLogger(ConvertSingleItemTask.class);
+public class SingleItemConvertionTask implements Runnable {
+    private static final Logger log = LogManager.getLogger(SingleItemConvertionTask.class);
     private final ConversionItemDTO conversionItemDTO;
-    private final ImageConverterTask imageConverterTask;
+    private final SingleImageConverter singleImageConverter;
     private volatile boolean canceled = false;
     private final ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO;
     LocalDateTime lastCall = LocalDateTime.now();
 
-    public ConvertSingleItemTask(ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO) {
+    public SingleItemConvertionTask(ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO) {
         this.convertSingleItemTaskInputDTO = convertSingleItemTaskInputDTO;
         this.conversionItemDTO = new ConversionItemDTOMapper().clone(convertSingleItemTaskInputDTO.conversionItemDTO());
-        this.imageConverterTask = new ImageConverterTaskImpl(convertSingleItemTaskInputDTO.platformExecutorService());
+        this.singleImageConverter = new SingleImageConverter(convertSingleItemTaskInputDTO.platformExecutorService());
     }
 
     private void onStart() {
@@ -50,7 +49,7 @@ public class ConvertSingleItemTask implements Runnable {
         }
         try {
             ConvertImageInputDTO convertImageInputDTO = buildInput();
-            this.imageConverterTask.convertImage(convertImageInputDTO);
+            this.singleImageConverter.convertImage(convertImageInputDTO);
         } catch (ConversionManualAbortedException e) {
             cancelOperation();
         } catch (Exception e) {
@@ -120,6 +119,6 @@ public class ConvertSingleItemTask implements Runnable {
 
     public void closeStreams() {
         this.canceled = true;
-        imageConverterTask.interruptTask();
+        singleImageConverter.interruptTask();
     }
 }

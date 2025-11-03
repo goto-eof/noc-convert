@@ -24,32 +24,36 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 import static org.andreidodu.nocconvert.util.ImageUtil.*;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
-public class ImageConverterTaskImpl implements ImageConverterTask {
-    private static final Logger log = LogManager.getLogger(ImageConverterTaskImpl.class);
+public class SingleImageConverter {
+    private static final Logger log = LogManager.getLogger(SingleImageConverter.class);
     @Setter
-    private boolean canceled = false;
+    private volatile boolean canceled = false;
     private final ExecutorService platformExecutorService;
 
-    public ImageConverterTaskImpl(ExecutorService platformExecutorService) {
+    private final static Object IMAGE_IO_LOCK = new Object();
+
+    public SingleImageConverter(ExecutorService platformExecutorService) {
         this.platformExecutorService = platformExecutorService;
     }
 
-    @Override
-    public void convertImage(ConvertImageInputDTO convertImageInputDTO) throws IOException {
+    public void convertImage(ConvertImageInputDTO convertImageInputDTO) {
         if (canceled) {
             throw new ConversionManualAbortedException();
         }
 
         log.debug("Converting image {} from {} to {}", convertImageInputDTO.sourceFile().getFileName(), convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension());
 
-        interruptIfNecessary(null);
+        interruptIfNecessary();
 
         convertImageInputDTO.onStart().run();
         convertImageInputDTO.onProgress().accept(1f);
@@ -58,9 +62,14 @@ public class ImageConverterTaskImpl implements ImageConverterTask {
         Path tmpOutputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.tmpPath(), convertImageInputDTO.targetExtension(), true);
 
         try {
-            ImageHeaderDTO sourceFileHeaders = getImageHeaders(sourceFile);
+
+            List<String> validInputFormatListInLowerCase;
+            ImageHeaderDTO sourceFileHeaders;
+            synchronized (IMAGE_IO_LOCK) {
+                sourceFileHeaders = getImageHeaders(sourceFile);
+                validInputFormatListInLowerCase = Arrays.stream(ImageIO.getReaderFormatNames()).toList();
+            }
             String sourceFileFormat = sourceFileHeaders.format();
-            List<String> validInputFormatListInLowerCase = Arrays.stream(ImageIO.getReaderFormatNames()).toList();
             validateInputImage(convertImageInputDTO.sourceFile(), sourceFileFormat, validInputFormatListInLowerCase, convertImageInputDTO.fail());
 
             if (sourceFileHeaders.format().equalsIgnoreCase(convertImageInputDTO.targetExtension())) {
@@ -88,11 +97,11 @@ public class ImageConverterTaskImpl implements ImageConverterTask {
 
             BufferedImage image = readImage(imageInputStream, readers, totalReadPercentageDTO, convertImageInputDTO.onProgress());
 
-            interruptIfNecessary(null);
+            interruptIfNecessary();
 
             image = preprocessImage(convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension(), image, platformExecutorService);
 
-            interruptIfNecessary(null);
+            interruptIfNecessary();
 
             writeImageOuter(convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image, convertImageInputDTO.addToFileRenameQueue());
         } catch (ConversionManualAbortedException e) {
@@ -136,7 +145,7 @@ public class ImageConverterTaskImpl implements ImageConverterTask {
 
                 reader.addIIOReadProgressListener(readerListener);
 
-                interruptIfNecessary(null);
+                interruptIfNecessary();
                 var data = reader.read(0);
                 if (readerListener.getException() != null) {
                     throw readerListener.getException();
@@ -211,7 +220,10 @@ public class ImageConverterTaskImpl implements ImageConverterTask {
     }
 
     private void writeImageInner(String newFileFormat, Consumer<Float> updateProgressFloatValue, Path outputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image) throws Exception {
-        Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(newFileFormat);
+        Iterator<ImageWriter> writers;
+        synchronized (IMAGE_IO_LOCK) {
+            writers = ImageIO.getImageWritersByFormatName(newFileFormat);
+        }
         if (!writers.hasNext()) {
             log.debug("No writers found for format: {}", newFileFormat);
             throw new IllegalStateException("No writer found for format: " + newFileFormat);
@@ -432,19 +444,15 @@ public class ImageConverterTaskImpl implements ImageConverterTask {
         };
     }
 
-    private static void interruptIfNecessary(Consumer<Exception> fail) {
-        if (Thread.currentThread().isInterrupted()) {
+    private void interruptIfNecessary() {
+        if (Thread.currentThread().isInterrupted() || canceled) {
             log.error("Operation aborted 0");
-            ConversionManualAbortedException e = new ConversionManualAbortedException("Operation aborted");
-            Optional.ofNullable(fail).ifPresent(callback -> callback.accept(e));
-            throw e;
+            throw new ConversionManualAbortedException("Operation aborted");
         }
     }
 
-    @Override
     public void interruptTask() {
         setCanceled(true);
-        Thread.currentThread().interrupt();
     }
 
 

@@ -27,7 +27,7 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMess
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
     private final ExecutorService virtualThreadExecutor;
-    private List<ConvertSingleItemTask> virtualTaskList;
+    private List<SingleItemConvertionTask> virtualTaskList;
     private final Semaphore semaphore;
     private final ExecutorService platformExecutorService;
     @Getter
@@ -77,7 +77,7 @@ public class ConversionOrchestrator {
         for (ConversionItemDTO conversionItemDTO : conversionOrchestratorInputDTO.conversionItemDTOList()) {
             conversionItemDTO.setStatus(ConversionStatus.QUEUED);
             ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO = buildInput(conversionItemDTO, tmpDirPath);
-            ConvertSingleItemTask task = new ConvertSingleItemTask(convertSingleItemTaskInputDTO);
+            SingleItemConvertionTask task = new SingleItemConvertionTask(convertSingleItemTaskInputDTO);
             virtualTaskList.add(task);
             virtualThreadExecutor.submit(task);
         }
@@ -125,7 +125,7 @@ public class ConversionOrchestrator {
             boolean terminated = virtualThreadExecutor.awaitTermination(31, TimeUnit.DAYS);
             if (!terminated) {
                 log.error("virtualThreadExecutor did not terminate in time. Forcing emergency shutdown.");
-                virtualTaskList.forEach(ConvertSingleItemTask::closeStreams);
+                virtualTaskList.forEach(SingleItemConvertionTask::closeStreams);
             }
 
             platformExecutorService.shutdown();
@@ -182,7 +182,7 @@ public class ConversionOrchestrator {
         }
 
         if (virtualThreadExecutor != null && !virtualThreadExecutor.isTerminated()) {
-            virtualTaskList.forEach(ConvertSingleItemTask::closeStreams);
+            virtualTaskList.forEach(SingleItemConvertionTask::closeStreams);
             this.virtualThreadExecutor.shutdownNow();
         }
 

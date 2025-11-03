@@ -3,7 +3,7 @@ package org.andreidodu.nocconvert.gui.components;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
-import org.andreidodu.nocconvert.task.ImageConverterTaskImpl;
+import org.andreidodu.nocconvert.task.SingleImageConverter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,7 +16,7 @@ import static org.andreidodu.nocconvert.gui.constants.Colors.*;
 import static org.andreidodu.nocconvert.gui.util.ShapeUtil.*;
 
 public class ListItemRenderer extends JPanel implements ListCellRenderer<ConversionItemDTO> {
-    private static final Logger log = LogManager.getLogger(ImageConverterTaskImpl.class);
+    private static final Logger log = LogManager.getLogger(SingleImageConverter.class);
 
     private final JLabel fileNameLabel;
     private final JLabel fileSize;
