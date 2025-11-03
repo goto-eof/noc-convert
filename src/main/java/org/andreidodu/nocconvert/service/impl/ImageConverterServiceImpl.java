@@ -201,26 +201,12 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         pass.run();
     }
 
-    private static void retrableMove(Path tmpOutputFile, Path outputFile) {
-        boolean isMoved = false;
-        for (int i = 0; i < 50 && !isMoved; i++) {
-            try {
-                Files.move(tmpOutputFile, outputFile, StandardCopyOption.ATOMIC_MOVE);
-                isMoved = true;
-            } catch (IOException ex) {
-                log.warn("tried to move the file and failed: {}", getRootCauseMessage(ex), ex);
-                sleep();
-            }
-        }
-    }
-
     private static void validationSleep(Consumer<Exception> fail) {
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {
             fail.accept(new RuntimeException(getRootCauseMessage(e), e));
             log.debug(getRootCauseMessage(e), e);
-            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }
