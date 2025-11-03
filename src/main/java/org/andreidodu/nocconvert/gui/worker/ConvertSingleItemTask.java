@@ -4,6 +4,7 @@ import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
+import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
 import org.andreidodu.nocconvert.service.ImageConverterService;
 import org.andreidodu.nocconvert.service.impl.ImageConverterServiceImpl;
@@ -19,7 +20,7 @@ public class ConvertSingleItemTask implements Runnable {
     private static final Logger log = LogManager.getLogger(ConvertSingleItemTask.class);
     private final ConversionItemDTO conversionItemDTO;
     private final ImageConverterService imageConverterService;
-    private boolean canceled = false;
+    private volatile boolean canceled = false;
     private final ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO;
     LocalDateTime lastCall = LocalDateTime.now();
 
@@ -37,26 +38,31 @@ public class ConvertSingleItemTask implements Runnable {
 
     public void run() {
         if (canceled) {
-            updateAsCancelled();
-            log.debug("CANCELED: {}", conversionItemDTO.getSourceFile());
+            cancelOperation();
             return;
         }
         try {
             convertSingleItemTaskInputDTO.semaphore().acquire();
         } catch (InterruptedException e) {
-            updateAsCancelled();
-            log.debug("CANCELED: {}", conversionItemDTO.getSourceFile());
+            cancelOperation();
             log.debug(getRootCauseMessage(e), e);
             return;
         }
         try {
             ConvertImageInputDTO convertImageInputDTO = buildInput();
             this.imageConverterService.convertImage(convertImageInputDTO);
+        } catch (ConversionManualAbortedException e) {
+            cancelOperation();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         } finally {
             convertSingleItemTaskInputDTO.semaphore().release();
         }
+    }
+
+    private void cancelOperation() {
+        updateAsCancelled();
+        log.debug("CANCELED: {}", conversionItemDTO.getSourceFile());
     }
 
     private ConvertImageInputDTO buildInput() {

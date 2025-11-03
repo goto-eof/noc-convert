@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.*;
 
 import static org.andreidodu.nocconvert.util.FileUtil.deleteTemporaryDirectory;
@@ -27,7 +28,7 @@ public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
     private final ExecutorService virtualThreadExecutor;
     private List<ConvertSingleItemTask> virtualTaskList;
-    private static Semaphore semaphore;
+    private final Semaphore semaphore;
     private final ExecutorService platformExecutorService;
     @Getter
     private final int platformThreadsPermits;
@@ -58,10 +59,17 @@ public class ConversionOrchestrator {
     public void startConversion() {
         virtualTaskList = new ArrayList<>();
         try {
-            Path conversionDestinationDirectory = conversionOrchestratorInputDTO.conversionItemDTOList().stream().findFirst().get().getDestinationDirectory();
+            Path conversionDestinationDirectory = conversionOrchestratorInputDTO.conversionItemDTOList()
+                    .stream()
+                    .findFirst()
+                    .orElseThrow()
+                    .getDestinationDirectory();
             tmpDirPath = buildTmpPathAndReturn(conversionDestinationDirectory);
             tmpParentDirPath = buildParentTmpPathAndReturn(conversionDestinationDirectory);
             log.debug("Creating temporary directory: {}", tmpDirPath);
+        } catch (NoSuchElementException e) {
+            log.error("Conversion list is empty. Cannot start conversion.", e);
+            throw new RuntimeException("Conversion list is empty. Cannot determine destination path.", e);
         } catch (IOException e) {
             log.error("Failed to build tmp dir for conversion orchestrator", e);
             throw new RuntimeException(e);

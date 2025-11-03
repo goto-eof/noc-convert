@@ -34,7 +34,6 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMess
 
 public class ImageConverterServiceImpl implements ImageConverterService {
     private static final Logger log = LogManager.getLogger(ImageConverterServiceImpl.class);
-    int totalPercentage = 0;
     @Setter
     private boolean canceled = false;
     private final ExecutorService platformExecutorService;
@@ -73,6 +72,8 @@ public class ImageConverterServiceImpl implements ImageConverterService {
                 convertImageInputDTO.pass().run();
                 return;
             }
+        } catch (ConversionManualAbortedException e) {
+            throw e;
         } catch (Exception e) {
             convertImageInputDTO.fail().accept(e);
             throw new RuntimeException(getRootCauseMessage(e), e);
@@ -95,6 +96,8 @@ public class ImageConverterServiceImpl implements ImageConverterService {
             interruptIfNecessary(null);
 
             writeImageOuter(convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image, convertImageInputDTO.addToFileRenameQueue());
+        } catch (ConversionManualAbortedException e) {
+            throw e;
         } catch (Exception e) {
             convertImageInputDTO.fail().accept(e);
             throw new RuntimeException(getRootCauseMessage(e), e);
@@ -156,34 +159,30 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         try {
             writeImageInner(convertImageInputDTO.targetExtension(), convertImageInputDTO.onProgress(), tmpOutputFile, totalReadPercentageDTO, image);
             Path outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
-            asyncFileCompletionValidation(tmpOutputFile, outputFile, convertImageInputDTO.pass(), convertImageInputDTO.fail(), addToFileRenameQueue);
+            validateFileCompletionWithRetry(tmpOutputFile, outputFile, convertImageInputDTO.pass(), convertImageInputDTO.fail(), addToFileRenameQueue);
         } catch (Throwable e) {
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }
 
-    private void asyncFileCompletionValidation(Path tmpOutputFile, Path outputFile, Runnable pass, Consumer<Exception> fail, Consumer<Path> addToFileRenameQueue) {
-        Thread.ofVirtual().start(() -> {
-                    int i = 5;
+    private void validateFileCompletionWithRetry(Path tmpOutputFile, Path outputFile, Runnable pass, Consumer<Exception> fail, Consumer<Path> addToFileRenameQueue) {
+        int i = 5;
 
-                    while (i > 0) {
-                        try {
-                            validateFileCompletion(tmpOutputFile, outputFile, pass);
-                            addToFileRenameQueue.accept(outputFile);
-                            return;
-                        } catch (Exception e) {
-                            log.debug(getRootCauseMessage(e), e);
-                            log.debug("validation i: " + i);
-                            if (i == 1) {
-                                moveFailedImageToTmp(tmpOutputFile, outputFile, fail, e);
-                                return;
-                            }
-                        }
-                        validationSleep(fail);
-                        i--;
-                    }
+        while (i > 0) {
+            try {
+                validateFileCompletion(tmpOutputFile, outputFile, pass);
+                addToFileRenameQueue.accept(outputFile);
+                return;
+            } catch (Exception e) {
+                log.debug(getRootCauseMessage(e), e);
+                if (i == 1) {
+                    moveFailedImageToTmp(tmpOutputFile, outputFile, fail, e);
+                    return;
                 }
-        );
+            }
+            validationSleep(fail);
+            i--;
+        }
     }
 
     private static void moveFailedImageToTmp(Path tmpOutputFile, Path outputFile, Consumer<Exception> fail, Exception e) {
@@ -221,6 +220,7 @@ public class ImageConverterServiceImpl implements ImageConverterService {
         } catch (InterruptedException e) {
             fail.accept(new RuntimeException(getRootCauseMessage(e), e));
             log.debug(getRootCauseMessage(e), e);
+            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }
@@ -442,7 +442,6 @@ public class ImageConverterServiceImpl implements ImageConverterService {
             @Override
             public void readAborted(ImageReader source) {
                 if (isInterrupted()) return;
-                totalPercentage = 0;
                 this.exception = new RuntimeException("Read aborted");
             }
         };
