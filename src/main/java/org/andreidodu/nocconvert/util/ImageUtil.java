@@ -34,12 +34,12 @@ public class ImageUtil {
 
     public static BufferedImage normalizeAsIco(BufferedImage bufferedImage) {
         Objects.requireNonNull(bufferedImage);
-        return normalizeIconFormatCommon(TYPE_4BYTE_ABGR, bufferedImage, ICO_MAX_SIZE, true);
+        return normalizeIconFormatCommon(TYPE_4BYTE_ABGR, bufferedImage, ICO_MAX_SIZE, false, true);
     }
 
     public static BufferedImage normalizeAsIcns(BufferedImage bufferedImage) {
         Objects.requireNonNull(bufferedImage);
-        return normalizeIconFormatCommon(TYPE_INT_ARGB, bufferedImage, ICNS_MAX_SIZE, false);
+        return normalizeIconFormatCommon(TYPE_INT_ARGB, bufferedImage, ICNS_MAX_SIZE, false, false);
     }
 
     public static BufferedImage convertToOpaque(BufferedImage originalImage, String newFormat) {
@@ -103,13 +103,16 @@ public class ImageUtil {
         }
     }
 
-    private static BufferedImage normalizeIconFormatCommon(int imageType, BufferedImage bufferedImage, int targetSize, boolean isOpaque) {
+    private static BufferedImage normalizeIconFormatCommon(int imageType, BufferedImage bufferedImage, int targetSize, boolean isOpaque, boolean isSwapChannels) {
 
         if (bufferedImage.getWidth() == targetSize && bufferedImage.getHeight() == targetSize && bufferedImage.getType() == imageType) {
             BufferedImage copy = new BufferedImage(targetSize, targetSize, imageType);
             Graphics2D g = copy.createGraphics();
             g.drawImage(bufferedImage, 0, 0, null);
             g.dispose();
+            if (isSwapChannels) {
+                swapRBGChannels(copy);
+            }
             return copy;
         }
 
@@ -137,7 +140,41 @@ public class ImageUtil {
         g2.drawImage(bufferedImage, x, y, x + scaledW, y + scaledH, 0, 0, bufferedImage.getWidth(), bufferedImage.getHeight(), null);
         g2.dispose();
 
+        if (isSwapChannels) {
+            swapRBGChannels(out);
+        }
         return out;
+    }
+
+    private static void swapRBGChannels(BufferedImage image) {
+        if (image.getType() != BufferedImage.TYPE_INT_ARGB &&
+                image.getType() != BufferedImage.TYPE_INT_RGB &&
+                image.getType() != TYPE_4BYTE_ABGR) {
+            log.warn("Unsupported image type for R/B swap.");
+            return;
+        }
+
+        int w = image.getWidth();
+        int h = image.getHeight();
+        int[] pixels = image.getRGB(0, 0, w, h, null, 0, w);
+
+        for (int i = 0; i < pixels.length; i++) {
+            int pixel = pixels[i];
+
+            int alpha = (pixel >> 24) & 0xff;
+            int red = (pixel >> 16) & 0xff;
+            int green = (pixel >> 8) & 0xff;
+            int blue = (pixel) & 0xff;
+
+            int newPixel = (alpha << 24) |
+                    (blue << 16) |
+                    (green << 8) |
+                    (red);
+
+            pixels[i] = newPixel;
+        }
+
+        image.setRGB(0, 0, w, h, pixels, 0, w);
     }
 
     public static java.util.List<FormatExtensionDTO> getFormatExtensionDTOList(String[] formatList) {
