@@ -20,12 +20,13 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.*;
 
-import static org.andreidodu.nocconvert.util.FileUtil.deleteTemporaryDirectory;
+import static org.andreidodu.nocconvert.util.OperationUtil.retryable;
 import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
+    public static final int RENAME_SEMAPHORE_SIZE = 100;
     private final ExecutorService virtualThreadExecutor;
     private List<SingleItemConvertionTask> virtualTaskList;
     private final Semaphore semaphore;
@@ -137,8 +138,12 @@ public class ConversionOrchestrator {
 
             virtualThreadExecutor.shutdownNow();
 
-            Thread.ofVirtual().start(() -> deleteTemporaryDirectory(!ApplicationConfig.DEV_MODE && tmpParentDirPath != null, tmpDirPath));
-            Thread.ofVirtual().start(this::renameFiles);
+
+            Semaphore semaphore = new Semaphore(RENAME_SEMAPHORE_SIZE);
+            if (!ApplicationConfig.DEV_MODE && tmpParentDirPath != null) {
+                Thread.ofVirtual().start(() -> retryable(semaphore, tmpDirPath, FileUtil::deleteDirectory));
+            }
+            fileRenameQueue.forEach(filePath -> Thread.ofVirtual().start(() -> retryable(semaphore, filePath, this::renameFile)));
 
         } catch (InterruptedException e) {
             log.warn("Conversion Worker interrupted (user STOP action). Forcing Orchestrator cancel.", e);
@@ -149,21 +154,21 @@ public class ConversionOrchestrator {
         }
     }
 
-    private void renameFiles() {
-        for (Path file : fileRenameQueue) {
-            Path cleanFileName = FileUtil.getCleanFileNameWithoutExtension(file);
-            String backupCleanFileName = cleanFileName.getFileName().toString();
-            int i = 1;
-            while (Files.exists(cleanFileName)) {
-                cleanFileName = calculateNewName(cleanFileName, i, backupCleanFileName);
-                i++;
-            }
-            try {
-                Files.move(file, cleanFileName, StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                log.error(getRootCauseMessage(e), e);
-            }
+    private boolean renameFile(Path file) {
+        Path cleanFileName = FileUtil.getCleanFileNameWithoutExtension(file);
+        String backupCleanFileName = cleanFileName.getFileName().toString();
+        int i = 1;
+        while (Files.exists(cleanFileName)) {
+            cleanFileName = calculateNewName(cleanFileName, i, backupCleanFileName);
+            i++;
         }
+        try {
+            Files.move(file, cleanFileName, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            log.error(getRootCauseMessage(e), e);
+            return false;
+        }
+        return true;
     }
 
     private static Path calculateNewName(Path cleanFilename, int i, String cleanedFilename) {

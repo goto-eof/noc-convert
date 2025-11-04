@@ -7,15 +7,13 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.concurrent.Semaphore;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class FileUtil {
     private static final Logger log = LogManager.getLogger(FileUtil.class);
     private static final int MAX_FILENAME_LENGTH = 150;
-    private static final int MAX_DELETE_ATTEMPTS = 5;
-    private static final long SLEEP_TIME_MS = 100;
+
 
     public static String getHumanableFileSize(File file) {
         if (file == null || !file.exists()) return "0 B";
@@ -93,58 +91,30 @@ public class FileUtil {
         }
     }
 
-    public static void deleteFileTask(Semaphore vtSemaphore, File file) {
-        try {
-            vtSemaphore.acquire();
-            int attempt = 0;
-            boolean isDone = false;
-
-            while (!isDone && attempt < MAX_DELETE_ATTEMPTS) {
-                isDone = deleteFileIfExists(file);
-                attempt++;
-                try {
-                    Thread.sleep(SLEEP_TIME_MS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            log.error(getRootCauseMessage(e), e);
-            throw new RuntimeException(e);
-        } finally {
-            vtSemaphore.release();
-        }
-    }
-
     public static boolean deleteFileIfExists(File outputFile) {
-        if (outputFile.exists()) {
-            return deleteFile(outputFile);
+        if (!outputFile.exists() || !outputFile.isFile()) {
+            return true;
         }
-        return true;
+        return deleteFile(outputFile);
     }
-
-    public static void deleteTemporaryDirectoryTask(Semaphore vtSemaphore, Path tmpParentDirPath) {
-        try {
-            vtSemaphore.acquire();
-            deleteTemporaryDirectory(tmpParentDirPath != null, tmpParentDirPath);
-        } catch (InterruptedException e) {
-            log.error(getRootCauseMessage(e), e);
-            throw new RuntimeException(e);
-        } finally {
-            vtSemaphore.release();
-        }
-    }
-
 
     public static void deleteTemporaryDirectory(boolean isPathExists, Path toDeletePath) {
         if (isPathExists) {
-            try {
-                FileUtils.deleteDirectory(toDeletePath.toFile());
-            } catch (IOException e) {
-                log.debug(getRootCauseMessage(e), e);
-                throw new RuntimeException(e);
+            deleteDirectory(toDeletePath);
+        }
+    }
+
+    public static boolean deleteDirectory(Path toDeletePath) {
+        try {
+            File file = toDeletePath.toFile();
+            if (!file.exists() || !file.isDirectory()) {
+                return true;
             }
+            FileUtils.deleteDirectory(file);
+            return true;
+        } catch (IOException e) {
+            log.debug(getRootCauseMessage(e), e);
+            return false;
         }
     }
 }

@@ -10,6 +10,7 @@ import org.andreidodu.nocconvert.gui.worker.ConversionWorker;
 import org.andreidodu.nocconvert.gui.worker.ImageSearcherSwingWorker;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
+import org.andreidodu.nocconvert.util.FileUtil;
 import org.andreidodu.nocconvert.util.ImageConverterUtil;
 import org.andreidodu.nocconvert.util.check.FormatCheckUtil;
 import org.apache.logging.log4j.LogManager;
@@ -27,14 +28,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.andreidodu.nocconvert.util.CpuUtil.calculateCpuLoadPercentage;
-import static org.andreidodu.nocconvert.util.FileUtil.deleteFileTask;
-import static org.andreidodu.nocconvert.util.FileUtil.deleteTemporaryDirectoryTask;
+import static org.andreidodu.nocconvert.util.OperationUtil.retryable;
 import static org.andreidodu.nocconvert.util.PathNameUtil.normalizePath;
 import static org.andreidodu.nocconvert.util.PathNameUtil.normalizePathAdvanced;
-import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.IDEAL_NUM_OF_THREADS;
 
 public class ConversionController {
     private static final Logger log = LogManager.getLogger(ConversionController.class);
+    public static final int DELETE_SEMAPHORE_SIZE = 100;
     private final ConversionDTO conversionDTO;
     private final ImageConverterUtil imageConverterUtil;
     private final JLabel applicationStatusLabel;
@@ -114,7 +114,7 @@ public class ConversionController {
                             "<span style=\"color: #007bff;\">Found " + filesInDirectory + " file(s) in " + normalizePath(directory.getFileName().toString(), 30) + "</span></html>");
                 } else {
                     applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" +
-                            "<span style=\"color: #007bff;\">" + normalizePathAdvanced(directory.toString(), 100) + "</spa></html>");
+                            "<span style=\"color: #007bff;\">" + normalizePathAdvanced(directory.toString(), DELETE_SEMAPHORE_SIZE) + "</spa></html>");
                 }
             });
         }
@@ -178,9 +178,11 @@ public class ConversionController {
     }
 
     public static void deleteTemporaryFiles(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath) {
-        Semaphore vtSemaphore = new Semaphore(50);
-        Thread.ofVirtual().start(() -> deleteTemporaryDirectoryTask(vtSemaphore, tmpParentDirPath));
-        tmpDirPaths.forEach((path) -> Thread.ofVirtual().start(() -> deleteFileTask(vtSemaphore, path.toFile())));
+        Semaphore vtSemaphore = new Semaphore(DELETE_SEMAPHORE_SIZE);
+
+        Thread.ofVirtual().start(() -> retryable(vtSemaphore, tmpParentDirPath, FileUtil::deleteDirectory));
+
+        tmpDirPaths.forEach((path) -> Thread.ofVirtual().start(() -> retryable(vtSemaphore, path.toFile(), FileUtil::deleteFileIfExists)));
     }
 
     private void onSearchComplete(List<Path> paths) {

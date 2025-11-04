@@ -9,7 +9,8 @@ import java.util.function.Supplier;
 public class PerformanceUtil {
     private static final Logger log = LogManager.getLogger(PerformanceUtil.class);
 
-    public static void checkVThreadPerformance(AdaptiveTestListener input, Supplier<Boolean> isStopCommandFromParent) {
+    public static void checkPThreadPerformance(AdaptiveTestListener input, Supplier<Boolean> isStopCommandFromParent) {
+        log.debug("checking CPU performance...");
         new AdaptiveSimpleGovernorRunnable(input, isStopCommandFromParent).runStressTest();
     }
 }
