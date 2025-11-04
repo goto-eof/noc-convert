@@ -98,13 +98,7 @@ public class FileUtil {
         return deleteFile(outputFile);
     }
 
-    public static void deleteTemporaryDirectory(boolean isPathExists, Path toDeletePath) {
-        if (isPathExists) {
-            deleteDirectory(toDeletePath);
-        }
-    }
-
-    public static boolean deleteDirectory(Path toDeletePath) {
+    public static boolean deleteDirectoryIfExists(Path toDeletePath) {
         try {
             File file = toDeletePath.toFile();
             if (!file.exists() || !file.isDirectory()) {

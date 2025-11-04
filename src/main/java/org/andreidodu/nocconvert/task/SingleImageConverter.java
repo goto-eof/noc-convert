@@ -250,10 +250,7 @@ public class SingleImageConverter {
             }
 
         } catch (IOException e) {
-            if (Thread.currentThread().isInterrupted()) {
-                throw new ConversionManualAbortedException("Conversion aborted by thread interruption.");
-            }
-            throw e;
+            throw new ConversionManualAbortedException("Conversion aborted by thread interruption.", e);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             if (Thread.currentThread().isInterrupted()) {

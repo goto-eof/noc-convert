@@ -159,12 +159,14 @@ public class ConversionController {
     public void manualShutdown() {
 
         if (conversionWorker != null && !conversionWorker.isDone()) {
-            log.info("Cancelling active conversion process.");
+
+            log.info("Removing temporary files");
             ConcurrentLinkedQueue<Path> tmpDirectoryList = conversionWorker.getConversionOrchestrator().getFileRenameQueue();
             Path tmpDirectory = conversionWorker.getConversionOrchestrator().getTmpParentDirPath();
-            conversionWorker.shutdownThreads(true);
+            Thread.ofVirtual().start(() -> deleteTemporaryFilesOnNewThread(tmpDirectoryList, tmpDirectory));
 
-            Thread.ofVirtual().start(() -> deleteTemporaryFiles(tmpDirectoryList, tmpDirectory));
+            log.info("Cancelling active conversion process.");
+            conversionWorker.shutdownThreads(true);
         }
 
         if (imageSearcherSwingWorker != null && !imageSearcherSwingWorker.isDone()) {
@@ -177,10 +179,14 @@ public class ConversionController {
 
     }
 
-    public static void deleteTemporaryFiles(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath) {
+    public static void deleteTemporaryFilesOnNewThread(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath) {
+        Thread.ofVirtual().start(() -> deleteTemporaryFiles(tmpDirPaths, tmpParentDirPath));
+    }
+
+    private static void deleteTemporaryFiles(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath) {
         Semaphore vtSemaphore = new Semaphore(DELETE_SEMAPHORE_SIZE);
 
-        Thread.ofVirtual().start(() -> retryable(vtSemaphore, tmpParentDirPath, FileUtil::deleteDirectory));
+        Thread.ofVirtual().start(() -> retryable(vtSemaphore, tmpParentDirPath, FileUtil::deleteDirectoryIfExists));
 
         tmpDirPaths.forEach((path) -> Thread.ofVirtual().start(() -> retryable(vtSemaphore, path.toFile(), FileUtil::deleteFileIfExists)));
     }

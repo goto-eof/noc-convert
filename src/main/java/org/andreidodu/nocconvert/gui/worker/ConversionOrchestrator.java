@@ -138,10 +138,9 @@ public class ConversionOrchestrator {
 
             virtualThreadExecutor.shutdownNow();
 
-
             Semaphore semaphore = new Semaphore(RENAME_SEMAPHORE_SIZE);
             if (!ApplicationConfig.DEV_MODE && tmpParentDirPath != null) {
-                Thread.ofVirtual().start(() -> retryable(semaphore, tmpDirPath, FileUtil::deleteDirectory));
+                Thread.ofVirtual().start(() -> retryable(semaphore, tmpDirPath, FileUtil::deleteDirectoryIfExists));
             }
             fileRenameQueue.forEach(filePath -> Thread.ofVirtual().start(() -> retryable(semaphore, filePath, this::renameFile)));
 

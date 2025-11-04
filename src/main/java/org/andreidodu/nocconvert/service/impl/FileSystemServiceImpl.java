@@ -1,7 +1,9 @@
 package org.andreidodu.nocconvert.service.impl;
 
+import org.andreidodu.nocconvert.exception.SearchManuallyAbortedException;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.service.FileSystemService;
+import org.andreidodu.nocconvert.util.ThreadUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,6 +17,7 @@ import java.util.stream.Stream;
 
 public class FileSystemServiceImpl implements FileSystemService {
     private static final Logger log = LogManager.getLogger(FileSystemServiceImpl.class);
+    public static final int YIELD_INTERVAL = 5;
 
     public List<Path> getAllFilesInDirectory(Path directoryPath,
                                              List<String> allowedFileExtensionList,
@@ -36,7 +39,7 @@ public class FileSystemServiceImpl implements FileSystemService {
         Queue<Path> queueOfDirectories = new LinkedList<>();
         queueOfDirectories.add(directoryPath);
 
-        long counter = 0;
+        long yieldCounter = 0;
 
         long totalFiles = 0;
         while (!queueOfDirectories.isEmpty()) {
@@ -46,24 +49,30 @@ public class FileSystemServiceImpl implements FileSystemService {
             try (var stream = Files.newDirectoryStream(currentDir)) {
                 for (Path entry : stream) {
                     try {
-                        if (Files.isDirectory(entry)) {
+
+                        if (Files.isDirectory(entry) && !entry.getFileName().startsWith(".")) {
                             queueOfDirectories.add(entry);
                         } else if (isValidFile(entry, allowedFileExtensionList)) {
                             result.add(entry);
                             listener.onFileFound(entry);
                             filesInThisDir++;
                         }
-                        if (counter++ % 6 == 0) {
-                            if (isCancelled.get() || Thread.currentThread().isInterrupted()) {
-                                listener.onOperationAborted();
-                                return result;
-                            }
+
+                        if (yieldCounter % YIELD_INTERVAL == 0) {
+                            yieldCooperatively(listener, isCancelled);
+                            yieldCounter++;
                         }
+
                     } catch (Exception e) {
+                        if (e instanceof SearchManuallyAbortedException) {
+                            throw e;
+                        }
+
                         log.warn("not valid path: {}", entry);
                     }
-                    Thread.yield();
+
                 }
+
                 totalFiles += filesInThisDir;
                 listener.onDirectoryProcessed(totalFiles, currentDir, filesInThisDir);
 
@@ -78,6 +87,14 @@ public class FileSystemServiceImpl implements FileSystemService {
         }
         listener.onSearchDone(result);
         return result;
+    }
+
+    private static void yieldCooperatively(FilesInDirectoryListener listener, Supplier<Boolean> isCancelled) {
+        ThreadUtil.yieldCooperatively();
+        if (isCancelled.get() || Thread.currentThread().isInterrupted()) {
+            listener.onOperationAborted();
+            throw new SearchManuallyAbortedException("search process manually aborted");
+        }
     }
 
     private static boolean isValidFile(Path file, List<String> allowedFileExtensionList) {
