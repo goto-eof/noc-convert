@@ -1,4 +1,4 @@
-# NoCloud Bulk Image Converter v.2.0.72 (noc-convert)
+# NoCloud Bulk Image Converter v.2.0.72 (aka noc-convert)
 
 <div id="introduction"> </div>
 
