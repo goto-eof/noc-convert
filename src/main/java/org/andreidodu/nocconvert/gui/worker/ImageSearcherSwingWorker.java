@@ -41,8 +41,10 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<File>, Imag
         FilesInDirectoryListenerImpl listener = new FilesInDirectoryListenerImpl();
         try {
             listener.onSearchDone(pictureSearcher.search(sourceDirectory, listener, getAvailableReadExtensions()).stream().map(File::toPath).toList());
+            log.debug("Finished searching image from directory {}", sourceDirectory);
         } catch (AccessDeniedException e) {
             listener.onAccessDenied();
+            log.error("Access denied for: {}", sourceDirectory, e);
         } catch (Exception e) {
             log.error(getRootCauseMessage(e), e);
             listener.onUpdateTotalFile(0L);
