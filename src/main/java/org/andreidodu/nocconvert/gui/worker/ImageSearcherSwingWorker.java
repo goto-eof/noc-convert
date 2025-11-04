@@ -37,7 +37,6 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<File>, Imag
 
     @Override
     protected Collection<File> doInBackground() {
-        List<String> allowedExtensions = getAvailableReadExtensions();
         log.debug("Starting to search image from directory {}", sourceDirectory);
         FilesInDirectoryListenerImpl listener = new FilesInDirectoryListenerImpl();
         try {
