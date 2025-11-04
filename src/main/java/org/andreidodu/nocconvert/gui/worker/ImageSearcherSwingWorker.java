@@ -5,19 +5,18 @@ import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 import org.andreidodu.nocconvert.task.PictureSearcher;
 import org.andreidodu.nocconvert.util.ImageConverterUtil;
-import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.io.File;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
-import static org.apache.commons.lang3.exception.ExceptionUtils.printRootCauseStackTrace;
 
 public class ImageSearcherSwingWorker extends SwingWorker<Collection<File>, ImageSearcherSwingWorker.ChunkDTO> {
     private static final Logger log = LogManager.getLogger(ImageSearcherSwingWorker.class);
@@ -42,7 +41,9 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<File>, Imag
         log.debug("Starting to search image from directory {}", sourceDirectory);
         FilesInDirectoryListenerImpl listener = new FilesInDirectoryListenerImpl();
         try {
-            listener.onSearchDone(pictureSearcher.search(sourceDirectory, listener,getAvailableReadExtensions()).stream().map(File::toPath).toList());
+            listener.onSearchDone(pictureSearcher.search(sourceDirectory, listener, getAvailableReadExtensions()).stream().map(File::toPath).toList());
+        } catch (AccessDeniedException e) {
+            listener.onAccessDenied();
         } catch (Exception e) {
             log.error(getRootCauseMessage(e), e);
             listener.onUpdateTotalFile(0L);
