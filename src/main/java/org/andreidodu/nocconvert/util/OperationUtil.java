@@ -21,11 +21,16 @@ public class OperationUtil {
             boolean isDone = false;
 
             while (!isDone && attempt < MAX_DELETE_ATTEMPTS) {
-                isDone = operation.apply(input);
+                try {
+                    isDone = operation.apply(input);
+                } catch (Exception ex) {
+                    log.warn(ex.getMessage(), ex);
+                }
                 attempt++;
                 try {
                     Thread.sleep(SLEEP_TIME_MS);
                 } catch (InterruptedException e) {
+                    log.warn(e.getMessage(), e);
                 }
             }
         } catch (Exception e) {
