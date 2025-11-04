@@ -21,7 +21,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.andreidodu.nocconvert.util.CpuUtil.calculateCpuLoadPercentage;
@@ -30,7 +32,6 @@ import static org.andreidodu.nocconvert.util.FileUtil.deleteTemporaryDirectoryTa
 import static org.andreidodu.nocconvert.util.PathNameUtil.normalizePath;
 import static org.andreidodu.nocconvert.util.PathNameUtil.normalizePathAdvanced;
 import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.IDEAL_NUM_OF_THREADS;
-import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class ConversionController {
     private static final Logger log = LogManager.getLogger(ConversionController.class);
@@ -177,24 +178,9 @@ public class ConversionController {
     }
 
     public static void deleteTemporaryFiles(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath) {
-        ExecutorService vtExecutor = Executors.newVirtualThreadPerTaskExecutor();
         Semaphore vtSemaphore = new Semaphore(IDEAL_NUM_OF_THREADS.get());
-
-        vtExecutor.execute(() -> deleteTemporaryDirectoryTask(vtSemaphore, tmpParentDirPath));
-        tmpDirPaths.forEach((path) -> vtExecutor.execute(() -> deleteFileTask(vtSemaphore, path.toFile())));
-
-        vtExecutor.shutdown();
-        try {
-            boolean stopAction = vtExecutor.awaitTermination(5, TimeUnit.MINUTES);
-            if (!stopAction) {
-                vtExecutor.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            vtExecutor.shutdownNow();
-            log.debug(getRootCauseMessage(e), e);
-            throw new RuntimeException(e);
-        }
-
+        Thread.ofVirtual().start(() -> deleteTemporaryDirectoryTask(vtSemaphore, tmpParentDirPath));
+        tmpDirPaths.forEach((path) -> Thread.ofVirtual().start(() -> deleteFileTask(vtSemaphore, path.toFile())));
     }
 
     private void onSearchComplete(List<Path> paths) {

@@ -1,4 +1,4 @@
-# NoCloud Bulk Image Converter v.2.0.70 (noc-convert)
+# NoCloud Bulk Image Converter v.2.0.71 (noc-convert)
 
 <div id="introduction"> </div>
 
@@ -68,13 +68,13 @@ anywhere.
 
 ## Download
 
-<div id="download">v.2.0.70</div>
+<div id="download">v.2.0.71</div>
 
 | Platform    | AMD 64-bit                                                                                                                                    | ARM 64-bit                                                                                                                                       |
 |:------------|:----------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Linux**   | [zip (.deb)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.0.70/noc-convert-Linux-2.0.70-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                                                |
-| **Windows** | [zip (.msi)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.0.70/noc-convert-Windows-2.0.70-amd64-Installer.zip) | N/A                                                                                                                                              |
-| **macOS**   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.0.70/noc-convert-MacOS-2.0.70-amd64-Installer.zip)   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.0.70/noc-convert-MacOS-2.0.70-arm64-Installer.zip) |
+| **Linux**   | [zip (.deb)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.0.71/noc-convert-Linux-2.0.71-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                                                |
+| **Windows** | [zip (.msi)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.0.71/noc-convert-Windows-2.0.71-amd64-Installer.zip) | N/A                                                                                                                                              |
+| **macOS**   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.0.71/noc-convert-MacOS-2.0.71-amd64-Installer.zip)   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.0.71/noc-convert-MacOS-2.0.71-arm64-Installer.zip) |
 
 ## Installation and Usage
 

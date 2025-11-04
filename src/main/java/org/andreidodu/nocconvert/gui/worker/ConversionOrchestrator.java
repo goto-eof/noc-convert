@@ -137,9 +137,8 @@ public class ConversionOrchestrator {
 
             virtualThreadExecutor.shutdownNow();
 
-            deleteTemporaryDirectory(!ApplicationConfig.DEV_MODE && tmpParentDirPath != null, tmpDirPath);
-
-            renameFiles();
+            Thread.ofVirtual().start(() -> deleteTemporaryDirectory(!ApplicationConfig.DEV_MODE && tmpParentDirPath != null, tmpDirPath));
+            Thread.ofVirtual().start(this::renameFiles);
 
         } catch (InterruptedException e) {
             log.warn("Conversion Worker interrupted (user STOP action). Forcing Orchestrator cancel.", e);
