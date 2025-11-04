@@ -131,7 +131,7 @@ public class ConversionOrchestrator {
             platformExecutorService.shutdown();
             boolean platformExecutorShutdown = platformExecutorService.awaitTermination(31, TimeUnit.DAYS);
             if (!platformExecutorShutdown) {
-                log.error("platformExecutorService did not terminate in time. Forcing emergency shutdown.");
+                log.error("platformExecutorService did not terminate in time. Forcing emerConversionWorkergency shutdown.");
                 platformExecutorService.shutdownNow();
             }
 
