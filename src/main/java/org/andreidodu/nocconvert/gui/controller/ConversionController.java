@@ -178,7 +178,7 @@ public class ConversionController {
     }
 
     public static void deleteTemporaryFiles(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath) {
-        Semaphore vtSemaphore = new Semaphore(IDEAL_NUM_OF_THREADS.get());
+        Semaphore vtSemaphore = new Semaphore(50);
         Thread.ofVirtual().start(() -> deleteTemporaryDirectoryTask(vtSemaphore, tmpParentDirPath));
         tmpDirPaths.forEach((path) -> Thread.ofVirtual().start(() -> deleteFileTask(vtSemaphore, path.toFile())));
     }
