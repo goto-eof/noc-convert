@@ -159,7 +159,6 @@ public class ConversionController {
     public void manualShutdown() {
 
         if (conversionWorker != null && !conversionWorker.isDone()) {
-
             log.info("Removing temporary files");
             ConcurrentLinkedQueue<Path> tmpDirectoryList = conversionWorker.getConversionOrchestrator().getFileRenameQueue();
             Path tmpDirectory = conversionWorker.getConversionOrchestrator().getTmpParentDirPath();
@@ -170,11 +169,8 @@ public class ConversionController {
         }
 
         if (imageSearcherSwingWorker != null && !imageSearcherSwingWorker.isDone()) {
-            imageSearcherSwingWorker.shutdown(true);
-        }
-
-        if (conversionWorker != null) {
-            conversionWorker.onAllItemsCompleted();
+            log.debug("Cancelling active search process.");
+            imageSearcherSwingWorker.shutdown();
         }
 
     }

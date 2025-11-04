@@ -214,7 +214,7 @@ public class SingleImageConverter {
             Thread.sleep(100);
         } catch (InterruptedException e) {
             fail.accept(new RuntimeException(getRootCauseMessage(e), e));
-            log.debug(getRootCauseMessage(e), e);
+            log.error(getRootCauseMessage(e), e);
             throw new RuntimeException(e);
         }
     }

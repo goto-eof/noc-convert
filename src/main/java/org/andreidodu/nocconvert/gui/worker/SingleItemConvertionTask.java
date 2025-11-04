@@ -36,13 +36,9 @@ public class SingleItemConvertionTask implements Runnable {
     }
 
     public void run() {
-        if (canceled) {
+        if (canceled || Thread.currentThread().isInterrupted()) {
             cancelOperation();
             log.debug("thread is cancelled");
-            return;
-        }
-        if (Thread.currentThread().isInterrupted()) {
-            log.debug("Thread is interrupted");
             return;
         }
         try {

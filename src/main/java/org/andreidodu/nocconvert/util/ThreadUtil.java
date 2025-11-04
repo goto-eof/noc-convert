@@ -1,7 +1,7 @@
 package org.andreidodu.nocconvert.util;
 
 public class ThreadUtil {
-    private static final long COOPERATIVE_SLEEP_MS = 1;
+    private static final long COOPERATIVE_SLEEP_MS = 10;
 
     public static boolean yieldCooperatively() {
         if (Thread.currentThread().isInterrupted()) {

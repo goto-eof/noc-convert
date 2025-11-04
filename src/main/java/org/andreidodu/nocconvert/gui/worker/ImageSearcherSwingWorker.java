@@ -3,47 +3,46 @@ package org.andreidodu.nocconvert.gui.worker;
 import lombok.Builder;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
-import org.andreidodu.nocconvert.service.FileSystemService;
-import org.andreidodu.nocconvert.service.impl.FileSystemServiceImpl;
+import org.andreidodu.nocconvert.task.PictureSearcher;
 import org.andreidodu.nocconvert.util.ImageConverterUtil;
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
-import java.io.IOException;
-import java.nio.file.AccessDeniedException;
+import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
+import static org.apache.commons.lang3.exception.ExceptionUtils.printRootCauseStackTrace;
 
-public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearcherSwingWorker.ChunkDTO> {
+public class ImageSearcherSwingWorker extends SwingWorker<Collection<File>, ImageSearcherSwingWorker.ChunkDTO> {
     private static final Logger log = LogManager.getLogger(ImageSearcherSwingWorker.class);
 
     private final Path sourceDirectory;
-    private final FileSystemService fileSystemService;
     private final ImageConverterUtil imageConverterService;
     private final FilesInDirectoryListener filesInDirectoryListener;
+    private final PictureSearcher pictureSearcher;
 
     public ImageSearcherSwingWorker(Path sourceDirectory, FilesInDirectoryListener filesInDirectoryListener) {
         super();
         this.sourceDirectory = sourceDirectory;
         this.filesInDirectoryListener = filesInDirectoryListener;
+        this.pictureSearcher = new PictureSearcher();
 
-        this.fileSystemService = new FileSystemServiceImpl();
         this.imageConverterService = new ImageConverterUtil();
     }
 
     @Override
-    protected List<Path> doInBackground() {
+    protected Collection<File> doInBackground() {
+        List<String> allowedExtensions = getAvailableReadExtensions();
         log.debug("Starting to search image from directory {}", sourceDirectory);
         FilesInDirectoryListenerImpl listener = new FilesInDirectoryListenerImpl();
         try {
-            return fileSystemService.getAllFilesInDirectory(sourceDirectory, getAvailableReadExtensions(), listener, super::isCancelled);
-        } catch (AccessDeniedException e) {
-            log.error(getRootCauseMessage(e), e);
-            listener.onAccessDenied();
+            listener.onSearchDone(pictureSearcher.search(sourceDirectory, listener,getAvailableReadExtensions()).stream().map(File::toPath).toList());
         } catch (Exception e) {
             log.error(getRootCauseMessage(e), e);
             listener.onUpdateTotalFile(0L);
@@ -51,6 +50,7 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
         }
         return new ArrayList<>();
     }
+
 
     private List<String> getAvailableReadExtensions() {
         List<String> list = new ArrayList<>(imageConverterService.getAvailableReadFormatList()
@@ -71,8 +71,9 @@ public class ImageSearcherSwingWorker extends SwingWorker<List<Path>, ImageSearc
         // NOTE: we're already passing the result through the FilesInDirectoryListenerImpl
     }
 
-    public void shutdown(boolean b) {
-        this.cancel(b);
+    public void shutdown() {
+        this.cancel(true);
+        pictureSearcher.cancel();
     }
 
     @Builder
