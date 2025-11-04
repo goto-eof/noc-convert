@@ -36,7 +36,7 @@ public class SingleItemConvertionTask implements Runnable {
     }
 
     public void run() {
-        if (canceled || Thread.currentThread().isInterrupted()) {
+        if (canceled || Thread.currentThread().isInterrupted() || convertSingleItemTaskInputDTO.isParentInterrupted().get()) {
             cancelOperation();
             log.debug("thread is cancelled");
             return;
@@ -45,7 +45,7 @@ public class SingleItemConvertionTask implements Runnable {
             convertSingleItemTaskInputDTO.semaphore().acquire();
         } catch (InterruptedException e) {
             cancelOperation();
-            log.debug(getRootCauseMessage(e), e);
+            log.debug("operation aborted");
             return;
         }
         try {

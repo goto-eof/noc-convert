@@ -3,11 +3,11 @@ package org.andreidodu.nocconvert.dto.conversion.input;
 import lombok.Builder;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @Builder
 public record ConvertSingleItemTaskInputDTO(
@@ -19,6 +19,7 @@ public record ConvertSingleItemTaskInputDTO(
         ExecutorService platformExecutorService,
         Runnable incrementPasses,
         Runnable incrementFailures,
-        Consumer<Path> addToFileRenameQueue
+        Consumer<Path> addToFileRenameQueue,
+        Supplier<Boolean> isParentInterrupted
 ) {
 }

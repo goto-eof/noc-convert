@@ -22,6 +22,7 @@ import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
@@ -36,6 +37,7 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMess
 
 public class SingleImageConverter {
     private static final Logger log = LogManager.getLogger(SingleImageConverter.class);
+    public static final int VALIDATION_RETRY_TIMES = 5;
     @Setter
     private volatile boolean canceled = false;
     private final ExecutorService platformExecutorService;
@@ -168,13 +170,15 @@ public class SingleImageConverter {
             writeImageInner(convertImageInputDTO.targetExtension(), convertImageInputDTO.onProgress(), tmpOutputFile, totalReadPercentageDTO, image);
             Path outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
             validateFileCompletionWithRetry(tmpOutputFile, outputFile, convertImageInputDTO.pass(), convertImageInputDTO.fail(), addToFileRenameQueue);
+        } catch (ConversionManualAbortedException e) {
+            throw e;
         } catch (Throwable e) {
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }
 
     private void validateFileCompletionWithRetry(Path tmpOutputFile, Path outputFile, Runnable pass, Consumer<Exception> fail, Consumer<Path> addToFileRenameQueue) {
-        int i = 5;
+        int i = VALIDATION_RETRY_TIMES;
 
         while (i > 0) {
             try {
@@ -204,9 +208,14 @@ public class SingleImageConverter {
     }
 
     private static void validateFileCompletion(Path tmpOutputFile, Path outputFile, Runnable pass) throws IOException {
-        Files.move(tmpOutputFile, outputFile, StandardCopyOption.ATOMIC_MOVE);
-        ImageUtil.getImageHeaders(outputFile);
-        pass.run();
+        try {
+            Files.move(tmpOutputFile, outputFile, StandardCopyOption.ATOMIC_MOVE);
+            ImageUtil.getImageHeaders(outputFile);
+            pass.run();
+        } catch (NoSuchFileException ex) {
+            log.warn("file not found: {}", ex.getMessage());
+        }
+
     }
 
     private static void validationSleep(Consumer<Exception> fail) {
@@ -249,7 +258,7 @@ public class SingleImageConverter {
                 throw writerListener.getException();
             }
 
-        } catch (IOException e) {
+        } catch (ConversionManualAbortedException e) {
             throw new ConversionManualAbortedException("Conversion aborted by thread interruption.", e);
         } catch (Exception e) {
             log.error(e.getMessage(), e);

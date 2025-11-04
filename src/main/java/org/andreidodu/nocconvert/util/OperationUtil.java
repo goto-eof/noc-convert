@@ -14,20 +14,18 @@ public class OperationUtil {
     private static final int MAX_DELETE_ATTEMPTS = 20;
     private static final long SLEEP_TIME_MS = 100;
 
-    public static <T> void retryable(Semaphore vtSemaphore, T input, Function<T, Boolean> retryableOperation) {
+    public static <T> void retryable(Semaphore vtSemaphore, T input, Function<T, Boolean> operation) {
         try {
             vtSemaphore.acquire();
             int attempt = 0;
             boolean isDone = false;
 
             while (!isDone && attempt < MAX_DELETE_ATTEMPTS) {
-                isDone = retryableOperation.apply(input);
+                isDone = operation.apply(input);
                 attempt++;
                 try {
                     Thread.sleep(SLEEP_TIME_MS);
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
                 }
             }
         } catch (Exception e) {

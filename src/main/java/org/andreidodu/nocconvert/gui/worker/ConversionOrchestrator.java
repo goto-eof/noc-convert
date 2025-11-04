@@ -109,7 +109,12 @@ public class ConversionOrchestrator {
                 .incrementFailures(conversionOrchestratorInputDTO.incrementFailures())
                 .incrementPasses(conversionOrchestratorInputDTO.incrementPasses())
                 .addToFileRenameQueue(this::addToFileRenameQueue)
+                .isParentInterrupted(this::isInterrupted)
                 .build();
+    }
+
+    private Boolean isInterrupted() {
+        return Thread.currentThread().isInterrupted();
     }
 
     private void addToFileRenameQueue(Path file) {
