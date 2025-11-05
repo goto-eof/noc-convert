@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
@@ -19,7 +20,7 @@ public class SingleItemConvertionTask implements Runnable {
     private static final Logger log = LogManager.getLogger(SingleItemConvertionTask.class);
     private final ConversionItemDTO conversionItemDTO;
     private final SingleImageConverter singleImageConverter;
-    private volatile boolean canceled = false;
+    private final AtomicBoolean canceled = new AtomicBoolean(false);
     private final ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO;
     LocalDateTime lastCall = LocalDateTime.now();
 
@@ -36,7 +37,7 @@ public class SingleItemConvertionTask implements Runnable {
     }
 
     public void run() {
-        if (canceled || Thread.currentThread().isInterrupted() || convertSingleItemTaskInputDTO.isParentInterrupted().get()) {
+        if (canceled.get() || Thread.currentThread().isInterrupted() || convertSingleItemTaskInputDTO.isParentInterrupted().get()) {
             cancelOperation();
             log.debug("thread is cancelled");
             return;
@@ -121,7 +122,7 @@ public class SingleItemConvertionTask implements Runnable {
     }
 
     public void closeStreams() {
-        this.canceled = true;
+        this.canceled.set(true);
         singleImageConverter.cancel();
     }
 }

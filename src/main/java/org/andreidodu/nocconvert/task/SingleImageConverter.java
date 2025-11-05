@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static org.andreidodu.nocconvert.util.ImageUtil.*;
@@ -39,8 +40,7 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMess
 public class SingleImageConverter {
     private static final Logger log = LogManager.getLogger(SingleImageConverter.class);
     public static final int VALIDATION_RETRY_TIMES = 5;
-    @Setter
-    private volatile boolean canceled = false;
+    private final AtomicBoolean canceled = new AtomicBoolean(false);
     private final ExecutorService platformExecutorService;
 
     private final static Object IMAGE_IO_LOCK = new Object();
@@ -51,7 +51,7 @@ public class SingleImageConverter {
     }
 
     public void convertImage(ConvertImageInputDTO convertImageInputDTO) {
-        if (canceled) {
+        if (canceled.get()) {
             throw new ConversionManualAbortedException();
         }
 
@@ -94,6 +94,9 @@ public class SingleImageConverter {
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
 
+        Path outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
+        convertImageInputDTO.addToFileDeleteQueue().accept(outputFile);
+
         try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(sourceFile.toFile())) {
 
             Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
@@ -110,7 +113,7 @@ public class SingleImageConverter {
 
             interruptIfNecessary();
 
-            writeImageOuter(convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image, convertImageInputDTO.addToFileRenameQueue(), convertImageInputDTO.addToFileDeleteQueue());
+            writeImageOuter(outputFile, convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image, convertImageInputDTO.addToFileRenameQueue(), convertImageInputDTO.addToFileDeleteQueue());
         } catch (ConversionManualAbortedException e) {
             throw e;
         } catch (Exception e) {
@@ -173,10 +176,9 @@ public class SingleImageConverter {
         }
     }
 
-    private void writeImageOuter(ConvertImageInputDTO convertImageInputDTO, Path tmpOutputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image, Consumer<Path> addToFileRenameQueue, Consumer<Path> addToFileDeleteQueue) throws Exception {
+    private void writeImageOuter(Path outputFile, ConvertImageInputDTO convertImageInputDTO, Path tmpOutputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image, Consumer<Path> addToFileRenameQueue, Consumer<Path> addToFileDeleteQueue) throws Exception {
         try {
             writeImageInner(convertImageInputDTO.targetExtension(), convertImageInputDTO.onProgress(), tmpOutputFile, totalReadPercentageDTO, image);
-            Path outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
             validateFileCompletionWithRetry(tmpOutputFile, outputFile, convertImageInputDTO.pass(), convertImageInputDTO.fail(), addToFileRenameQueue, addToFileDeleteQueue);
         } catch (ConversionManualAbortedException e) {
             throw e;
@@ -187,7 +189,6 @@ public class SingleImageConverter {
 
     private void validateFileCompletionWithRetry(Path tmpOutputFile, Path outputFile, Runnable pass, Consumer<Exception> fail, Consumer<Path> addToFileRenameQueue, Consumer<Path> addToFileDeleteQueue) throws Exception {
         int i = VALIDATION_RETRY_TIMES;
-        addToFileDeleteQueue.accept(outputFile);
         while (i > 0) {
             try {
                 validateFileCompletion(tmpOutputFile, outputFile, pass);
@@ -459,14 +460,14 @@ public class SingleImageConverter {
     }
 
     private void interruptIfNecessary() {
-        if (Thread.currentThread().isInterrupted() || canceled) {
+        if (Thread.currentThread().isInterrupted() || canceled.get()) {
             log.error("Operation aborted 0");
             throw new ConversionManualAbortedException("Operation aborted");
         }
     }
 
     public void cancel() {
-        setCanceled(true);
+        this.canceled.set(true);
     }
 
 
