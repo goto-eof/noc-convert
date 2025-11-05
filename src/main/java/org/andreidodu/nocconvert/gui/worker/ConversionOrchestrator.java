@@ -6,6 +6,7 @@ import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
+import org.andreidodu.nocconvert.enums.NotificationLevel;
 import org.andreidodu.nocconvert.util.FileUtil;
 import org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable;
 import org.apache.logging.log4j.LogManager;
@@ -113,7 +114,15 @@ public class ConversionOrchestrator {
                 .addToFileRenameQueue(this::addToFileRenameQueue)
                 .addToFileDeleteQueue(this::addToFileDeleteQueue)
                 .isParentInterrupted(this::isInterrupted)
+                .notificationLevel(calculateNotificationLevel())
                 .build();
+    }
+
+    private NotificationLevel calculateNotificationLevel() {
+        if (conversionOrchestratorInputDTO.conversionItemDTOList().size() > 20000) {
+            return NotificationLevel.LOW;
+        }
+        return NotificationLevel.HIGH;
     }
 
     private Boolean isInterrupted() {

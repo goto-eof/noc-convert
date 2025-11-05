@@ -2,6 +2,7 @@ package org.andreidodu.nocconvert.dto.conversion.input;
 
 import lombok.Builder;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.enums.NotificationLevel;
 
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
@@ -21,6 +22,7 @@ public record ConvertSingleItemTaskInputDTO(
         Runnable incrementFailures,
         Consumer<Path> addToFileRenameQueue,
         Consumer<Path> addToFileDeleteQueue,
-        Supplier<Boolean> isParentInterrupted
+        Supplier<Boolean> isParentInterrupted,
+        NotificationLevel notificationLevel
 ) {
 }

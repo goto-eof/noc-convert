@@ -1,6 +1,7 @@
 package org.andreidodu.nocconvert.dto.conversion.input;
 
 import lombok.Builder;
+import org.andreidodu.nocconvert.enums.NotificationLevel;
 
 import java.nio.file.Path;
 import java.util.function.Consumer;
@@ -16,6 +17,7 @@ public record ConvertImageInputDTO(
         Runnable pass,
         Consumer<Exception> fail,
         Consumer<Path> addToFileRenameQueue,
-        Consumer<Path> addToFileDeleteQueue
+        Consumer<Path> addToFileDeleteQueue,
+        NotificationLevel notificationLevel
 ) {
 }

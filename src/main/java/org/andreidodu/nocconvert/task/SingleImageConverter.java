@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.andreidodu.nocconvert.dto.ImageHeaderDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
+import org.andreidodu.nocconvert.enums.NotificationLevel;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.exception.InvalidFileFormatException;
 import org.andreidodu.nocconvert.util.ImageUtil;
@@ -43,6 +44,7 @@ public class SingleImageConverter {
     private final ExecutorService platformExecutorService;
 
     private final static Object IMAGE_IO_LOCK = new Object();
+    private NotificationLevel notificationLevel = NotificationLevel.MEDIUM;
 
     public SingleImageConverter(ExecutorService platformExecutorService) {
         this.platformExecutorService = platformExecutorService;
@@ -56,6 +58,8 @@ public class SingleImageConverter {
         log.debug("Converting image {} from {} to {}", convertImageInputDTO.sourceFile().getFileName(), convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension());
 
         interruptIfNecessary();
+
+        this.notificationLevel = convertImageInputDTO.notificationLevel();
 
         convertImageInputDTO.onStart().run();
         convertImageInputDTO.onProgress().accept(1f);
@@ -290,7 +294,7 @@ public class SingleImageConverter {
         Exception getException();
     }
 
-    private static ExtendedIIOWriteProgressListener getWriterListener(Consumer<Float> updateProgressFloatValue) {
+    private ExtendedIIOWriteProgressListener getWriterListener(Consumer<Float> updateProgressFloatValue) {
         return new ExtendedIIOWriteProgressListener() {
             private Exception exception;
 
@@ -317,7 +321,7 @@ public class SingleImageConverter {
 
             @Override
             public void imageProgress(ImageWriter source, float percentageDone) {
-                if (isInterrupted()) {
+                if (isInterrupted() || notificationLevel == NotificationLevel.LOW) {
                     return;
                 }
                 updateProgressFloatValue.accept(50 + percentageDone / 2);
@@ -325,7 +329,7 @@ public class SingleImageConverter {
 
             @Override
             public void imageComplete(ImageWriter source) {
-                if (isInterrupted()) {
+                if (isInterrupted() || notificationLevel == NotificationLevel.LOW) {
                     return;
                 }
                 log.trace("Write image complete");
@@ -400,14 +404,14 @@ public class SingleImageConverter {
 
             @Override
             public void imageStarted(ImageReader source, int imageIndex) {
-                if (isInterrupted()) return;
+                if (isInterrupted() || notificationLevel == NotificationLevel.LOW) return;
                 totalReadPercentageDTO.setTotalReadPercentage(1);
                 onProgress.accept(1f);
             }
 
             @Override
             public void imageProgress(ImageReader source, float percentageDone) {
-                if (isInterrupted()) return;
+                if (isInterrupted() || notificationLevel == NotificationLevel.LOW) return;
                 totalReadPercentageDTO.setTotalReadPercentage(percentageDone / 2);
                 onProgress.accept(totalReadPercentageDTO.getTotalReadPercentage());
 

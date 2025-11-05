@@ -77,6 +77,7 @@ public class SingleItemConvertionTask implements Runnable {
                 .pass(this::pass)
                 .addToFileRenameQueue(convertSingleItemTaskInputDTO.addToFileRenameQueue())
                 .addToFileDeleteQueue(convertSingleItemTaskInputDTO.addToFileDeleteQueue())
+                .notificationLevel(convertSingleItemTaskInputDTO.notificationLevel())
                 .build();
     }
 
