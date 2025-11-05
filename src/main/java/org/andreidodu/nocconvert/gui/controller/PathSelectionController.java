@@ -43,8 +43,8 @@ public class PathSelectionController {
         validationService = new ValidationServiceImpl();
         fileSystemService = new FileSystemServiceImpl();
 
-        pathSelectionDTO.destinationComponent().getSecondaryButton().setVisible(false);
-        pathSelectionDTO.sourceComponent().getSecondaryButton().setVisible(false);
+        pathSelectionDTO.destinationComponent().getSecondaryButton().setEnabled(false);
+        pathSelectionDTO.sourceComponent().getSecondaryButton().setEnabled(false);
         addEventListeners();
     }
 
@@ -82,7 +82,7 @@ public class PathSelectionController {
     private void addEventListenersForSourceComponent() {
         TextfieldDoubleButtonComponent sourceComponent = pathSelectionDTO.sourceComponent();
         addBrowseDirectoryEventListener(sourceComponent, pathSelectionRawDTO::setSourceDirectory, this::isValidPath, () -> {
-            sourceComponent.getSecondaryButton().setVisible(true);
+            sourceComponent.getSecondaryButton().setEnabled(true);
         });
     }
 
@@ -97,7 +97,7 @@ public class PathSelectionController {
     private void addEventListenersForDestinationComponent() {
         TextfieldDoubleButtonComponent destinationComponent = pathSelectionDTO.destinationComponent();
         addBrowseDirectoryEventListener(destinationComponent, pathSelectionRawDTO::setDestinationDirectory, this::isAllowOverrideIfNecessary, () -> {
-            destinationComponent.getSecondaryButton().setVisible(true);
+            destinationComponent.getSecondaryButton().setEnabled(true);
         });
     }
 

@@ -2,6 +2,7 @@ package org.andreidodu.nocconvert.gui.components;
 
 import lombok.Getter;
 import org.andreidodu.nocconvert.gui.constants.Colors;
+import org.andreidodu.nocconvert.gui.util.ShapeUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -16,14 +17,16 @@ import static org.andreidodu.nocconvert.gui.util.ShapeUtil.getRoundedWestPath;
 public class TextfieldButtonComponent extends JPanel implements Colors {
 
     public static final float ARC_SIZE = 20;
-    private static final float ARC_SIZE_BTN = 10;
+    private static final float ARC_SIZE_BTN = 5;
     @Getter
     private final JTextField textField;
     @Getter
     private final JButton button;
-
     @Getter
     private JPanel onlyButtonsPanel;
+
+    protected final static Shape westRounded = ShapeUtil.getRoundedWestPath(84, 38, ARC_SIZE_BTN);
+    protected final static Shape eastRounded = ShapeUtil.getRoundedEastPath(84, 38, ARC_SIZE_BTN);
 
     public TextfieldButtonComponent() {
         textField = new JTextField("");
@@ -74,17 +77,17 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
         buttonPanel.add(separator, BorderLayout.CENTER);
 
 
-        onlyButtonsPanel = new JPanel(new BorderLayout(5, 0));
+        onlyButtonsPanel = new JPanel(new BorderLayout(0, 0));
         onlyButtonsPanel.add(button, BorderLayout.EAST);
 
         buttonPanel.add(onlyButtonsPanel, BorderLayout.EAST);
 
-        button.setVerticalAlignment(SwingConstants.CENTER);
-        button.setHorizontalAlignment(SwingConstants.CENTER);
+//        button.setVerticalAlignment(SwingConstants.CENTER);
+//        button.setHorizontalAlignment(SwingConstants.CENTER);
 
         JPanel old = new JPanel(new BorderLayout(0, 0));
         old.add(buttonPanel, BorderLayout.EAST);
-        old.setBorder(new EmptyBorder(10, 10, 10, 10));
+        old.setBorder(new EmptyBorder(1, 10, 1, 0));
         old.setOpaque(false);
 
         JPanel onlyLabel = new JPanel(new BorderLayout(0, 0)) {
@@ -189,21 +192,28 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                int width = getWidth();
-                int height = getHeight();
 
                 Color color = isHover ? LIME_SUPER_DARK : LIME_DARK;
-                color = isEnabled() ? color : GRAY_DARK;
+                color = isEnabled() ? color : DARK_ACCENT_GREEN;
                 g2.setColor(color);
-
-                g2.fill(new RoundRectangle2D.Float(
-                        0, 0, width, height, ARC_SIZE_BTN, ARC_SIZE_BTN
-                ));
+                g2.fill(eastRounded);
 
                 g2.dispose();
                 super.paintComponent(g);
-
             }
+
+//            @Override
+//            protected void paintBorder(Graphics g) {
+//                Graphics2D g2 = (Graphics2D) g.create();
+//                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+//
+//                g2.setColor(LIST_BG2);
+//                g2.setStroke(new BasicStroke(1));
+//                RoundRectangle2D.Float s = new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, ARC_SIZE, ARC_SIZE);
+//                g2.draw(eastRounded);
+//
+//                g2.dispose();
+//            }
 
 
         };
@@ -247,9 +257,7 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
         int height = getHeight();
 
         g2.setColor(LIST_BG);
-        g2.fill(new RoundRectangle2D.Float(
-                0, 0, width, height, ARC_SIZE, ARC_SIZE
-        ));
+        g2.fill(new RoundRectangle2D.Float(0, 0, width, height, ARC_SIZE, ARC_SIZE));
 
         g2.dispose();
     }

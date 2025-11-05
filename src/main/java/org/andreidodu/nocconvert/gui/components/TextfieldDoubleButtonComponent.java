@@ -4,10 +4,10 @@ import lombok.Getter;
 import org.andreidodu.nocconvert.gui.constants.Colors;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.geom.RoundRectangle2D;
 
 public class TextfieldDoubleButtonComponent extends TextfieldButtonComponent implements Colors {
     private static final float ARC_SIZE_BTN = 10;
@@ -25,6 +25,16 @@ public class TextfieldDoubleButtonComponent extends TextfieldButtonComponent imp
         super(initialText, labelText);
         secondaryButton = createBrowseButton(buttonText);
         super.getOnlyButtonsPanel().add(secondaryButton, BorderLayout.WEST);
+
+
+        secondaryButton.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 0, 3, new Color(255, 255, 255, 50)),
+                new EmptyBorder(8, 0, 8, 0)
+        ));
+
+        secondaryButton.setPreferredSize(new Dimension(84, 38));
+
+        getOnlyButtonsPanel().repaint();
     }
 
 
@@ -36,7 +46,7 @@ public class TextfieldDoubleButtonComponent extends TextfieldButtonComponent imp
             {
                 SwingUtilities.invokeLater(() -> {
                     setContentAreaFilled(false);
-                    setBorderPainted(false);
+                    setBorderPainted(true);
                     setFocusPainted(false);
                     setForeground(Color.WHITE);
                     setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -72,20 +82,14 @@ public class TextfieldDoubleButtonComponent extends TextfieldButtonComponent imp
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                int width = getWidth();
-                int height = getHeight();
 
                 Color color = isHover ? LIME_SUPER_DARK : LIME_DARK;
-                color = isEnabled() ? color : GRAY_DARK;
+                color = isEnabled() ? color : DARK_ACCENT_GREEN;
                 g2.setColor(color);
-
-                g2.fill(new RoundRectangle2D.Float(
-                        0, 0, width, height, ARC_SIZE_BTN, ARC_SIZE_BTN
-                ));
+                g2.fill(westRounded);
 
                 g2.dispose();
                 super.paintComponent(g);
-
             }
 
 

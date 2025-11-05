@@ -40,7 +40,7 @@ public interface Colors {
 
     Color DARK_ACCENT_BLUE = new Color(0, 120, 212, 189);
 
-    Color DARK_ACCENT_GREEN = new Color(102, 212, 0, 87);
+    Color DARK_ACCENT_GREEN = new Color(45, 74, 15, 115);
     Color DARK_ACCENT_GRAY = new Color(30, 30, 30);
     Color SELECTED_DARK_ACCENT_BLUE = new Color(0, 120, 212, 124);
     Color ACCENT_GREEN = new Color(102, 212, 0);

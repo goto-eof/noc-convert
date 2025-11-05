@@ -53,7 +53,6 @@ public class PerformantJList extends JList<ConversionItemDTO> {
     @Override
     public Dimension getPreferredScrollableViewportSize() {
         int rows = Math.min(PREFERRED_VISIBLE_ROWS, getModel().getSize());
-        log.debug("rows: {}", rows);
         int height = rows * rowHeight;
         int width = super.getPreferredScrollableViewportSize().width;
         return new Dimension(width, height);
