@@ -3,6 +3,7 @@ package org.andreidodu.nocconvert.util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
 import java.util.function.Function;
 

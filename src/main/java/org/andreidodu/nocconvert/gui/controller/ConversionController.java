@@ -19,12 +19,8 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.andreidodu.nocconvert.util.CpuUtil.calculateCpuLoadPercentage;
@@ -176,15 +172,41 @@ public class ConversionController {
     }
 
     public static void deleteTemporaryFilesOnNewThread(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath) {
-        Thread.ofVirtual().start(() -> deleteTemporaryFiles(tmpDirPaths, tmpParentDirPath));
+        Thread.ofPlatform()
+                .name("temp-file-cleaner-thread")
+                .daemon(false)
+                .start(() -> deleteTemporaryFiles(tmpDirPaths, tmpParentDirPath));
     }
 
     private static void deleteTemporaryFiles(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath) {
-        Semaphore vtSemaphore = new Semaphore(DELETE_SEMAPHORE_SIZE);
 
-        Thread.ofVirtual().start(() -> retryable(vtSemaphore, tmpParentDirPath, FileUtil::deleteDirectoryIfExists));
+        try (ExecutorService virtualThread = Executors.newVirtualThreadPerTaskExecutor()) {
 
-        tmpDirPaths.forEach((path) -> Thread.ofVirtual().start(() -> retryable(vtSemaphore, path.toFile(), FileUtil::deleteFileIfExists)));
+            Semaphore vtSemaphore = new Semaphore(DELETE_SEMAPHORE_SIZE);
+
+            Collection<Future<?>> tasks = new ArrayList<>();
+
+            Future<?> tmpDirectoryCleanerFuture = virtualThread.submit(() -> {
+                retryable(vtSemaphore, tmpParentDirPath, FileUtil::deleteDirectoryIfExists);
+            });
+            tasks.add(tmpDirectoryCleanerFuture);
+
+            tmpDirPaths.forEach((path) -> {
+                Future<?> tmpFileCleanerFuture = virtualThread.submit(() -> {
+                    retryable(vtSemaphore, path.toFile(), FileUtil::deleteFileIfExists);
+                });
+                tasks.add(tmpFileCleanerFuture);
+            });
+
+
+            for (Future<?> task : tasks) {
+                try {
+                    task.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    log.error("Error while deleting temporary files and directory", e);
+                }
+            }
+        }
     }
 
     private void onSearchComplete(List<Path> paths) {
