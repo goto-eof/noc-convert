@@ -1,6 +1,7 @@
 package org.andreidodu.nocconvert.gui.worker;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.gui.components.performant.PerformantListModel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -43,9 +44,11 @@ public class ListRendererWorker extends SwingWorker<List<ConversionItemDTO>, Voi
             long startTime = System.nanoTime();
             int chunkListLength = Integer.min(pos + BATCH_SIZE, formatExtensionList.size());
             List<ConversionItemDTO> chunkList = formatExtensionList.subList(pos, chunkListLength);
-            DefaultListModel<ConversionItemDTO> model = (DefaultListModel<ConversionItemDTO>) list.getModel();
+            PerformantListModel model = (PerformantListModel) list.getModel();
 
-            model.addAll(chunkList);
+            SwingUtilities.invokeLater(() -> {
+                model.addAll(chunkList);
+            });
 
             long endTime = System.nanoTime();
             long durationNs = endTime - startTime;

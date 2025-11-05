@@ -1,22 +1,18 @@
-package org.andreidodu.nocconvert.gui.components;
+package org.andreidodu.nocconvert.gui.components.performant;
 
-
+import lombok.Getter;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
-import org.andreidodu.nocconvert.task.SingleImageConverter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.geom.GeneralPath;
 
 import static org.andreidodu.nocconvert.gui.constants.Colors.*;
-import static org.andreidodu.nocconvert.gui.util.ShapeUtil.*;
 
-public class ListItemRenderer extends JPanel implements ListCellRenderer<ConversionItemDTO> {
-    private static final Logger log = LogManager.getLogger(SingleImageConverter.class);
+class PerformantCellRenderer extends JPanel implements ListCellRenderer<ConversionItemDTO> {
+    final Color ROW_EVEN_COLOR = LIST_BG3;
+    final Color ROW_ODD_COLOR = BLUE_SUPER_SUPER_DARK;
 
     private final JLabel fileNameLabel;
     private final JLabel fileSize;
@@ -29,20 +25,25 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
     private final JPanel wrapperPanel;
     private final JTextArea errorMessage;
     private Color statusLabelBackground = LIME_SUPER_DARK;
+    private final StringBuffer stringBuffer = new StringBuffer();
 
-    public ListItemRenderer() {
+
+    @Getter
+    private final int rowHeight = 70;
+
+    public PerformantCellRenderer() {
         setLayout(new BorderLayout());
-        setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
         fileNameLabel = new JLabel() {
             {
                 setFont(getFont().deriveFont(Font.BOLD, 10f));
-                setOpaque(false);
+                setOpaque(true);
                 setForeground(Color.WHITE);
                 setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+                setFont(this.getFont().deriveFont(Font.BOLD, 12f));
+                setBackground(LIST_BG);
             }
         };
-        fileNameLabel.setFont(fileNameLabel.getFont().deriveFont(Font.BOLD, 12f));
 
         statusLabel = new JLabel() {
             {
@@ -50,49 +51,17 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
                 setOpaque(false);
                 setForeground(Color.WHITE);
                 setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
-            }
-
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                int width = getWidth();
-                int height = getHeight();
-
-                GeneralPath path = getRoundedEastPath(width, height, 7);
-
-                g2.setColor(statusLabelBackground);
-                g2.fill(path);
-
-                g2.dispose();
-                super.paintComponent(g);
+                setBackground(statusLabelBackground);
             }
         };
+
         targetFormat = new JLabel() {
             {
                 setFont(getFont().deriveFont(Font.BOLD, 10f));
-                setOpaque(false);
+                setOpaque(true);
                 setForeground(Color.WHITE);
                 setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
-            }
-
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                int width = getWidth();
-                int height = getHeight();
-
-                GeneralPath path = getRoundedWestPath(width, height, 7);
-
-                g2.setColor(YELLOW_SUPER_DARK);
-                g2.fill(path);
-
-                g2.dispose();
-                super.paintComponent(g);
+                setBackground(YELLOW_SUPER_DARK);
             }
         };
         statusPanel = new JPanel(new BorderLayout(0, 0));
@@ -108,27 +77,10 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         fileSize = new JLabel() {
             {
                 setFont(getFont().deriveFont(Font.BOLD, 10f));
-                setOpaque(false);
+                setOpaque(true);
                 setForeground(Color.WHITE);
                 setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-            }
-
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                int width = getWidth();
-                int height = getHeight();
-
-                GeneralPath path = getRoundedPath(width, height, 10);
-
-                g2.setColor(GRAY_SUPER_DARK);
-                g2.fill(path);
-
-                g2.dispose();
-                super.paintComponent(g);
+                setBackground(GRAY_SUPER_DARK);
             }
         };
 
@@ -140,10 +92,10 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         topPanel.add(fileInfoPanel, BorderLayout.WEST);
         topPanel.add(statusPanel, BorderLayout.EAST);
         topPanel.setBorder(new EmptyBorder(5, 0, 5, 0));
-
+        topPanel.setOpaque(false);
 
         contentPanel = new JPanel(new GridBagLayout());
-        contentPanel.setOpaque(true);
+        contentPanel.setOpaque(false);
 
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -165,8 +117,8 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
 
         wrapperPanel = new JPanel(new BorderLayout());
-        wrapperPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, LIST_BG));
         wrapperPanel.add(contentPanel, BorderLayout.CENTER);
+        wrapperPanel.setOpaque(false);
 
         add(wrapperPanel, BorderLayout.CENTER);
 
@@ -174,21 +126,18 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
         errorMessage.setWrapStyleWord(true);
         errorMessage.setLineWrap(true);
         errorMessage.setEnabled(false);
-        errorMessage.setOpaque(true);
+        errorMessage.setOpaque(false);
         errorMessage.setBackground(LIST_BG);
         errorMessage.setForeground(RED);
         errorMessage.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
 
         wrapperPanel.add(errorMessage, BorderLayout.SOUTH);
 
-        setOpaque(false);
-        wrapperPanel.setOpaque(false);
-        topPanel.setOpaque(false);
-        progressBar.setOpaque(false);
-        contentPanel.setOpaque(false);
-        fileInfoPanel.setOpaque(false);
+        progressBar.setForeground(statusLabelBackground);
 
+        fileNameLabel.setForeground(Color.WHITE);
 
+        setBackground(GRAY_DARK);
     }
 
     @Override
@@ -197,7 +146,26 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
                                                   int index,
                                                   boolean isSelected,
                                                   boolean cellHasFocus) {
-        fileNameLabel.setText((currentItemDTO.getIndex() + 1) + " | " + currentItemDTO.getFileName());
+        if (isSelected) {
+            setForeground(list.getSelectionForeground());
+        } else {
+            if (index % 2 == 0) {
+                setBackground(ROW_EVEN_COLOR);
+                fileNameLabel.setBackground(ROW_EVEN_COLOR);
+            } else {
+                setBackground(ROW_ODD_COLOR);
+                fileNameLabel.setBackground(ROW_ODD_COLOR);
+            }
+            setForeground(list.getForeground());
+        }
+
+
+        stringBuffer.setLength(0);
+        stringBuffer.append(currentItemDTO.getIndex());
+        stringBuffer.append(") ");
+        stringBuffer.append(currentItemDTO.getFileName());
+        fileNameLabel.setText(stringBuffer.toString());
+
         progressBar.setValue(currentItemDTO.getProgressPercentage().intValue());
         fileSize.setText(currentItemDTO.getFileSize());
 
@@ -213,43 +181,20 @@ public class ListItemRenderer extends JPanel implements ListCellRenderer<Convers
             errorMessage.setVisible(false);
         }
 
-        targetFormat.setText(currentItemDTO.getTargetFormat());
-
+        targetFormat.setText(currentItemDTO.getTargetFormat().toUpperCase());
 
         if (ConversionStatus.PROCESSING.equals(currentItemDTO.getStatus())) {
             statusLabelBackground = ACCENT_BLUE_DARK;
-        }
-
-        if (ConversionStatus.COMPLETED.equals(currentItemDTO.getStatus())) {
+        } else if (ConversionStatus.COMPLETED.equals(currentItemDTO.getStatus())) {
             statusLabelBackground = LIME_DARK;
-        }
-
-        if (ConversionStatus.QUEUED.equals(currentItemDTO.getStatus())) {
+        } else if (ConversionStatus.QUEUED.equals(currentItemDTO.getStatus())) {
             statusLabelBackground = YELLOW_DARK;
+        } else if (ConversionStatus.FAILED.equals(currentItemDTO.getStatus())) {
+            statusLabelBackground = RED_DARK;
         }
+        statusPanel.setBackground(statusLabelBackground);
 
-        statusLabelBackground = ConversionStatus.FAILED.equals(currentItemDTO.getStatus()) ? RED_DARK : statusLabelBackground;
 
-
-        Color border = list.getBackground();
-        border = isSelected ? LIME_SUPER_SUPER_DARK : GRAY_DARK;
-
-        setBorder(BorderFactory.createMatteBorder(10, 10, 10, 10, border));
-
-        progressBar.setForeground(statusLabelBackground);
-
-        fileNameLabel.setForeground(Color.WHITE);
-
-        wrapperPanel.setBackground(GRAY_DARK);
-
-        setOpaque(false);
-        errorMessage.setOpaque(false);
-        wrapperPanel.setOpaque(true);
-        topPanel.setOpaque(false);
-        contentPanel.setOpaque(false);
-        fileNameLabel.setOpaque(false);
-        statusLabel.setOpaque(false);
-        progressBar.setOpaque(false);
         return this;
     }
 }

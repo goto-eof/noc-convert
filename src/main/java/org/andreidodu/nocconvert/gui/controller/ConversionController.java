@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.lang.System.exit;
 import static org.andreidodu.nocconvert.util.CpuUtil.calculateCpuLoadPercentage;
 import static org.andreidodu.nocconvert.util.OperationUtil.retryable;
 import static org.andreidodu.nocconvert.util.PathNameUtil.normalizePath;
@@ -67,10 +68,7 @@ public class ConversionController {
 
         imageFormatList = FormatCheckUtil.testAvailableFormatsAndGet(imageFormatList);
 
-        FormatExtensionDTO preferredFormat = imageFormatList.stream()
-                .filter(format -> "png".equalsIgnoreCase(format.getFormat()))
-                .findFirst()
-                .orElse(imageFormatList.getLast());
+        FormatExtensionDTO preferredFormat = imageFormatList.stream().filter(format -> "png".equalsIgnoreCase(format.getFormat())).findFirst().orElse(imageFormatList.getLast());
 
         conversionDTO.convertComponent().setImageList(imageFormatList);
         conversionDTO.convertComponent().setPreferredFormat(preferredFormat);
@@ -79,24 +77,23 @@ public class ConversionController {
 
 
     private void addConvertComponentEventListener() {
-        conversionDTO.convertComponent().getMainActionButton()
-                .addActionListener(e -> {
+        conversionDTO.convertComponent().getMainActionButton().addActionListener(e -> {
 
-                    if (SplitButtonComponent.Action.START.equals(conversionDTO.convertComponent().getAction())) {
-                        List<String> validationMessageList = conversionDTO.guiOrchestrator().getValidationMessageList();
-                        if (!validationMessageList.isEmpty()) {
-                            JOptionPane.showMessageDialog(conversionDTO.guiOrchestrator(), "Huston, we have some validation errors:\n" + String.join("\n", validationMessageList), "Validation Errors", JOptionPane.ERROR_MESSAGE);
-                            return;
-                        }
-                        conversionDTO.guiOrchestrator().setEnableSearchStepComponents(false);
-                        startSearchForImagesStep();
+            if (SplitButtonComponent.Action.START.equals(conversionDTO.convertComponent().getAction())) {
+                List<String> validationMessageList = conversionDTO.guiOrchestrator().getValidationMessageList();
+                if (!validationMessageList.isEmpty()) {
+                    JOptionPane.showMessageDialog(conversionDTO.guiOrchestrator(), "Huston, we have some validation errors:\n" + String.join("\n", validationMessageList), "Validation Errors", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                conversionDTO.guiOrchestrator().setEnableSearchStepComponents(false);
+                startSearchForImagesStep();
 
-                        imageSearcherSwingWorker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), new FilesInDirectoryListenerImpl());
-                        imageSearcherSwingWorker.execute();
-                    } else if (SplitButtonComponent.Action.STOP.equals(conversionDTO.convertComponent().getAction())) {
-                        manualShutdown();
-                    }
-                });
+                imageSearcherSwingWorker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), new FilesInDirectoryListenerImpl());
+                imageSearcherSwingWorker.execute();
+            } else if (SplitButtonComponent.Action.STOP.equals(conversionDTO.convertComponent().getAction())) {
+                manualShutdownWithExit(false);
+            }
+        });
     }
 
 
@@ -106,11 +103,9 @@ public class ConversionController {
         public void onDirectoryProcessed(long totalFiles, Path directory, long filesInDirectory) {
             SwingUtilities.invokeLater(() -> {
                 if (filesInDirectory > 0) {
-                    applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" +
-                            "<span style=\"color: #007bff;\">Found " + filesInDirectory + " file(s) in " + normalizePath(directory.getFileName().toString(), 30) + "</span></html>");
+                    applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" + "<span style=\"color: #007bff;\">Found " + filesInDirectory + " file(s) in " + normalizePath(directory.getFileName().toString(), 30) + "</span></html>");
                 } else {
-                    applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" +
-                            "<span style=\"color: #007bff;\">" + normalizePathAdvanced(directory.toString(), DELETE_SEMAPHORE_SIZE) + "</spa></html>");
+                    applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" + "<span style=\"color: #007bff;\">" + normalizePathAdvanced(directory.toString(), DELETE_SEMAPHORE_SIZE) + "</spa></html>");
                 }
             });
         }
@@ -119,8 +114,7 @@ public class ConversionController {
         @Override
         public void onFileFound(Path filename) {
             SwingUtilities.invokeLater(() -> {
-                applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" +
-                        "<span style=\"color: #007bff;\">" + normalizePathAdvanced(filename.getParent().toString(), 60) + " &#8658; " + normalizePath(filename.getFileName().toString(), 30) + "</span></html>");
+                applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" + "<span style=\"color: #007bff;\">" + normalizePathAdvanced(filename.getParent().toString(), 60) + " &#8658; " + normalizePath(filename.getFileName().toString(), 30) + "</span></html>");
             });
         }
 
@@ -152,13 +146,10 @@ public class ConversionController {
     }
 
 
-    public void manualShutdown() {
+    public void manualShutdownWithExit(boolean exit) {
 
         if (conversionWorker != null && !conversionWorker.isDone()) {
             log.info("Removing temporary files");
-            ConcurrentLinkedQueue<Path> tmpDirectoryList = conversionWorker.getConversionOrchestrator().getFileDeleteQueue();
-            Path tmpDirectory = conversionWorker.getConversionOrchestrator().getTmpParentDirPath();
-            Thread.ofVirtual().start(() -> deleteTemporaryFilesOnNewThread(tmpDirectoryList, tmpDirectory));
 
             log.info("Cancelling active conversion process.");
             Thread.ofVirtual().start(() -> conversionWorker.shutdownThreads(true));
@@ -169,16 +160,21 @@ public class ConversionController {
             Thread.ofVirtual().start(() -> imageSearcherSwingWorker.shutdown());
         }
 
+        Optional.ofNullable(conversionWorker).ifPresent(conversionWorker -> {
+            ConcurrentLinkedQueue<Path> tmpDirectoryList = conversionWorker.getConversionOrchestrator().getFileDeleteQueue();
+            Path tmpDirectory = conversionWorker.getConversionOrchestrator().getTmpParentDirPath();
+            Thread.ofVirtual().start(() -> deleteTemporaryFilesOnNewThread(tmpDirectoryList, tmpDirectory, exit));
+        });
+
+        Thread.ofVirtual().start(() -> imageSearcherSwingWorker.shutdown());
+
     }
 
-    public static void deleteTemporaryFilesOnNewThread(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath) {
-        Thread.ofPlatform()
-                .name("temp-file-cleaner-thread")
-                .daemon(false)
-                .start(() -> deleteTemporaryFiles(tmpDirPaths, tmpParentDirPath));
+    public static void deleteTemporaryFilesOnNewThread(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath, boolean exit) {
+        Thread.ofPlatform().name("temp-file-cleaner-thread").daemon().start(() -> deleteTemporaryFiles(tmpDirPaths, tmpParentDirPath, exit));
     }
 
-    private static void deleteTemporaryFiles(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath) {
+    private static void deleteTemporaryFiles(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath, boolean exit) {
 
         try (ExecutorService virtualThread = Executors.newVirtualThreadPerTaskExecutor()) {
 
@@ -205,6 +201,10 @@ public class ConversionController {
                 } catch (InterruptedException | ExecutionException e) {
                     log.error("Error while deleting temporary files and directory", e);
                 }
+            }
+
+            if (exit) {
+                exit(0);
             }
         }
     }
@@ -345,13 +345,7 @@ public class ConversionController {
         String colorUnprocessed = totalFound.get() - passed - failed > 0 ? "#CCCC00" : "white";
         String colorFailed = failed > 0 ? "red" : "white";
 
-        String coloredMessage = String.format("<html><div style='text-align:center;'>" +
-                "<span style='font-size:14pt;'>Conversion completed.</span><br/>" +
-                "<span style='font-size:14pt; font-weight:bold;'>Total: </span>" + "<span style='font-size:14pt; font-weight:bold;'>%s. </span>" +
-                "<span style='color:" + colorPassed + "; font-weight:bold; font-size:14pt;'>Success: %s / </span>" +
-                "<span style='color:" + colorUnprocessed + "; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" +
-                "<span style='color:" + colorFailed + "; font-weight:bold; font-size:14pt;'>Failed: %s</span>" +
-                "</div></html>", total, passed, unprocessed, failed);
+        String coloredMessage = String.format("<html><div style='text-align:center;'>" + "<span style='font-size:14pt;'>Conversion completed.</span><br/>" + "<span style='font-size:14pt; font-weight:bold;'>Total: </span>" + "<span style='font-size:14pt; font-weight:bold;'>%s. </span>" + "<span style='color:" + colorPassed + "; font-weight:bold; font-size:14pt;'>Success: %s / </span>" + "<span style='color:" + colorUnprocessed + "; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" + "<span style='color:" + colorFailed + "; font-weight:bold; font-size:14pt;'>Failed: %s</span>" + "</div></html>", total, passed, unprocessed, failed);
 
         SwingUtilities.invokeLater(() -> {
             applicationStatusLabel.setText(coloredMessage);

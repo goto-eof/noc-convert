@@ -55,7 +55,9 @@ public class AdaptiveSimpleGovernorRunnable {
         log.debug("creating watchdog thread");
         startScheduledService();
         log.debug("running stress test main thread");
-        Thread.ofPlatform().start(this::startStressTestThreads);
+        Thread.ofPlatform()
+                .daemon(false)
+                .start(this::startStressTestThreads);
     }
 
 

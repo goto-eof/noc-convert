@@ -19,6 +19,7 @@ public interface Colors {
     Color ACCENT_BLUE = new Color(0, 120, 212);
     Color ACCENT_BLUE_DARK = new Color(0, 90, 158);
     Color BLUE_SUPER_DARK = new Color(0, 70, 125);
+    Color BLUE_SUPER_SUPER_DARK = new Color(0, 22, 39, 136);
 
     Color DROPDOWN_TOGGLE_BG_LIME = new Color(0, 90, 158);
 

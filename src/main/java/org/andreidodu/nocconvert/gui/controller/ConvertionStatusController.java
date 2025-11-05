@@ -2,7 +2,7 @@ package org.andreidodu.nocconvert.gui.controller;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
-import org.andreidodu.nocconvert.gui.components.ListItemRenderer;
+import org.andreidodu.nocconvert.gui.components.performant.PerformantListModel;
 import org.andreidodu.nocconvert.gui.constants.Colors;
 import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
 import org.andreidodu.nocconvert.gui.worker.ListRendererWorker;
@@ -32,10 +32,10 @@ public class ConvertionStatusController {
 
             long startTime = System.nanoTime();
 
-            DefaultListModel<ConversionItemDTO> modelProgress = new DefaultListModel<>();
+            PerformantListModel modelProgress = new PerformantListModel();
             convertionStatusDTO.conversionFileList().setModel(modelProgress);
-            ListItemRenderer renderer = new ListItemRenderer();
-            convertionStatusDTO.conversionFileList().setCellRenderer(renderer);
+//            PerformantListItemRenderer renderer = new PerformantListItemRenderer();
+//            convertionStatusDTO.conversionFileList().setCellRenderer(renderer);
 
             long endTime = System.nanoTime();
             long durationNs = endTime - startTime;
@@ -76,17 +76,16 @@ public class ConvertionStatusController {
 
     public void updateList(List<ConversionItemDTO> list) {
         SwingUtilities.invokeLater(() -> {
-            DefaultListModel<ConversionItemDTO> model = (DefaultListModel<ConversionItemDTO>) convertionStatusDTO.conversionFileList().getModel();
+            PerformantListModel model = (PerformantListModel) convertionStatusDTO.conversionFileList().getModel();
             for (ConversionItemDTO conversionItemDTO : list) {
-                model.set(conversionItemDTO.getIndex(), conversionItemDTO);
+                model.updateElementAt(conversionItemDTO.getIndex(), conversionItemDTO);
             }
-            convertionStatusDTO.conversionFileList().repaint();
         });
     }
 
     public void enableProgressBar(boolean bool) {
         SwingUtilities.invokeLater(() -> {
-            convertionStatusDTO.conversionFileList().setModel(new DefaultListModel<>());
+            convertionStatusDTO.conversionFileList().setModel(new PerformantListModel());
             convertionStatusDTO.conversionFileListScrollPane().setVisible(bool);
             convertionStatusDTO.progressBarAndStatusPanel().setVisible(bool);
             convertionStatusDTO.progressBar().setVisible(bool);

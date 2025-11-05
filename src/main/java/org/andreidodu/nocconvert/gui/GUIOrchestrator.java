@@ -6,15 +6,17 @@ import com.intellij.uiDesigner.core.Spacer;
 import lombok.Getter;
 import org.andreidodu.nocconvert.constants.ApplicationConfig;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
-import org.andreidodu.nocconvert.gui.components.ListItemRenderer;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.gui.components.TextfieldDoubleButtonComponent;
+import org.andreidodu.nocconvert.gui.components.performant.PerformantJList;
+import org.andreidodu.nocconvert.gui.components.performant.PerformantListModel;
 import org.andreidodu.nocconvert.gui.controller.ConversionController;
 import org.andreidodu.nocconvert.gui.controller.ConvertionStatusController;
 import org.andreidodu.nocconvert.gui.controller.PathSelectionController;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
+import org.andreidodu.nocconvert.gui.util.FPSDisplay;
 import org.andreidodu.nocconvert.listener.AdaptiveTestListener;
 import org.andreidodu.nocconvert.util.performance.PerformanceUtil;
 import org.apache.logging.log4j.LogManager;
@@ -24,12 +26,12 @@ import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.text.StyleContext;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
-
-import static java.lang.System.exit;
 
 public class GUIOrchestrator extends JFrame {
     private static final Logger log = LogManager.getLogger(GUIOrchestrator.class);
@@ -54,6 +56,7 @@ public class GUIOrchestrator extends JFrame {
     private JPanel progressBarAndStatusPanel;
     private JLabel secondaryApplicationStatusLabel;
     private JPanel progressBarPanel;
+    private FPSDisplay fpsDisplay;
 
     private final PathSelectionController pathSelectionController;
     private final ConvertionStatusController convertionStatusController;
@@ -62,6 +65,7 @@ public class GUIOrchestrator extends JFrame {
 
     public GUIOrchestrator() {
         super();
+        fpsDisplay = new FPSDisplay();
 
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> log.error("Uncaught exception on {}: {}", thread.getName(), throwable));
 
@@ -83,8 +87,7 @@ public class GUIOrchestrator extends JFrame {
         menu.add(about);
         JMenuItem exit = new JMenuItem("Exit");
         exit.addActionListener((e) -> SwingUtilities.invokeLater(() -> {
-            conversionController.manualShutdown();
-            exit(0);
+            conversionController.manualShutdownWithExit(true);
         }));
         menu.add(exit);
         button1.addActionListener(e -> {
@@ -92,6 +95,15 @@ public class GUIOrchestrator extends JFrame {
         });
 
         postInitialization();
+
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                conversionController.manualShutdownWithExit(true);
+            }
+        });
     }
 
     private void postInitialization() {
@@ -202,11 +214,12 @@ public class GUIOrchestrator extends JFrame {
     private void initializeWindow() {
         setTitle("NoCloud Bulk Image Converter " + (ApplicationConfig.DEV_MODE ? "(dev_mode)" : ""));
         setContentPane(mainPanel);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         revalidate();
         pack();
         setLocationRelativeTo(null);
         setVisible(true);
+
     }
 
     public List<String> getValidationMessageList() {
@@ -295,6 +308,7 @@ public class GUIOrchestrator extends JFrame {
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new GridLayoutManager(2, 1, new Insets(0, 10, 10, 10), -1, -1));
         panel6.setBackground(new Color(-14079186));
+        panel6.setOpaque(false);
         mainPanel.add(panel6, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         scrollPanePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         scrollPanePanel.setBackground(new Color(-13026240));
@@ -304,6 +318,7 @@ public class GUIOrchestrator extends JFrame {
         conversionFileListScrollPane.setBackground(new Color(-13026240));
         conversionFileListScrollPane.setForeground(new Color(-2038305));
         conversionFileListScrollPane.setOpaque(false);
+        conversionFileListScrollPane.setVerticalScrollBarPolicy(22);
         scrollPanePanel.add(conversionFileListScrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         conversionFileList.setBackground(new Color(-14408151));
         conversionFileList.setFocusable(false);
@@ -348,7 +363,7 @@ public class GUIOrchestrator extends JFrame {
         progressBar1.setForeground(new Color(-16744236));
         progressBar1.setValue(55);
         progressBarPanel.add(progressBar1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        headerPanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 5, 0, 5), -1, -1));
+        headerPanel.setLayout(new GridLayoutManager(1, 4, new Insets(0, 5, 0, 5), -1, -1));
         headerPanel.setBackground(new Color(-13026240));
         mainPanel.add(headerPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         button1 = new JButton();
@@ -367,6 +382,8 @@ public class GUIOrchestrator extends JFrame {
         headerPanel.add(label4, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer3 = new Spacer();
         headerPanel.add(spacer3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        fpsDisplay.setText("");
+        headerPanel.add(fpsDisplay, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /** @noinspection ALL */
@@ -400,7 +417,7 @@ public class GUIOrchestrator extends JFrame {
         sourceComponent = new TextfieldDoubleButtonComponent("", "Source", "Open");
         destinationComponent = new TextfieldDoubleButtonComponent("", "Destination", "Open");
         headerPanel = new JPanel();
-        conversionFileList = new JList<>();
+        conversionFileList = new PerformantJList(new PerformantListModel());
         conversionFileListScrollPane = new JScrollPane();
 
         footerPanel = new JPanel(new BorderLayout(0, 0));
@@ -408,11 +425,12 @@ public class GUIOrchestrator extends JFrame {
             Color headerBorderColor = new Color(168, 172, 174, 255);
             headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, headerBorderColor));
 
-            conversionFileList.setCellRenderer(new ListItemRenderer());
+            //conversionFileList.setCellRenderer(new PerformantListItemRenderer());
 
             footerPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, headerBorderColor));
 
             conversionFileListScrollPane.setVisible(false);
+            conversionFileListScrollPane.add(conversionFileList, BorderLayout.CENTER);
             conversionFileListScrollPane.setViewportView(conversionFileList);
             conversionFileListScrollPane.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
         });
