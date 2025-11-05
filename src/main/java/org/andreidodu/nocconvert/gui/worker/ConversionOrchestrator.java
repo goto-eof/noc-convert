@@ -28,6 +28,7 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMess
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
     public static final int RENAME_SEMAPHORE_SIZE = 100;
+    public static final int MAX_NUM_ITEMS_FOR_NOTIFICATION_LEVEL_LOW = 20000;
     private final ExecutorService virtualThreadExecutor;
     private List<SingleItemConvertionTask> virtualTaskList;
     private final Semaphore semaphore;
@@ -119,7 +120,8 @@ public class ConversionOrchestrator {
     }
 
     private NotificationLevel calculateNotificationLevel() {
-        if (conversionOrchestratorInputDTO.conversionItemDTOList().size() > 20000) {
+        if (conversionOrchestratorInputDTO.conversionItemDTOList().size() >
+                MAX_NUM_ITEMS_FOR_NOTIFICATION_LEVEL_LOW) {
             return NotificationLevel.LOW;
         }
         return NotificationLevel.HIGH;
