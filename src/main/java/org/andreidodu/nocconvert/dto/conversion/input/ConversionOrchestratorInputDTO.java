@@ -11,7 +11,7 @@ public record ConversionOrchestratorInputDTO(
         List<ConversionItemDTO> conversionItemDTOList,
         Consumer<ConversionItemDTO> publishItemUpdate,
         Consumer<ConversionItemDTO> setItemAsCompleted,
-        Runnable onAllTasksComplete,
+        Runnable onAllTasksCompleteEnableComponents,
         Runnable incrementPasses,
         Runnable incrementFailures
 ) {

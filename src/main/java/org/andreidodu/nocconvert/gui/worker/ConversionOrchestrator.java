@@ -43,6 +43,8 @@ public class ConversionOrchestrator {
     private Path tmpParentDirPath;
     @Getter
     private final ConcurrentLinkedQueue<Path> fileRenameQueue = new ConcurrentLinkedQueue<>();
+    @Getter
+    private final ConcurrentLinkedQueue<Path> fileDeleteQueue = new ConcurrentLinkedQueue<>();
 
     public ConversionOrchestrator(ConversionOrchestratorInputDTO conversionOrchestratorInputDTO) {
         this.conversionOrchestratorInputDTO = conversionOrchestratorInputDTO;
@@ -109,6 +111,7 @@ public class ConversionOrchestrator {
                 .incrementFailures(conversionOrchestratorInputDTO.incrementFailures())
                 .incrementPasses(conversionOrchestratorInputDTO.incrementPasses())
                 .addToFileRenameQueue(this::addToFileRenameQueue)
+                .addToFileDeleteQueue(this::addToFileDeleteQueue)
                 .isParentInterrupted(this::isInterrupted)
                 .build();
     }
@@ -121,41 +124,72 @@ public class ConversionOrchestrator {
         fileRenameQueue.add(file);
     }
 
+    private void addToFileDeleteQueue(Path file) {
+        fileDeleteQueue.add(file);
+    }
+
     private void setItemAsCompletedOverride(ConversionItemDTO conversionItemDTO) {
         conversionOrchestratorInputDTO.setItemAsCompleted().accept(conversionItemDTO);
     }
 
     private void onCompleteAll() {
         try {
-            virtualThreadExecutor.shutdown();
-            boolean terminated = virtualThreadExecutor.awaitTermination(31, TimeUnit.DAYS);
-            if (!terminated) {
-                log.error("virtualThreadExecutor did not terminate in time. Forcing emergency shutdown.");
-                virtualTaskList.forEach(SingleItemConvertionTask::closeStreams);
+
+
+            boolean rename = true;
+
+            try {
+                shutdownVirtualThreadExecutor();
+            } catch (InterruptedException e) {
+                log.debug("Interrupted while waiting for virtualThreadExecutor to terminate.");
+                rename = false;
             }
 
-            platformExecutorService.shutdown();
-            boolean platformExecutorShutdown = platformExecutorService.awaitTermination(31, TimeUnit.DAYS);
-            if (!platformExecutorShutdown) {
-                log.error("platformExecutorService did not terminate in time. Forcing emerConversionWorkergency shutdown.");
-                platformExecutorService.shutdownNow();
+            try {
+                shutdownPlatformThreadExecutor();
+            } catch (InterruptedException e) {
+                log.debug("Interrupted while waiting for platformExecutorService to terminate.");
+                rename = false;
             }
 
-            virtualThreadExecutor.shutdownNow();
+            virtualTaskList.forEach(SingleItemConvertionTask::closeStreams);
 
-            Semaphore semaphore = new Semaphore(RENAME_SEMAPHORE_SIZE);
-            if (!ApplicationConfig.DEV_MODE && tmpParentDirPath != null) {
-                Thread.ofVirtual().start(() -> retryable(semaphore, tmpDirPath, FileUtil::deleteDirectoryIfExists));
+            if (rename) {
+                renameFiles();
             }
-            fileRenameQueue.forEach(filePath -> Thread.ofVirtual().start(() -> retryable(semaphore, filePath, this::renameFile)));
 
-        } catch (InterruptedException e) {
-            log.warn("Conversion Worker interrupted (user STOP action). Forcing Orchestrator cancel.", e);
-            Thread.currentThread().interrupt();
         } finally {
             shutdown();
-            onAllTasksComplete();
+            onAllTasksCompleteEnableComponents();
         }
+    }
+
+    private void shutdownVirtualThreadExecutor() throws InterruptedException {
+        virtualThreadExecutor.shutdown();
+        boolean terminated = virtualThreadExecutor.awaitTermination(31, TimeUnit.DAYS);
+        virtualTaskList.forEach(SingleItemConvertionTask::closeStreams);
+        if (!terminated) {
+            log.error("virtualThreadExecutor did not terminate in time. Forcing emergency shutdown.");
+            virtualThreadExecutor.shutdownNow();
+        }
+    }
+
+    private void shutdownPlatformThreadExecutor() throws InterruptedException {
+        platformExecutorService.shutdown();
+        boolean platformExecutorShutdown = platformExecutorService.awaitTermination(31, TimeUnit.DAYS);
+        virtualTaskList.forEach(SingleItemConvertionTask::closeStreams);
+        if (!platformExecutorShutdown) {
+            log.error("platformExecutorService did not terminate in time. Forcing emergencyConversionWorker shutdown.");
+            platformExecutorService.shutdownNow();
+        }
+    }
+
+    private void renameFiles() {
+        Semaphore semaphore = new Semaphore(RENAME_SEMAPHORE_SIZE);
+        if (!ApplicationConfig.DEV_MODE && tmpParentDirPath != null) {
+            Thread.ofVirtual().start(() -> retryable(semaphore, tmpDirPath, FileUtil::deleteDirectoryIfExists));
+        }
+        fileRenameQueue.forEach(filePath -> Thread.ofVirtual().start(() -> retryable(semaphore, filePath, this::renameFile)));
     }
 
     private boolean renameFile(Path file) {
@@ -179,8 +213,8 @@ public class ConversionOrchestrator {
         return Path.of(cleanFilename.getParent().toString(), "duplicate-" + i + "-of-" + cleanedFilename);
     }
 
-    public void onAllTasksComplete() {
-        conversionOrchestratorInputDTO.onAllTasksComplete().run();
+    public void onAllTasksCompleteEnableComponents() {
+        conversionOrchestratorInputDTO.onAllTasksCompleteEnableComponents().run();
     }
 
     public void shutdown() {
@@ -190,7 +224,6 @@ public class ConversionOrchestrator {
         }
 
         if (virtualThreadExecutor != null && !virtualThreadExecutor.isTerminated()) {
-            virtualTaskList.forEach(SingleItemConvertionTask::closeStreams);
             this.virtualThreadExecutor.shutdownNow();
         }
 

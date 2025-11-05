@@ -160,7 +160,7 @@ public class ConversionController {
 
         if (conversionWorker != null && !conversionWorker.isDone()) {
             log.info("Removing temporary files");
-            ConcurrentLinkedQueue<Path> tmpDirectoryList = conversionWorker.getConversionOrchestrator().getFileRenameQueue();
+            ConcurrentLinkedQueue<Path> tmpDirectoryList = conversionWorker.getConversionOrchestrator().getFileDeleteQueue();
             Path tmpDirectory = conversionWorker.getConversionOrchestrator().getTmpParentDirPath();
             Thread.ofVirtual().start(() -> deleteTemporaryFilesOnNewThread(tmpDirectoryList, tmpDirectory));
 

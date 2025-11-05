@@ -76,6 +76,7 @@ public class SingleItemConvertionTask implements Runnable {
                 .fail(this::fail)
                 .pass(this::pass)
                 .addToFileRenameQueue(convertSingleItemTaskInputDTO.addToFileRenameQueue())
+                .addToFileDeleteQueue(convertSingleItemTaskInputDTO.addToFileDeleteQueue())
                 .build();
     }
 
@@ -120,6 +121,6 @@ public class SingleItemConvertionTask implements Runnable {
 
     public void closeStreams() {
         this.canceled = true;
-        singleImageConverter.interruptTask();
+        singleImageConverter.cancel();
     }
 }

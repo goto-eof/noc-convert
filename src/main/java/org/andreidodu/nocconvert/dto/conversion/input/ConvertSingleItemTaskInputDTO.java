@@ -20,6 +20,7 @@ public record ConvertSingleItemTaskInputDTO(
         Runnable incrementPasses,
         Runnable incrementFailures,
         Consumer<Path> addToFileRenameQueue,
+        Consumer<Path> addToFileDeleteQueue,
         Supplier<Boolean> isParentInterrupted
 ) {
 }

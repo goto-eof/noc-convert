@@ -32,7 +32,7 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
         return ConversionOrchestratorInputDTO.builder()
                 .conversionItemDTOList(conversionWorkerInputDTO.list())
                 .setItemAsCompleted(conversionWorkerInputDTO.completeItem())
-                .onAllTasksComplete(conversionWorkerInputDTO.onAllTasksComplete())
+                .onAllTasksCompleteEnableComponents(conversionWorkerInputDTO.onAllTasksComplete())
                 .publishItemUpdate(this::publishItemUpdate)
                 .incrementFailures(conversionWorkerInputDTO.incrementFailures())
                 .incrementPasses(conversionWorkerInputDTO.incrementPasses())
@@ -68,11 +68,11 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
         if (isCancelled()) {
             log.debug("Conversion Worker cancelled.");
         }
-        this.conversionOrchestrator.onAllTasksComplete();
+        this.conversionOrchestrator.onAllTasksCompleteEnableComponents();
     }
 
     public void shutdownThreads(boolean shutdown) {
-        conversionOrchestrator.onAllTasksComplete();
+        conversionOrchestrator.onAllTasksCompleteEnableComponents();
         cancelOrchestratorJob();
         cancel(shutdown);
     }

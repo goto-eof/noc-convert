@@ -77,6 +77,7 @@ public class SingleImageConverter {
             if (sourceFileHeaders.format().equalsIgnoreCase(convertImageInputDTO.targetExtension())) {
                 log.info("No need to convert image {} from {} to {}. I will just copy it.", convertImageInputDTO.sourceFile(), sourceFileHeaders.format(), convertImageInputDTO.targetExtension());
                 Path outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
+                convertImageInputDTO.addToFileDeleteQueue().accept(outputFile);
                 Files.copy(sourceFile, outputFile, StandardCopyOption.REPLACE_EXISTING);
                 convertImageInputDTO.addToFileRenameQueue().accept(outputFile);
                 convertImageInputDTO.pass().run();
@@ -105,7 +106,7 @@ public class SingleImageConverter {
 
             interruptIfNecessary();
 
-            writeImageOuter(convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image, convertImageInputDTO.addToFileRenameQueue());
+            writeImageOuter(convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image, convertImageInputDTO.addToFileRenameQueue(), convertImageInputDTO.addToFileDeleteQueue());
         } catch (ConversionManualAbortedException e) {
             throw e;
         } catch (Exception e) {
@@ -153,6 +154,9 @@ public class SingleImageConverter {
                     throw readerListener.getException();
                 }
                 return data;
+            } catch (ConversionManualAbortedException e) {
+                log.debug("ConversionManualAbortedException", e);
+                throw e;
             } catch (Exception e) {
                 throw e;
             } finally {
@@ -165,11 +169,11 @@ public class SingleImageConverter {
         }
     }
 
-    private void writeImageOuter(ConvertImageInputDTO convertImageInputDTO, Path tmpOutputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image, Consumer<Path> addToFileRenameQueue) throws Exception {
+    private void writeImageOuter(ConvertImageInputDTO convertImageInputDTO, Path tmpOutputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image, Consumer<Path> addToFileRenameQueue, Consumer<Path> addToFileDeleteQueue) throws Exception {
         try {
             writeImageInner(convertImageInputDTO.targetExtension(), convertImageInputDTO.onProgress(), tmpOutputFile, totalReadPercentageDTO, image);
             Path outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
-            validateFileCompletionWithRetry(tmpOutputFile, outputFile, convertImageInputDTO.pass(), convertImageInputDTO.fail(), addToFileRenameQueue);
+            validateFileCompletionWithRetry(tmpOutputFile, outputFile, convertImageInputDTO.pass(), convertImageInputDTO.fail(), addToFileRenameQueue, addToFileDeleteQueue);
         } catch (ConversionManualAbortedException e) {
             throw e;
         } catch (Throwable e) {
@@ -177,9 +181,9 @@ public class SingleImageConverter {
         }
     }
 
-    private void validateFileCompletionWithRetry(Path tmpOutputFile, Path outputFile, Runnable pass, Consumer<Exception> fail, Consumer<Path> addToFileRenameQueue) {
+    private void validateFileCompletionWithRetry(Path tmpOutputFile, Path outputFile, Runnable pass, Consumer<Exception> fail, Consumer<Path> addToFileRenameQueue, Consumer<Path> addToFileDeleteQueue) throws Exception {
         int i = VALIDATION_RETRY_TIMES;
-
+        addToFileDeleteQueue.accept(outputFile);
         while (i > 0) {
             try {
                 validateFileCompletion(tmpOutputFile, outputFile, pass);
@@ -457,7 +461,7 @@ public class SingleImageConverter {
         }
     }
 
-    public void interruptTask() {
+    public void cancel() {
         setCanceled(true);
     }
 
