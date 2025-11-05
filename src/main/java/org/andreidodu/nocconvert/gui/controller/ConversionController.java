@@ -165,12 +165,12 @@ public class ConversionController {
             Thread.ofVirtual().start(() -> deleteTemporaryFilesOnNewThread(tmpDirectoryList, tmpDirectory));
 
             log.info("Cancelling active conversion process.");
-            conversionWorker.shutdownThreads(true);
+            Thread.ofVirtual().start(() -> conversionWorker.shutdownThreads(true));
         }
 
         if (imageSearcherSwingWorker != null && !imageSearcherSwingWorker.isDone()) {
             log.debug("Cancelling active search process.");
-            imageSearcherSwingWorker.shutdown();
+            Thread.ofVirtual().start(() -> imageSearcherSwingWorker.shutdown());
         }
 
     }
