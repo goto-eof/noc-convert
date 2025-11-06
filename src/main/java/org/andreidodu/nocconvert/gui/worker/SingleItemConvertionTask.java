@@ -76,8 +76,7 @@ public class SingleItemConvertionTask implements Runnable {
                 .onProgress(this::updateProgressFloatValue)
                 .fail(this::fail)
                 .pass(this::pass)
-                .addToFileRenameQueue(convertSingleItemTaskInputDTO.addToFileRenameQueue())
-                .addToFileDeleteQueue(convertSingleItemTaskInputDTO.addToFileDeleteQueue())
+                .addToFileQueue(convertSingleItemTaskInputDTO.addToFileQueue())
                 .notificationLevel(convertSingleItemTaskInputDTO.notificationLevel())
                 .build();
     }

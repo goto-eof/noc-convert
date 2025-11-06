@@ -10,6 +10,7 @@ import java.util.List;
 public class PerformantListModel extends AbstractListModel<ConversionItemDTO> {
 
     private final List<ConversionItemDTO> data;
+    private JList<ConversionItemDTO> conversionFileList;
 
     public PerformantListModel() {
         this.data = Collections.synchronizedList(new ArrayList<>());
@@ -42,8 +43,30 @@ public class PerformantListModel extends AbstractListModel<ConversionItemDTO> {
     }
 
     public void addAll(List<ConversionItemDTO> chunkList) {
-        int index = data.size();
         data.addAll(chunkList);
-        fireIntervalAdded(this, index, data.size() - 1);
+        fireIntervalAdded(this, 0, 14);
+    }
+
+    public void updateElements(List<ConversionItemDTO> list) {
+        int minIndex = Integer.MAX_VALUE;
+        int maxIndex = Integer.MIN_VALUE;
+        for (ConversionItemDTO item : list) {
+            data.set(item.getIndex(), item);
+            if (conversionFileList != null) {
+                minIndex = Math.min(minIndex, item.getIndex());
+                maxIndex = Math.max(maxIndex, item.getIndex());
+            }
+        }
+
+        if (conversionFileList != null) {
+            if (maxIndex < conversionFileList.getFirstVisibleIndex() || minIndex > conversionFileList.getLastVisibleIndex()) {
+                return;
+            }
+            fireContentsChanged(this, 0, 14);
+        }
+    }
+
+    public void setJList(JList<ConversionItemDTO> conversionFileList) {
+        this.conversionFileList = conversionFileList;
     }
 }

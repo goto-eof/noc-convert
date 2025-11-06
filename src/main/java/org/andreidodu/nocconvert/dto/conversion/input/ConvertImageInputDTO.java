@@ -16,8 +16,7 @@ public record ConvertImageInputDTO(
         Consumer<Float> onProgress,
         Runnable pass,
         Consumer<Exception> fail,
-        Consumer<Path> addToFileRenameQueue,
-        Consumer<Path> addToFileDeleteQueue,
+        Consumer<Path> addToFileQueue,
         NotificationLevel notificationLevel
 ) {
 }

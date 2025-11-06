@@ -73,9 +73,10 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<File>, Imag
         // NOTE: we're already passing the result through the FilesInDirectoryListenerImpl
     }
 
-    public void shutdown() {
+    public Void shutdown() {
         this.cancel(true);
         pictureSearcher.cancel();
+        return null;
     }
 
     @Builder

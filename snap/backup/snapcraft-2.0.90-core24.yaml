@@ -1,11 +1,11 @@
 name: noc-convert
-version: '2.0.95'
+version: '2.0.90'
 summary: Fast, no-cloud bulk image converter.
 description: |
   Bulk Image Converter (NoCloud). The easy way to batch convert all your images.
-base: core26
-build-base: devel
-grade: devel
+base: core24
+grade: stable
+# build-base: devel
 confinement: strict
 icon: snap/gui/icon.png
 title: NoCloud Bulk Image Converter
@@ -19,8 +19,8 @@ license: CC-BY-NC-4.0
 apps:
   noc-convert:
     environment:
-    # extensions: [ gnome ]
     command: executor
+    extensions: [ gnome ]
     plugs:
       - browser-support
       - home
@@ -52,18 +52,9 @@ parts:
       - xdg-utils
     override-prime: |
       snapcraftctl prime
-      
-      rm -f $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/jaxp-strict.properties.template
-      if [ -f "/etc/java-25-openjdk/jaxp-strict.properties.template" ]; then
-          cp /etc/java-25-openjdk/jaxp-strict.properties.template $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/jaxp-strict.properties.template 
-      fi
-      
-      rm -f $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/security/java.policy
-      if [ -f "/etc/java-25-openjdk/security/java.policy" ]; then
-          cp /etc/java-25-openjdk/security/java.policy $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/security/java.policy
-      fi
-      
-      rm -f $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/lib/security/default.policy
-      if [ -f "/etc/java-25-openjdk/security/default.policy" ]; then
-          cp /etc/java-25-openjdk/security/default.policy lint-snap-v2_external_symlinks $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/lib/security/default.policy
-      fi
+      rm $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/jaxp-strict.properties.template
+      cp /etc/java-25-openjdk/jaxp-strict.properties.template $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/jaxp-strict.properties.template 
+      rm $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/security/java.policy
+      cp /etc/java-25-openjdk/security/java.policy $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/security/java.policy
+      rm $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/lib/security/default.policy
+      cp /etc/java-25-openjdk/security/default.policy lint-snap-v2_external_symlinks $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/lib/security/default.policy

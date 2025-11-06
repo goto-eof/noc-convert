@@ -71,10 +71,11 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
         this.conversionOrchestrator.onAllTasksCompleteEnableComponents();
     }
 
-    public void shutdownThreads(boolean shutdown) {
+    public Void shutdownThreads() {
         cancelOrchestratorJob();
         conversionOrchestrator.onAllTasksCompleteEnableComponents();
-        cancel(shutdown);
+        cancel(true);
+        return null;
     }
 
 }

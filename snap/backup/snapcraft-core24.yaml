@@ -3,9 +3,9 @@ version: '2.0.95'
 summary: Fast, no-cloud bulk image converter.
 description: |
   Bulk Image Converter (NoCloud). The easy way to batch convert all your images.
-base: core26
-build-base: devel
-grade: devel
+base: core24
+#build-base: devel
+#grade: devel
 confinement: strict
 icon: snap/gui/icon.png
 title: NoCloud Bulk Image Converter
@@ -19,7 +19,7 @@ license: CC-BY-NC-4.0
 apps:
   noc-convert:
     environment:
-    # extensions: [ gnome ]
+    extensions: [ gnome ]
     command: executor
     plugs:
       - browser-support

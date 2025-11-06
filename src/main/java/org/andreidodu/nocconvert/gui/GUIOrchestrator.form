@@ -168,7 +168,7 @@
                 <properties>
                   <font size="14" style="1"/>
                   <foreground color="-8289660"/>
-                  <text value="noc-convert v.2.0.90"/>
+                  <text value="noc-convert v.2.0.95"/>
                 </properties>
               </component>
               <component id="b9c57" class="javax.swing.JLabel">

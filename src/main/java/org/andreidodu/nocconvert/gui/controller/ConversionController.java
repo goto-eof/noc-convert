@@ -147,35 +147,59 @@ public class ConversionController {
 
 
     public void manualShutdownWithExit(boolean exit) {
-        if (conversionWorker == null && exit) {
-            exit(0);
+        Thread.ofVirtual().start(() -> manualShutdownWithExitAction(exit));
+    }
+
+    public void manualShutdownWithExitAction(boolean exit) {
+
+        try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Callable<Void>> callableList = new ArrayList<>();
+
+            if (conversionWorker != null && !conversionWorker.isDone()) {
+                log.info("Cancelling active conversion process.");
+                callableList.add(() -> {
+                    return conversionWorker.shutdownThreads();
+                });
+            }
+
+            if (imageSearcherSwingWorker != null && !imageSearcherSwingWorker.isDone()) {
+                log.debug("Cancelling active search process.");
+                callableList.add(() -> {
+                    return imageSearcherSwingWorker.shutdown();
+                });
+            }
+
+            Optional.ofNullable(conversionWorker).ifPresent(conversionWorker -> {
+                ConcurrentLinkedQueue<Path> tmpDirectoryList = conversionWorker.getConversionOrchestrator().getFilesQueue();
+                Path tmpDirectory = conversionWorker.getConversionOrchestrator().getTmpParentDirPath();
+                callableList.add(() -> {
+                    return deleteTemporaryFiles(tmpDirectoryList, tmpDirectory);
+                });
+            });
+
+            callableList.add(() -> {
+                if (imageSearcherSwingWorker == null) {
+                    return null;
+                }
+
+                return imageSearcherSwingWorker.shutdown();
+            });
+
+            executorService.invokeAll(callableList);
+
+            if (exit) {
+                log.info("Exiting....");
+                exit(0);
+            }
+
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
-
-        if (conversionWorker != null && !conversionWorker.isDone()) {
-            log.info("Cancelling active conversion process.");
-            Thread.ofVirtual().start(() -> conversionWorker.shutdownThreads(true));
-        }
-
-        if (imageSearcherSwingWorker != null && !imageSearcherSwingWorker.isDone()) {
-            log.debug("Cancelling active search process.");
-            Thread.ofVirtual().start(() -> imageSearcherSwingWorker.shutdown());
-        }
-
-        Optional.ofNullable(conversionWorker).ifPresent(conversionWorker -> {
-            ConcurrentLinkedQueue<Path> tmpDirectoryList = conversionWorker.getConversionOrchestrator().getFileDeleteQueue();
-            Path tmpDirectory = conversionWorker.getConversionOrchestrator().getTmpParentDirPath();
-            Thread.ofVirtual().start(() -> deleteTemporaryFilesOnNewThread(tmpDirectoryList, tmpDirectory, exit));
-        });
-
-        Thread.ofVirtual().start(() -> Optional.ofNullable(imageSearcherSwingWorker).ifPresent(ImageSearcherSwingWorker::shutdown));
 
     }
 
-    public static void deleteTemporaryFilesOnNewThread(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath, boolean exit) {
-        Thread.ofPlatform().name("temp-file-cleaner-thread").daemon().start(() -> deleteTemporaryFiles(tmpDirPaths, tmpParentDirPath, exit));
-    }
-
-    private static void deleteTemporaryFiles(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath, boolean exit) {
+    private static Void deleteTemporaryFiles(ConcurrentLinkedQueue<Path> tmpDirPaths, Path tmpParentDirPath) {
 
         try (ExecutorService virtualThread = Executors.newVirtualThreadPerTaskExecutor()) {
 
@@ -204,9 +228,7 @@ public class ConversionController {
                 }
             }
 
-            if (exit) {
-                exit(0);
-            }
+            return null;
         }
     }
 

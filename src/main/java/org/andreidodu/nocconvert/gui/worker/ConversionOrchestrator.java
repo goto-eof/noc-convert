@@ -28,7 +28,7 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMess
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
     public static final int RENAME_SEMAPHORE_SIZE = 100;
-    public static final int MAX_NUM_ITEMS_FOR_NOTIFICATION_LEVEL_LOW = 20000;
+    public static final int MAX_NUM_ITEMS_FOR_NOTIFICATION_LEVEL_LOW = 10_000;
     private final ExecutorService virtualThreadExecutor;
     private List<SingleItemConvertionTask> virtualTaskList;
     private final Semaphore semaphore;
@@ -44,9 +44,7 @@ public class ConversionOrchestrator {
     @Getter
     private Path tmpParentDirPath;
     @Getter
-    private final ConcurrentLinkedQueue<Path> fileRenameQueue = new ConcurrentLinkedQueue<>();
-    @Getter
-    private final ConcurrentLinkedQueue<Path> fileDeleteQueue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<Path> filesQueue = new ConcurrentLinkedQueue<>();
 
     public ConversionOrchestrator(ConversionOrchestratorInputDTO conversionOrchestratorInputDTO) {
         this.conversionOrchestratorInputDTO = conversionOrchestratorInputDTO;
@@ -79,8 +77,10 @@ public class ConversionOrchestrator {
             log.error("Failed to build tmp dir for conversion orchestrator", e);
             throw new RuntimeException(e);
         }
+        int index = 0;
         for (ConversionItemDTO conversionItemDTO : conversionOrchestratorInputDTO.conversionItemDTOList()) {
             conversionItemDTO.setStatus(ConversionStatus.QUEUED);
+            conversionItemDTO.setIndex(index++);
             ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO = buildInput(conversionItemDTO, tmpDirPath);
             SingleItemConvertionTask task = new SingleItemConvertionTask(convertSingleItemTaskInputDTO);
             virtualTaskList.add(task);
@@ -112,8 +112,7 @@ public class ConversionOrchestrator {
                 .platformExecutorService(platformExecutorService)
                 .incrementFailures(conversionOrchestratorInputDTO.incrementFailures())
                 .incrementPasses(conversionOrchestratorInputDTO.incrementPasses())
-                .addToFileRenameQueue(this::addToFileRenameQueue)
-                .addToFileDeleteQueue(this::addToFileDeleteQueue)
+                .addToFileQueue(this::addToFileQueue)
                 .isParentInterrupted(this::isInterrupted)
                 .notificationLevel(calculateNotificationLevel())
                 .build();
@@ -131,12 +130,8 @@ public class ConversionOrchestrator {
         return Thread.currentThread().isInterrupted();
     }
 
-    private void addToFileRenameQueue(Path file) {
-        fileRenameQueue.add(file);
-    }
-
-    private void addToFileDeleteQueue(Path file) {
-        fileDeleteQueue.add(file);
+    private void addToFileQueue(Path file) {
+        filesQueue.add(file);
     }
 
     private void setItemAsCompletedOverride(ConversionItemDTO conversionItemDTO) {
@@ -200,7 +195,7 @@ public class ConversionOrchestrator {
         if (!ApplicationConfig.DEV_MODE && tmpParentDirPath != null) {
             Thread.ofVirtual().start(() -> retryable(semaphore, tmpDirPath, FileUtil::deleteDirectoryIfExists));
         }
-        fileRenameQueue.forEach(filePath -> Thread.ofVirtual().start(() -> retryable(semaphore, filePath, this::renameFile)));
+        filesQueue.forEach(filePath -> Thread.ofVirtual().start(() -> retryable(semaphore, filePath, this::renameFile)));
     }
 
     private boolean renameFile(Path file) {

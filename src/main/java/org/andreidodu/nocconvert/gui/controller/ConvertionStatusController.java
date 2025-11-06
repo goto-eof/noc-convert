@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ConvertionStatusController {
@@ -34,6 +35,7 @@ public class ConvertionStatusController {
 
             PerformantListModel modelProgress = new PerformantListModel();
             convertionStatusDTO.conversionFileList().setModel(modelProgress);
+            modelProgress.setJList(convertionStatusDTO.conversionFileList());
 //            PerformantListItemRenderer renderer = new PerformantListItemRenderer();
 //            convertionStatusDTO.conversionFileList().setCellRenderer(renderer);
 
@@ -50,19 +52,24 @@ public class ConvertionStatusController {
     }
 
     private static List<ConversionItemDTO> convertPathListToDTOList(Path destPath, String targetFormat, List<Path> paths) {
-        return paths.stream()
-                .map(path -> ConversionItemDTO.builder()
-                        .targetFormat(targetFormat)
-                        .targetExtension(targetFormat)
-                        .sourceFile(path)
-                        .fileName(prepareFileName(path))
-                        .status(ConversionStatus.QUEUED)
-                        .progressPercentage(0f)
-                        .sourceFile(path)
-                        .destinationDirectory(destPath)
-                        .fileSize(FileUtil.getHumanableFileSize(path.toFile()))
-                        .build())
-                .toList();
+        int index = 0;
+        List<ConversionItemDTO> list = new ArrayList<>();
+        for (Path path : paths) {
+            ConversionItemDTO item = ConversionItemDTO.builder()
+                    .index(index++)
+                    .targetFormat(targetFormat)
+                    .targetExtension(targetFormat)
+                    .sourceFile(path)
+                    .fileName(prepareFileName(path))
+                    .status(ConversionStatus.QUEUED)
+                    .progressPercentage(0f)
+                    .sourceFile(path)
+                    .destinationDirectory(destPath)
+                    .fileSize(FileUtil.getHumanableFileSize(path.toFile()))
+                    .build();
+            list.add(item);
+        }
+        return list;
     }
 
     private static String prepareFileName(Path path) {
@@ -75,17 +82,21 @@ public class ConvertionStatusController {
     }
 
     public void updateList(List<ConversionItemDTO> list) {
-        SwingUtilities.invokeLater(() -> {
-            PerformantListModel model = (PerformantListModel) convertionStatusDTO.conversionFileList().getModel();
-            for (ConversionItemDTO conversionItemDTO : list) {
-                model.updateElementAt(conversionItemDTO.getIndex(), conversionItemDTO);
-            }
-        });
+        PerformantListModel model = (PerformantListModel) convertionStatusDTO.conversionFileList().getModel();
+        model.updateElements(list);
+//        SwingUtilities.invokeLater(() -> {
+//
+//        });
     }
 
     public void enableProgressBar(boolean bool) {
         SwingUtilities.invokeLater(() -> {
-            convertionStatusDTO.conversionFileList().setModel(new PerformantListModel());
+
+            PerformantListModel jListModel = new PerformantListModel();
+            convertionStatusDTO.conversionFileList().setModel(jListModel);
+            jListModel.setJList(convertionStatusDTO.conversionFileList());
+
+
             convertionStatusDTO.conversionFileListScrollPane().setVisible(bool);
             convertionStatusDTO.progressBarAndStatusPanel().setVisible(bool);
             convertionStatusDTO.progressBar().setVisible(bool);

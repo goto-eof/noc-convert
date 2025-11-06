@@ -161,7 +161,7 @@ class PerformantCellRenderer extends JPanel implements ListCellRenderer<Conversi
 
 
         stringBuffer.setLength(0);
-        stringBuffer.append(currentItemDTO.getIndex());
+        stringBuffer.append(index);
         stringBuffer.append(") ");
         stringBuffer.append(currentItemDTO.getFileName());
         fileNameLabel.setText(stringBuffer.toString());
