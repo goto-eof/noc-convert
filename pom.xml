@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.andreidodu</groupId>
     <artifactId>noc-convert</artifactId>
-    <version>2.0.97</version>
+    <version>2.0.99</version>
     <name>Archetype - noc-convert</name>
     <url>http://maven.apache.org</url>
 
@@ -188,8 +188,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.14.1</version>
                 <configuration>
-                    <source>25</source>
-                    <target>25</target>
+                    <source>21</source>
+                    <target>21</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
