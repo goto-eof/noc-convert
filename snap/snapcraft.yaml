@@ -1,5 +1,5 @@
 name: noc-convert
-version: '2.0.87'
+version: '2.0.88'
 summary: Fast, no-cloud bulk image converter.
 description: |
   Bulk Image Converter (NoCloud). The easy way to batch convert all your images.
@@ -45,8 +45,8 @@ parts:
     plugin: maven
     source: .
     build-packages:
-      - openjdk-21-jdk
+      - openjdk-25-jdk
       - maven
     stage-packages:
-      - openjdk-21-jre
+      - openjdk-25-jre
       - xdg-utils
