@@ -147,6 +147,9 @@ public class ConversionController {
 
 
     public void manualShutdownWithExit(boolean exit) {
+        if (conversionWorker == null && exit) {
+            exit(0);
+        }
 
         if (conversionWorker != null && !conversionWorker.isDone()) {
             log.info("Cancelling active conversion process.");

@@ -430,7 +430,7 @@ public class GUIOrchestrator extends JFrame {
             footerPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, headerBorderColor));
 
             conversionFileListScrollPane.setVisible(false);
-            conversionFileListScrollPane.add(conversionFileList, BorderLayout.CENTER);
+            conversionFileListScrollPane.add(conversionFileList);
             conversionFileListScrollPane.setViewportView(conversionFileList);
             conversionFileListScrollPane.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
         });
