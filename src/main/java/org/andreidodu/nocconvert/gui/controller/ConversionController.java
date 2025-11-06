@@ -166,7 +166,7 @@ public class ConversionController {
             Thread.ofVirtual().start(() -> deleteTemporaryFilesOnNewThread(tmpDirectoryList, tmpDirectory, exit));
         });
 
-        Thread.ofVirtual().start(() -> imageSearcherSwingWorker.shutdown());
+        Thread.ofVirtual().start(() -> Optional.ofNullable(imageSearcherSwingWorker).ifPresent(ImageSearcherSwingWorker::shutdown));
 
     }
 
