@@ -1,6 +1,10 @@
 package org.andreidodu.nocconvert.gui.util;
 
+import org.andreidodu.nocconvert.constants.ApplicationConfig;
+import org.andreidodu.nocconvert.gui.constants.Colors;
+
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -14,17 +18,22 @@ public class FPSDisplay extends JLabel implements ActionListener {
 
     private Timer autoRepaintTimer;
 
-    private final boolean active = false;
-
     public FPSDisplay() {
         super("FPS: --");
-        if (!active) {
+        if (!ApplicationConfig.DEV_MODE) {
             setVisible(false);
             return;
         }
         setForeground(Color.RED);
-        setFont(getFont().deriveFont(Font.BOLD, 12f));
+        setFont(getFont().deriveFont(Font.BOLD, 16f));
         setToolTipText("FPS");
+        setBackground(Color.BLACK);
+        setOpaque(true);
+        setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(2, 2, 2, 2, Colors.LIME),
+                new EmptyBorder(8, 8, 8, 8)
+        ));
+
 
         textUpdateTimer = new Timer(1000, this);
         textUpdateTimer.start();
@@ -38,7 +47,7 @@ public class FPSDisplay extends JLabel implements ActionListener {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        if (!active) {
+        if (!ApplicationConfig.DEV_MODE) {
             return;
         }
         frames++;
@@ -46,7 +55,7 @@ public class FPSDisplay extends JLabel implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (!active) {
+        if (!ApplicationConfig.DEV_MODE) {
             return;
         }
         long currentTime = System.nanoTime();
@@ -54,6 +63,16 @@ public class FPSDisplay extends JLabel implements ActionListener {
         double fps = frames / intervalSeconds;
 
         int displayFps = (int) Math.round(fps);
+
+        if (displayFps < 20) {
+            setForeground(Color.RED);
+        } else if (displayFps < 30) {
+            setForeground(Color.ORANGE);
+        } else if (displayFps < 50) {
+            setForeground(Colors.LIME);
+        } else if (displayFps < 70) {
+            setForeground(Color.GREEN);
+        }
 
         setText(String.format("FPS: %d", displayFps));
 

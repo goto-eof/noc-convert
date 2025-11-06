@@ -23,15 +23,10 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
     @Getter
     private final JButton button;
     @Getter
-    private JPanel onlyButtonsPanel;
+    private final JPanel onlyButtonsPanel;
 
     protected final static Shape westRounded = ShapeUtil.getRoundedWestPath(84, 38, ARC_SIZE_BTN);
     protected final static Shape eastRounded = ShapeUtil.getRoundedEastPath(84, 38, ARC_SIZE_BTN);
-
-    public TextfieldButtonComponent() {
-        textField = new JTextField("");
-        button = createBrowseButton();
-    }
 
     public TextfieldButtonComponent(String initialText, String labelText) {
         setLayout(new BorderLayout());
@@ -81,9 +76,6 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
         onlyButtonsPanel.add(button, BorderLayout.EAST);
 
         buttonPanel.add(onlyButtonsPanel, BorderLayout.EAST);
-
-//        button.setVerticalAlignment(SwingConstants.CENTER);
-//        button.setHorizontalAlignment(SwingConstants.CENTER);
 
         JPanel old = new JPanel(new BorderLayout(0, 0));
         old.add(buttonPanel, BorderLayout.EAST);
@@ -142,13 +134,10 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
             @Override
             public void focusLost(java.awt.event.FocusEvent evt) {
                 setBorder(BorderFactory.createLineBorder(BORDER_DARK, 1, true));
-
             }
         });
 
         setEnabled(true);
-
-
     }
 
     private JButton createBrowseButton() {
@@ -201,32 +190,9 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
                 g2.dispose();
                 super.paintComponent(g);
             }
-
-//            @Override
-//            protected void paintBorder(Graphics g) {
-//                Graphics2D g2 = (Graphics2D) g.create();
-//                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-//
-//                g2.setColor(LIST_BG2);
-//                g2.setStroke(new BasicStroke(1));
-//                RoundRectangle2D.Float s = new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, ARC_SIZE, ARC_SIZE);
-//                g2.draw(eastRounded);
-//
-//                g2.dispose();
-//            }
-
-
         };
 
         return button;
-    }
-
-    public void setText(String text) {
-        textField.setText(text);
-    }
-
-    public String getText() {
-        return textField.getText();
     }
 
     @Override
@@ -248,17 +214,12 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-
         Graphics2D g2 = (Graphics2D) g.create();
-
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
         int width = getWidth();
         int height = getHeight();
-
         g2.setColor(LIST_BG);
         g2.fill(new RoundRectangle2D.Float(0, 0, width, height, ARC_SIZE, ARC_SIZE));
-
         g2.dispose();
     }
 
@@ -266,13 +227,9 @@ public class TextfieldButtonComponent extends JPanel implements Colors {
     protected void paintBorder(Graphics g) {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
         g2.setColor(LIST_BG2);
         g2.setStroke(new BasicStroke(1));
-        g2.draw(new RoundRectangle2D.Float(
-                0, 0, getWidth() - 1, getHeight() - 1, ARC_SIZE, ARC_SIZE
-        ));
-
+        g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, ARC_SIZE, ARC_SIZE));
         g2.dispose();
     }
 

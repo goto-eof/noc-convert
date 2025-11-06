@@ -10,16 +10,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class TextfieldDoubleButtonComponent extends TextfieldButtonComponent implements Colors {
-    private static final float ARC_SIZE_BTN = 10;
 
     @Getter
     private final JButton secondaryButton;
-
-
-    public TextfieldDoubleButtonComponent() {
-        super();
-        secondaryButton = createBrowseButton("Open");
-    }
 
     public TextfieldDoubleButtonComponent(String initialText, String labelText, String buttonText) {
         super(initialText, labelText);
