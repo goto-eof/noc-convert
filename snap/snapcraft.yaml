@@ -1,11 +1,9 @@
 name: noc-convert
-version: '2.0.96'
+version: '2.0.97'
 summary: Fast, no-cloud bulk image converter.
 description: |
   Bulk Image Converter (NoCloud). The easy way to batch convert all your images.
-base: core26
-build-base: devel
-grade: devel
+base: core24
 confinement: strict
 icon: snap/gui/icon.png
 title: NoCloud Bulk Image Converter
@@ -19,7 +17,7 @@ license: CC-BY-NC-4.0
 apps:
   noc-convert:
     environment:
-    # extensions: [ gnome ]
+    extensions: [ gnome ]
     command: executor
     plugs:
       - browser-support
@@ -29,13 +27,13 @@ apps:
       - x11
       - desktop
       - desktop-legacy
-platforms:
-  amd64:
-    build-on: [ amd64 ]
-    build-for: [ amd64 ]
-  arm64:
-    build-on: [ arm64 ]
-    build-for: [ arm64 ]
+#platforms:
+#  amd64:
+#    build-on: [ amd64 ]
+#    build-for: [ amd64 ]
+#  arm64:
+#    build-on: [ arm64 ]
+#    build-for: [ arm64 ]
 parts:
   wrapper:
     plugin: dump
@@ -50,20 +48,3 @@ parts:
     stage-packages:
       - openjdk-25-jre
       - xdg-utils
-#    override-prime: |
-#      snapcraftctl prime
-#
-#      rm -f $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/jaxp-strict.properties.template
-#      if [ -f "/etc/java-25-openjdk/jaxp-strict.properties.template" ]; then
-#          cp /etc/java-25-openjdk/jaxp-strict.properties.template $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/jaxp-strict.properties.template
-#      fi
-#
-#      rm -f $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/security/java.policy
-#      if [ -f "/etc/java-25-openjdk/security/java.policy" ]; then
-#          cp /etc/java-25-openjdk/security/java.policy $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/security/java.policy
-#      fi
-#
-#      rm -f $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/lib/security/default.policy
-#      if [ -f "/etc/java-25-openjdk/security/default.policy" ]; then
-#          cp /etc/java-25-openjdk/security/default.policy lint-snap-v2_external_symlinks $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/lib/security/default.policy
-#      fi
