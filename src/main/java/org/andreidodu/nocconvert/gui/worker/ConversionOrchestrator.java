@@ -15,7 +15,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -23,7 +22,6 @@ import java.util.concurrent.*;
 
 import static org.andreidodu.nocconvert.util.OperationUtil.retryable;
 import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
-import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
@@ -45,12 +43,13 @@ public class ConversionOrchestrator {
     private Path tmpParentDirPath;
     @Getter
     private final ConcurrentLinkedQueue<Path> filesQueue = new ConcurrentLinkedQueue<>();
+    private final String targetExtension;
 
     public ConversionOrchestrator(ConversionOrchestratorInputDTO conversionOrchestratorInputDTO) {
         this.conversionOrchestratorInputDTO = conversionOrchestratorInputDTO;
+        targetExtension = conversionOrchestratorInputDTO.conversionItemDTOList().stream().findFirst().orElseThrow().getTargetExtension();
 
         virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
-
         platformThreadsPermits = permits;
         platformExecutorService = Executors.newFixedThreadPool(platformThreadsPermits);
 
@@ -191,32 +190,33 @@ public class ConversionOrchestrator {
     }
 
     private void renameFiles() {
-        Semaphore semaphore = new Semaphore(RENAME_SEMAPHORE_SIZE);
+        renameFilesOnNewThread();
+        deleteTmpDirectoryOnNewThread();
+    }
+
+    private void renameFilesOnNewThread() {
+        filesQueue.forEach(filePath -> {
+            if (filePath.toFile().exists()) {
+                FileUtil.renameFile(filePath, targetExtension);
+            }
+        });
+    }
+
+    private void deleteTmpDirectoryOnNewThread() {
         if (!ApplicationConfig.DEV_MODE && tmpParentDirPath != null) {
-            Thread.ofVirtual().start(() -> retryable(semaphore, tmpDirPath, FileUtil::deleteDirectoryIfExists));
+            Thread.ofVirtual().start(() -> {
+                sleep(1000);
+                retryable(null, tmpDirPath, FileUtil::deleteDirectoryIfExists);
+            });
         }
-        filesQueue.forEach(filePath -> Thread.ofVirtual().start(() -> retryable(semaphore, filePath, this::renameFile)));
     }
 
-    private boolean renameFile(Path file) {
-        Path cleanFileName = FileUtil.getCleanFileNameWithoutExtension(file);
-        String backupCleanFileName = cleanFileName.getFileName().toString();
-        int i = 1;
-        while (Files.exists(cleanFileName)) {
-            cleanFileName = calculateNewName(cleanFileName, i, backupCleanFileName);
-            i++;
-        }
+    private static void sleep(long time) {
         try {
-            Files.move(file, cleanFileName, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            log.error(getRootCauseMessage(e), e);
-            return false;
+            Thread.sleep(time);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
-        return true;
-    }
-
-    private static Path calculateNewName(Path cleanFilename, int i, String cleanedFilename) {
-        return Path.of(cleanFilename.getParent().toString(), "duplicate-" + i + "-of-" + cleanedFilename);
     }
 
     public void onAllTasksCompleteEnableComponents() {

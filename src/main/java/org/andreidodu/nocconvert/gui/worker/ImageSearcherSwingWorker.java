@@ -59,9 +59,7 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<File>, Imag
                 .stream()
                 .map(format -> FormatExtensionMapper.getExtension(format.getFormat().toLowerCase()))
                 .toList());
-        if (list.stream().anyMatch(item -> item.equalsIgnoreCase("jpg"))) {
-            list.add(FormatExtensionMapper.getExtension("jpeg"));
-        }
+        list.add("jpeg");
 
         list = list.stream().map(String::toLowerCase).distinct().toList();
 

@@ -2,6 +2,7 @@ package org.andreidodu.nocconvert.task;
 
 import org.andreidodu.nocconvert.exception.SearchManuallyAbortedException;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
+import org.andreidodu.nocconvert.util.ImageUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -10,11 +11,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -25,6 +24,7 @@ public class PictureSearcher {
 
     public Collection<File> search(Path directory, FilesInDirectoryListener listener, List<String> allowedExtensions) throws IOException {
 
+        // here we are checking if we have the access to the root directory
         try (var stream = Files.newDirectoryStream(directory)) {
             stream.iterator().next();
         }
@@ -46,9 +46,22 @@ public class PictureSearcher {
                 if (file.isDirectory()) {
                     return false;
                 }
-                String name = file.getName().toLowerCase();
-                return allowedExtensions.stream()
-                        .anyMatch(ext -> name.toLowerCase().endsWith("." + ext.toLowerCase()));
+                // String name = file.getName().toLowerCase();
+                boolean accept = hasValidImageHeaders(file); // slower, but it finds more images and avoids to process not valid images
+                if (accept) {
+                    listener.onFileFound(file.toPath());
+                }
+                return accept;
+                // we can use also search by extension, but we will not find all supported images -> some images could not have the extension
+                //allowedExtensions.stream().anyMatch(ext -> name.toLowerCase().endsWith("." + ext.toLowerCase())) && hasValidImageHeaders(file) ||
+            }
+
+            private boolean hasValidImageHeaders(File file) {
+                try {
+                    return ImageUtil.getImageHeaders(file.toPath()).isHeaderFound();
+                } catch (Exception e) {
+                    return false;
+                }
             }
 
             @Override
@@ -56,9 +69,11 @@ public class PictureSearcher {
                 if (cancelled.get()) {
                     throw new SearchManuallyAbortedException("operation aborted");
                 }
-                boolean accept = allowedExtensions.stream()
-                        .anyMatch(ext -> s.toLowerCase().endsWith("." + ext.toLowerCase()));
-                listener.onFileFound(file.toPath());
+                boolean accept = hasValidImageHeaders(file);
+                // accept = allowedExtensions.stream().anyMatch(ext -> s.toLowerCase().endsWith("." + ext.toLowerCase())) && hasValidImageHeaders(file)
+                if (accept) {
+                    listener.onFileFound(file.toPath());
+                }
                 return accept;
             }
 

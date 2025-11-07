@@ -45,6 +45,7 @@ public class SingleImageConverter {
 
     private final static Object IMAGE_IO_LOCK = new Object();
     private NotificationLevel notificationLevel = NotificationLevel.MEDIUM;
+    private final static Object RENAME_LOCK = new Object();
 
     public SingleImageConverter(ExecutorService platformExecutorService) {
         this.platformExecutorService = platformExecutorService;
@@ -68,7 +69,6 @@ public class SingleImageConverter {
         Path tmpOutputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.tmpPath(), convertImageInputDTO.targetExtension(), true);
 
         try {
-
             List<String> validInputFormatListInLowerCase;
             ImageHeaderDTO sourceFileHeaders;
             synchronized (IMAGE_IO_LOCK) {
@@ -76,11 +76,15 @@ public class SingleImageConverter {
                 validInputFormatListInLowerCase = Arrays.stream(ImageIO.getReaderFormatNames()).toList();
             }
             String sourceFileFormat = sourceFileHeaders.format();
-            validateInputImage(convertImageInputDTO.sourceFile(), sourceFileFormat, validInputFormatListInLowerCase, convertImageInputDTO.fail());
+            validateInputImage(convertImageInputDTO.sourceFile(), sourceFileFormat, validInputFormatListInLowerCase);
 
             if (sourceFileHeaders.format().equalsIgnoreCase(convertImageInputDTO.targetExtension())) {
                 log.info("No need to convert image {} from {} to {}. I will just copy it.", convertImageInputDTO.sourceFile(), sourceFileHeaders.format(), convertImageInputDTO.targetExtension());
                 Path outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
+
+                if (outputFile == null) {
+                    throw new RuntimeException("unable to copy the file");
+                }
                 convertImageInputDTO.addToFileQueue().accept(outputFile);
                 Files.copy(sourceFile, outputFile, StandardCopyOption.REPLACE_EXISTING);
                 convertImageInputDTO.pass().run();
@@ -113,10 +117,11 @@ public class SingleImageConverter {
             interruptIfNecessary();
 
             writeImageOuter(outputFile, convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image, convertImageInputDTO.addToFileQueue());
+            convertImageInputDTO.pass().run();
         } catch (ConversionManualAbortedException e) {
             throw e;
-        } catch (Exception e) {
-            convertImageInputDTO.fail().accept(e);
+        } catch (Throwable e) {
+            convertImageInputDTO.fail().accept(new RuntimeException(getRootCauseMessage(e), e));
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }
@@ -130,7 +135,7 @@ public class SingleImageConverter {
 
     private static Path calculateOutputFile(Path sourceFile, Path destinationFile, String newFileFormat, boolean isTemporary) {
         if (isTemporary) {
-            newFileFormat = newFileFormat.toLowerCase() + ".tmp";
+            newFileFormat = "." + newFileFormat.toLowerCase() + ".tmp";
         }
 
         String fileName;
@@ -140,8 +145,7 @@ public class SingleImageConverter {
             outputFilePath = destinationFile.resolve(renameFileExtension(fileName, newFileFormat));
         } while (outputFilePath.toFile().exists());
 
-        String outputFileString = outputFilePath.toString();
-        return Path.of(outputFileString);
+        return outputFilePath;
     }
 
     private BufferedImage readImage(ImageInputStream imageInputStream, Iterator<ImageReader> readers, TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> updateProgressFloatValue) throws IOException {
@@ -178,7 +182,7 @@ public class SingleImageConverter {
     private void writeImageOuter(Path outputFile, ConvertImageInputDTO convertImageInputDTO, Path tmpOutputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image, Consumer<Path> addToFileDeleteQueue) throws Exception {
         try {
             writeImageInner(convertImageInputDTO.targetExtension(), convertImageInputDTO.onProgress(), tmpOutputFile, totalReadPercentageDTO, image);
-            validateFileCompletionWithRetry(tmpOutputFile, outputFile, convertImageInputDTO.pass(), convertImageInputDTO.fail(), addToFileDeleteQueue);
+            validateFileCompletionWithRetry(tmpOutputFile, outputFile);
         } catch (ConversionManualAbortedException e) {
             throw e;
         } catch (Throwable e) {
@@ -186,50 +190,46 @@ public class SingleImageConverter {
         }
     }
 
-    private void validateFileCompletionWithRetry(Path tmpOutputFile, Path outputFile, Runnable pass, Consumer<Exception> fail, Consumer<Path> addToFileDeleteQueue) throws Exception {
+    private void validateFileCompletionWithRetry(Path tmpOutputFile, Path outputFile) throws Exception {
         int i = VALIDATION_RETRY_TIMES;
         while (i > 0) {
             try {
-                validateFileCompletion(tmpOutputFile, outputFile, pass);
+                validateFileCompletion(tmpOutputFile, outputFile);
                 return;
             } catch (Exception e) {
                 log.debug(getRootCauseMessage(e), e);
                 if (i == 1) {
-                    moveFailedImageToTmp(tmpOutputFile, outputFile, fail, e);
-                    return;
+                    moveFailedImageToTmp(tmpOutputFile, outputFile);
+                    throw new RuntimeException(getRootCauseMessage(e), e);
                 }
             }
-            validationSleep(fail);
+            validationSleep();
             i--;
         }
     }
 
-    private static void moveFailedImageToTmp(Path tmpOutputFile, Path outputFile, Consumer<Exception> fail, Exception e) {
+    private static void moveFailedImageToTmp(Path tmpOutputFile, Path outputFile) {
         try {
             Files.move(outputFile, tmpOutputFile, StandardCopyOption.ATOMIC_MOVE);
-            fail.accept(new RuntimeException(getRootCauseMessage(e), e));
         } catch (IOException ex) {
-            fail.accept(new RuntimeException(getRootCauseMessage(e), ex));
             throw new RuntimeException(ex);
         }
     }
 
-    private static void validateFileCompletion(Path tmpOutputFile, Path outputFile, Runnable pass) throws IOException {
+    private static void validateFileCompletion(Path tmpOutputFile, Path outputFile) throws IOException {
         try {
             Files.move(tmpOutputFile, outputFile, StandardCopyOption.ATOMIC_MOVE);
             ImageUtil.getImageHeaders(outputFile);
-            pass.run();
         } catch (NoSuchFileException ex) {
             log.warn("file not found: {}", ex.getMessage());
         }
 
     }
 
-    private static void validationSleep(Consumer<Exception> fail) {
+    private static void validationSleep() {
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {
-            fail.accept(new RuntimeException(getRootCauseMessage(e), e));
             log.error(getRootCauseMessage(e), e);
             throw new RuntimeException(e);
         }
@@ -279,13 +279,11 @@ public class SingleImageConverter {
         }
     }
 
-    private static void validateInputImage(Path sourceFile, String sourceFileFormat, List<String> validInputFormatListInLowerCase, Consumer<Exception> fail) {
-        if (sourceFileFormat != null && !validInputFormatListInLowerCase.contains(sourceFileFormat.toLowerCase())) {
+    private static void validateInputImage(Path sourceFile, String sourceFileFormat, List<String> validInputFormatListInLowerCase) {
+        if (sourceFileFormat == null || !validInputFormatListInLowerCase.contains(sourceFileFormat.toLowerCase())) {
             String message = "invalid file format even if the extension is correct: " + sourceFile;
             log.warn(message);
-            InvalidFileFormatException e = new InvalidFileFormatException(message);
-            fail.accept(e);
-            throw e;
+            throw new InvalidFileFormatException(message);
         }
     }
 
@@ -422,7 +420,7 @@ public class SingleImageConverter {
                     this.exception = new ConversionManualAbortedException("Conversion aborted by thread interruption.");
                     return true;
                 }
-                return false;
+                return Thread.currentThread().isInterrupted();
             }
 
             @Override

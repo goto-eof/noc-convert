@@ -9,6 +9,7 @@ import java.util.List;
 
 public class PerformantListModel extends AbstractListModel<ConversionItemDTO> {
 
+    public static final int MAX_NUM_ELEMENTS = 10;
     private final List<ConversionItemDTO> data;
     private JList<ConversionItemDTO> conversionFileList;
 
@@ -44,7 +45,7 @@ public class PerformantListModel extends AbstractListModel<ConversionItemDTO> {
 
     public void addAll(List<ConversionItemDTO> chunkList) {
         data.addAll(chunkList);
-        fireIntervalAdded(this, 0, 14);
+        fireIntervalAdded(this, 0, MAX_NUM_ELEMENTS);
     }
 
     public void updateElements(List<ConversionItemDTO> list) {
@@ -62,7 +63,7 @@ public class PerformantListModel extends AbstractListModel<ConversionItemDTO> {
             if (maxIndex < conversionFileList.getFirstVisibleIndex() || minIndex > conversionFileList.getLastVisibleIndex()) {
                 return;
             }
-            fireContentsChanged(this, 0, 14);
+            fireContentsChanged(this, 0, MAX_NUM_ELEMENTS);
         }
     }
 

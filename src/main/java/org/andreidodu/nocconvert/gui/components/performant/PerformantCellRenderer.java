@@ -29,7 +29,7 @@ class PerformantCellRenderer extends JPanel implements ListCellRenderer<Conversi
 
 
     @Getter
-    private final int rowHeight = 70;
+    private final int rowHeight = 100;
 
     public PerformantCellRenderer() {
         setLayout(new BorderLayout());

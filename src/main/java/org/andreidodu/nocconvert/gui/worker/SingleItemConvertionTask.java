@@ -105,7 +105,7 @@ public class SingleItemConvertionTask implements Runnable {
     }
 
     private void updateAsCancelled() {
-        conversionItemDTO.setStatus(ConversionStatus.FAILED);
+        conversionItemDTO.setStatus(ConversionStatus.CANCELED);
         conversionItemDTO.setProgressPercentage(100f);
         conversionItemDTO.setErrorMessage("cancelled");
         convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);

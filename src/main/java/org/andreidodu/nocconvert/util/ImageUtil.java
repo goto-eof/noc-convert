@@ -275,6 +275,14 @@ public class ImageUtil {
         Objects.requireNonNull(newFileFormat);
 
         int lastIndexOf = oldFileName.lastIndexOf(".");
+        if (lastIndexOf == -1) {
+            return oldFileName + "." + FormatExtensionMapper.getExtension(newFileFormat);
+        }
+
+        if (oldFileName.chars().asDoubleStream().filter(c -> c == '.').count() == 1) {
+            return oldFileName + "." + FormatExtensionMapper.getExtension(newFileFormat);
+        }
+
         return oldFileName.substring(0, lastIndexOf) + "." + FormatExtensionMapper.getExtension(newFileFormat);
     }
 

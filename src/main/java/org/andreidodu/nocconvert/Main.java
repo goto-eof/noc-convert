@@ -13,6 +13,10 @@ public class Main {
 
     public static void main(String[] args) {
         log.info("Application is starting");
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("linux") || os.contains("unix")) {
+            System.setProperty("awt.toolkit.name", "sun.awt.image.GtkFactory");
+        }
 
         ImageIO.scanForPlugins();
 
