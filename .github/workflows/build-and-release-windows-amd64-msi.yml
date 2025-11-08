@@ -66,7 +66,7 @@ jobs:
       - name: Zip MSI file
         shell: pwsh
         run: |
-          $SourcePath = "executable\NoCloud Bulk Image Converter-$env:RELEASE_TAG.msi" 
+          $SourcePath = "executable\noc-convert-$env:RELEASE_TAG.msi" 
           $DestinationName = "${{ github.event.repository.name }}-Windows-${{ github.ref_name }}-amd64-Installer.zip"
           Compress-Archive -Path $SourcePath -DestinationPath $DestinationName
       - name: Release on Github

@@ -81,7 +81,7 @@ jobs:
 
       - name: Zip PKG file
         run: |
-          PKG_FILE="executable/NoCloud Bulk Image Converter-${RELEASE_TAG}.pkg"
+          PKG_FILE="executable/noc-convert-${RELEASE_TAG}.pkg"
           ZIP_NAME="${{ github.event.repository.name }}-MacOS-${{ github.ref_name }}-amd64-Installer.zip"
           zip -j "$ZIP_NAME" "$PKG_FILE"
 
