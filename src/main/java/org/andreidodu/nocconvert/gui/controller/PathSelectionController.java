@@ -9,7 +9,7 @@ import org.andreidodu.nocconvert.service.FileSystemService;
 import org.andreidodu.nocconvert.service.ValidationService;
 import org.andreidodu.nocconvert.service.impl.FileSystemServiceImpl;
 import org.andreidodu.nocconvert.service.impl.ValidationServiceImpl;
-import org.andreidodu.nocconvert.util.FileSystemSupportGuiUtil;
+import org.andreidodu.nocconvert.helper.FileSystemSupportGuiUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

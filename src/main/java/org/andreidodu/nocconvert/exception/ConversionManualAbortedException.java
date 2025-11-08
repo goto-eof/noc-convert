@@ -1,15 +1,15 @@
 package org.andreidodu.nocconvert.exception;
 
-public class ConversionManualAbortedException extends RuntimeException {
+public class ConversionManualAbortedException extends ManualAbortedException {
     public ConversionManualAbortedException() {
-        super("", null, false, false);
+        super();
     }
 
     public ConversionManualAbortedException(String message) {
-        super(message, null, false, false);
+        super(message);
     }
 
     public ConversionManualAbortedException(String message, Throwable cause) {
-        super(message, null, false, false);
+        super(message, null);
     }
 }

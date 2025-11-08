@@ -14,16 +14,13 @@ public class FPSDisplay extends JLabel implements ActionListener {
     private long lastTime = System.nanoTime();
     private int frames = 0;
 
-    private Timer textUpdateTimer;
+    private final Timer textUpdateTimer;
 
-    private Timer autoRepaintTimer;
+    private final Timer autoRepaintTimer;
 
     public FPSDisplay() {
         super("FPS: --");
-        if (!ApplicationConfig.DEV_MODE) {
-            setVisible(false);
-            return;
-        }
+        setVisible(ApplicationConfig.DEV_MODE);
         setForeground(Color.RED);
         setFont(getFont().deriveFont(Font.BOLD, 16f));
         setToolTipText("FPS");
@@ -46,15 +43,17 @@ public class FPSDisplay extends JLabel implements ActionListener {
 
     @Override
     protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
+        setVisible(ApplicationConfig.DEV_MODE);
         if (!ApplicationConfig.DEV_MODE) {
             return;
         }
+        super.paintComponent(g);
         frames++;
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        setVisible(ApplicationConfig.DEV_MODE);
         if (!ApplicationConfig.DEV_MODE) {
             return;
         }

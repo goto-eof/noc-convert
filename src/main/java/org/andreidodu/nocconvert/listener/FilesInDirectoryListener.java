@@ -8,6 +8,12 @@ public interface FilesInDirectoryListener {
 
     void onFileFound(Path filename);
 
+    void onFileAnalyzationStart(int totalNumberFiles);
+
+    void onFileAnalyzationProgress();
+
+    void onFileAnalyzation(Path filename);
+
     void onUpdateTotalFile(Long numberOfDirectories);
 
     void onSearchDone(List<Path> result);

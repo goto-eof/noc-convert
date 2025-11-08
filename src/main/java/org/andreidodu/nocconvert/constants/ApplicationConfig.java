@@ -1,7 +1,11 @@
 package org.andreidodu.nocconvert.constants;
 
-public interface ApplicationConfig {
+public class ApplicationConfig {
 
-    boolean DEV_MODE = Boolean.parseBoolean(System.getProperty("dev.mode", "false"));
+    public static boolean DEV_MODE = Boolean.parseBoolean(System.getProperty("dev.mode", "false"));
+
+    public static void reloadDevMode() {
+        ApplicationConfig.DEV_MODE = Boolean.parseBoolean(System.getProperty("dev.mode", "false"));
+    }
 
 }

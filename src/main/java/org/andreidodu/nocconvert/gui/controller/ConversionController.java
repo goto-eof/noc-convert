@@ -10,9 +10,9 @@ import org.andreidodu.nocconvert.gui.worker.ConversionWorker;
 import org.andreidodu.nocconvert.gui.worker.ImageSearcherSwingWorker;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
-import org.andreidodu.nocconvert.util.FileUtil;
-import org.andreidodu.nocconvert.util.ImageConverterUtil;
-import org.andreidodu.nocconvert.util.check.FormatCheckUtil;
+import org.andreidodu.nocconvert.helper.FileUtil;
+import org.andreidodu.nocconvert.helper.ImageConverterUtil;
+import org.andreidodu.nocconvert.helper.check.FormatCheckUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,10 +24,10 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.System.exit;
-import static org.andreidodu.nocconvert.util.CpuUtil.calculateCpuLoadPercentage;
-import static org.andreidodu.nocconvert.util.OperationUtil.retryable;
-import static org.andreidodu.nocconvert.util.PathNameUtil.normalizePath;
-import static org.andreidodu.nocconvert.util.PathNameUtil.normalizePathAdvanced;
+import static org.andreidodu.nocconvert.helper.CpuUtil.calculateCpuLoadPercentage;
+import static org.andreidodu.nocconvert.helper.OperationUtil.retryable;
+import static org.andreidodu.nocconvert.helper.PathNameUtil.normalizePath;
+import static org.andreidodu.nocconvert.helper.PathNameUtil.normalizePathAdvanced;
 
 public class ConversionController {
     private static final Logger log = LogManager.getLogger(ConversionController.class);
@@ -58,7 +58,7 @@ public class ConversionController {
         initializeConvertComponent();
     }
 
-    private void initializeConvertComponent() {
+    public void initializeConvertComponent() {
         populateConvertComponentDropdownMenu();
         addConvertComponentEventListener();
     }
@@ -76,7 +76,7 @@ public class ConversionController {
     }
 
 
-    private void addConvertComponentEventListener() {
+    public void addConvertComponentEventListener() {
         conversionDTO.convertComponent().getMainActionButton().addActionListener(e -> {
 
             if (SplitButtonComponent.Action.START.equals(conversionDTO.convertComponent().getAction())) {
@@ -94,6 +94,22 @@ public class ConversionController {
                 manualShutdownWithExit(false);
             }
         });
+    }
+
+    public ConversionWorker getWorker() {
+        return this.conversionWorker;
+    }
+
+    public int getInternalSuccessCount() {
+        return this.passes.get();
+    }
+
+    public int getInternalFailuresCount() {
+        return this.failures.get();
+    }
+
+    public int getInternalTotalCount() {
+        return this.totalFound.get();
     }
 
 
@@ -115,6 +131,26 @@ public class ConversionController {
         public void onFileFound(Path filename) {
             SwingUtilities.invokeLater(() -> {
                 applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" + "<span style=\"color: #007bff;\">" + normalizePathAdvanced(filename.getParent().toString(), 60) + " &#8658; " + normalizePath(filename.getFileName().toString(), 30) + "</span></html>");
+            });
+        }
+
+        @Override
+        public void onFileAnalyzationStart(int totalNumberFiles) {
+            conversionDTO.guiOrchestrator().enableProgressBarPanelFromEDT();
+            conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(totalNumberFiles);
+            secondaryApplicationStatusLabel.setText("Validating search results...");
+        }
+
+        @Override
+        public void onFileAnalyzationProgress() {
+            conversionDTO.guiOrchestrator().incrementMainProgressBarProgress();
+        }
+
+        @Override
+        public void onFileAnalyzation(Path filename) {
+            SwingUtilities.invokeLater(() -> {
+                applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Format Identification and Image Header Validation...</center>" +
+                        "<span style=\"color: #007bff;\">" + normalizePathAdvanced(filename.getParent().toString(), 60) + " &#8658; " + normalizePath(filename.getFileName().toString(), 30) + "</span></html>");
             });
         }
 
@@ -164,9 +200,7 @@ public class ConversionController {
 
             if (imageSearcherSwingWorker != null && !imageSearcherSwingWorker.isDone()) {
                 log.debug("Cancelling active search process.");
-                callableList.add(() -> {
-                    return imageSearcherSwingWorker.shutdown();
-                });
+                callableList.add(() -> imageSearcherSwingWorker.shutdown());
             }
 
             Optional.ofNullable(conversionWorker).ifPresent(conversionWorker -> {
@@ -276,6 +310,9 @@ public class ConversionController {
         conversionWorker = new ConversionWorker(conversionWorkerInputDTO);
         conversionWorker.execute();
         conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(list.size());
+        conversionDTO.guiOrchestrator().resetProgressBarPanelFromEDT();
+        conversionDTO.guiOrchestrator().enableProgressBarPanelFromEDT();
+
     }
 
     private ConversionWorkerInputDTO buildInput(List<ConversionItemDTO> list) {
@@ -349,7 +386,7 @@ public class ConversionController {
         return days + "d";
     }
 
-    private void onAllItemsCompleted() {
+    public void onAllItemsCompleted() {
         conversionDTO.guiOrchestrator().onConversionDone();
         SwingUtilities.invokeLater(() -> {
             conversionDTO.guiOrchestrator().setEnableSearchStepComponents(true);

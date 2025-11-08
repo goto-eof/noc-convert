@@ -1,8 +1,10 @@
-package org.andreidodu.nocconvert.util;
+package org.andreidodu.nocconvert.helper;
 
 import org.andreidodu.nocconvert.dto.ImageHeaderDTO;
+import org.andreidodu.nocconvert.exception.ManualAbortedException;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
+import org.andreidodu.nocconvert.task.SingleImageConverter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -11,7 +13,6 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
@@ -34,12 +35,12 @@ public class ImageUtil {
 
     public static BufferedImage normalizeAsIco(BufferedImage bufferedImage) {
         Objects.requireNonNull(bufferedImage);
-        return normalizeIconFormatCommon(TYPE_4BYTE_ABGR, bufferedImage, ICO_MAX_SIZE, false, true);
+        return normalizeIconFormatCommon(ICO_FORMAT, TYPE_4BYTE_ABGR, bufferedImage, ICO_MAX_SIZE, false);
     }
 
     public static BufferedImage normalizeAsIcns(BufferedImage bufferedImage) {
         Objects.requireNonNull(bufferedImage);
-        return normalizeIconFormatCommon(TYPE_INT_ARGB, bufferedImage, ICNS_MAX_SIZE, false, false);
+        return normalizeIconFormatCommon(ICNS_FORMAT, TYPE_INT_ARGB, bufferedImage, ICNS_MAX_SIZE, false);
     }
 
     public static BufferedImage convertToOpaque(BufferedImage originalImage, String newFormat) {
@@ -51,18 +52,17 @@ public class ImageUtil {
                 WBMP_FORMAT.equalsIgnoreCase(newFormat) ? BufferedImage.TYPE_BYTE_BINARY : BufferedImage.TYPE_INT_RGB
         );
 
-//        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-//        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-//        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-        java.awt.Graphics2D g2d = newImage.createGraphics();
-        g2d.drawImage(originalImage, 0, 0, Color.BLACK, null);
-        g2d.dispose();
+        java.awt.Graphics2D g2 = newImage.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.drawImage(originalImage, 0, 0, Color.BLACK, null);
+        g2.dispose();
 
         return newImage;
     }
 
-    public static ImageHeaderDTO getImageHeaders(Path file) throws IOException {
+    public static ImageHeaderDTO getImageHeaders(Path file) {
         Objects.requireNonNull(file);
 
         try (ImageInputStream iis = ImageIO.createImageInputStream(file.toFile())) {
@@ -72,7 +72,14 @@ public class ImageUtil {
             }
 
             ImageReader reader = readers.next();
+            SingleImageConverter.ExtendedIIOReadProgressListener readerListener = getReaderListener();
+            reader.addIIOReadProgressListener(readerListener);
+
             reader.setInput(iis, true, true);
+
+            if (readerListener.getException() != null) {
+                throw readerListener.getException();
+            }
 
             int width = reader.getWidth(0);
             int height = reader.getHeight(0);
@@ -98,27 +105,133 @@ public class ImageUtil {
                     .height(height)
                     .format(format)
                     .build();
+        } catch (InterruptedException e) {
+            throw new ManualAbortedException(getRootCauseMessage(e), e);
         } catch (Exception e) {
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }
 
-    private static BufferedImage normalizeIconFormatCommon(int imageType, BufferedImage bufferedImage, int targetSize, boolean isOpaque, boolean isSwapChannels) {
+    private static SingleImageConverter.ExtendedIIOReadProgressListener getReaderListener() {
+        return new SingleImageConverter.ExtendedIIOReadProgressListener() {
+            private Exception exception;
 
-        if (bufferedImage.getWidth() == targetSize && bufferedImage.getHeight() == targetSize && bufferedImage.getType() == imageType) {
-            BufferedImage copy = new BufferedImage(targetSize, targetSize, imageType);
-            Graphics2D g = copy.createGraphics();
-            g.drawImage(bufferedImage, 0, 0, null);
-            g.dispose();
-            if (isSwapChannels) {
-                swapRBGChannels(copy);
+            public Exception getException() {
+                return exception;
             }
-            return copy;
+
+            @Override
+            public void sequenceStarted(ImageReader source, int minIndex) {
+                if (isThreadInterrupted()) {
+                    log.error("Operation aborted 5");
+                    this.exception = new InterruptedException("Conversion aborted by thread interruption.");
+                }
+            }
+
+            @Override
+            public void sequenceComplete(ImageReader source) {
+                if (isThreadInterrupted()) {
+                    log.error("Operation aborted 5");
+                    this.exception = new InterruptedException("Conversion aborted by thread interruption.");
+                }
+            }
+
+            @Override
+            public void imageStarted(ImageReader source, int imageIndex) {
+                if (isThreadInterrupted()) {
+                    log.error("Operation aborted 5");
+                    this.exception = new InterruptedException("Conversion aborted by thread interruption.");
+                }
+            }
+
+            @Override
+            public void imageProgress(ImageReader source, float percentageDone) {
+                if (isThreadInterrupted()) {
+                    log.error("Operation aborted 5");
+                    this.exception = new InterruptedException("Conversion aborted by thread interruption.");
+                }
+            }
+
+            private boolean isInterrupted() {
+                if (isThreadInterrupted()) {
+                    log.error("Operation aborted 5");
+                    this.exception = new InterruptedException("Conversion aborted by thread interruption.");
+                    return true;
+                }
+                return Thread.currentThread().isInterrupted();
+            }
+
+            private boolean isThreadInterrupted() {
+                return Thread.currentThread().isInterrupted() && exception == null;
+            }
+
+            @Override
+            public void imageComplete(ImageReader source) {
+                if (isThreadInterrupted()) {
+                    log.error("Operation aborted 5");
+                    this.exception = new InterruptedException("Conversion aborted by thread interruption.");
+                }
+            }
+
+            @Override
+            public void thumbnailStarted(ImageReader source, int imageIndex, int thumbnailIndex) {
+                if (isThreadInterrupted()) {
+                    log.error("Operation aborted 5");
+                    this.exception = new InterruptedException("Conversion aborted by thread interruption.");
+                }
+            }
+
+            @Override
+            public void thumbnailProgress(ImageReader source, float percentageDone) {
+                if (isThreadInterrupted()) {
+                    log.error("Operation aborted 5");
+                    this.exception = new InterruptedException("Conversion aborted by thread interruption.");
+                }
+            }
+
+            @Override
+            public void thumbnailComplete(ImageReader source) {
+                if (isThreadInterrupted()) {
+                    log.error("Operation aborted 5");
+                    this.exception = new InterruptedException("Conversion aborted by thread interruption.");
+                }
+            }
+
+            @Override
+            public void readAborted(ImageReader source) {
+                if (isThreadInterrupted()) {
+                    log.error("Operation aborted 5");
+                    Thread.currentThread().interrupt();
+                    this.exception = new InterruptedException("Conversion aborted by thread interruption.");
+                }
+            }
+        };
+    }
+
+
+    private static BufferedImage normalizeIconFormatCommon(String format, int imageType, BufferedImage bufferedImage, int targetSize, boolean isOpaque) {
+        int height = bufferedImage.getHeight();
+        int width = bufferedImage.getWidth();
+
+        if (ICO_FORMAT.equalsIgnoreCase(format) && width == height && width <= targetSize && bufferedImage.getType() == imageType) {
+            return bufferedImage;
         }
 
-        double scale = Math.min((double) targetSize / bufferedImage.getWidth(), (double) targetSize / bufferedImage.getHeight());
-        int scaledW = Math.max(1, (int) Math.round(bufferedImage.getWidth() * scale));
-        int scaledH = Math.max(1, (int) Math.round(bufferedImage.getHeight() * scale));
+        if (ICNS_FORMAT.equalsIgnoreCase(format) && width < ICNS_MAX_SIZE) {
+            List<Integer> validSizes = List.of(1024, 512, 256, 128, 64, 32, 16);
+            for (Integer size : validSizes) {
+                if (width > size) {
+                    targetSize = size;
+                    break;
+                }
+            }
+        }
+
+        log.debug("target size: {}", targetSize);
+
+        double scale = Math.min((double) targetSize / width, (double) targetSize / height);
+        int scaledW = Math.max(16, (int) Math.round(width * scale));
+        int scaledH = Math.max(16, (int) Math.round(height * scale));
 
         BufferedImage out = new BufferedImage(targetSize, targetSize, imageType);
         Graphics2D g2 = out.createGraphics();
@@ -126,9 +239,7 @@ public class ImageUtil {
         if (isOpaque) {
             g2.setColor(Color.black);
             g2.fillRect(0, 0, targetSize, targetSize);
-        }
-
-        if (!isOpaque) {
+        } else {
             g2.setComposite(AlphaComposite.Clear);
             g2.fillRect(0, 0, targetSize, targetSize);
             g2.setComposite(AlphaComposite.SrcOver);
@@ -137,10 +248,14 @@ public class ImageUtil {
         int x = (targetSize - scaledW) / 2;
         int y = (targetSize - scaledH) / 2;
 
-        g2.drawImage(bufferedImage, x, y, x + scaledW, y + scaledH, 0, 0, bufferedImage.getWidth(), bufferedImage.getHeight(), null);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        g2.drawImage(bufferedImage, x, y, x + scaledW, y + scaledH, 0, 0, width, height, null);
         g2.dispose();
 
-        if (isSwapChannels) {
+        if (ICO_FORMAT.equalsIgnoreCase(format)) {
             swapRBGChannels(out);
         }
         return out;
@@ -197,8 +312,8 @@ public class ImageUtil {
 
     private static boolean isNotCompatibleWithIcnsFormat(BufferedImage image) {
         Objects.requireNonNull(image);
-
-        return image.getWidth() != image.getHeight() || image.getWidth() > ICNS_MAX_SIZE;
+        List<Integer> validSizes = List.of(1024, 512, 256, 128, 64, 32, 16).reversed();
+        return !validSizes.contains(image.getWidth()) || !validSizes.contains(image.getHeight()) || image.getWidth() != image.getHeight();
     }
 
     public static BufferedImage preprocessImage(Path sourceFile, String newFileFormat, BufferedImage image, ExecutorService cpuPool) {
@@ -284,6 +399,51 @@ public class ImageUtil {
         }
 
         return oldFileName.substring(0, lastIndexOf) + "." + FormatExtensionMapper.getExtension(newFileFormat);
+    }
+
+    /**
+     * Necessary to avoid issues with a possibly corrupted ruster of the original image
+     */
+    public static BufferedImage safeDeepCopy(BufferedImage source) {
+        if (source == null) {
+            return null;
+        }
+
+        int targetType = BufferedImage.TYPE_INT_ARGB;
+
+        if (source.getType() == targetType) {
+            return source;
+        }
+
+        BufferedImage target = new BufferedImage(
+                source.getWidth(),
+                source.getHeight(),
+                targetType
+        );
+
+        Graphics2D g2d = target.createGraphics();
+
+        if (source.getTransparency() == java.awt.Transparency.OPAQUE) {
+            g2d.setColor(java.awt.Color.WHITE);
+            g2d.fillRect(0, 0, source.getWidth(), source.getHeight());
+        }
+
+        g2d.drawImage(source, 0, 0, null);
+        g2d.dispose();
+
+        return target;
+    }
+
+    public static BufferedImage safeDeepCopy2(BufferedImage source) {
+        if (source == null) {
+            return null;
+        }
+        java.awt.image.ColorModel cm = source.getColorModel();
+        boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
+
+        java.awt.image.WritableRaster raster = source.copyData(null);
+
+        return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
     }
 
 }

@@ -7,8 +7,8 @@ import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
 import org.andreidodu.nocconvert.enums.NotificationLevel;
-import org.andreidodu.nocconvert.util.FileUtil;
-import org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable;
+import org.andreidodu.nocconvert.helper.FileUtil;
+import org.andreidodu.nocconvert.helper.performance.AdaptiveSimpleGovernorRunnable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.*;
 
-import static org.andreidodu.nocconvert.util.OperationUtil.retryable;
-import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
+import static org.andreidodu.nocconvert.helper.OperationUtil.retryable;
+import static org.andreidodu.nocconvert.helper.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
 
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);

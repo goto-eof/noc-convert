@@ -18,7 +18,7 @@ import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
 import org.andreidodu.nocconvert.gui.util.FPSDisplay;
 import org.andreidodu.nocconvert.listener.AdaptiveTestListener;
-import org.andreidodu.nocconvert.util.performance.PerformanceUtil;
+import org.andreidodu.nocconvert.helper.performance.PerformanceUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,12 +26,13 @@ import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.text.StyleContext;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
+
+import static org.andreidodu.nocconvert.constants.ApplicationConfig.DEV_MODE;
 
 public class GUIOrchestrator extends JFrame {
     private static final Logger log = LogManager.getLogger(GUIOrchestrator.class);
@@ -79,7 +80,7 @@ public class GUIOrchestrator extends JFrame {
         JPopupMenu menu = new JPopupMenu("Main Menu");
         JMenuItem about = new JMenuItem("About");
         about.addActionListener((e) -> JOptionPane.showMessageDialog(null,
-                "NoCloud Bulk Image Converter\nv. 2.1.1\nby Andrei Dodu",
+                "NoCloud Bulk Image Converter\nv. 2.1.2\nby Andrei Dodu",
                 "About",
                 JOptionPane.INFORMATION_MESSAGE));
 
@@ -119,6 +120,28 @@ public class GUIOrchestrator extends JFrame {
         progressBar1.setStringPainted(true);
 
         PerformanceUtil.checkPThreadPerformance(buildAdaptiveListener(messageFull), this::shouldStressTestStop);
+
+        configureEnableDevModeKeys();
+    }
+
+    private void configureEnableDevModeKeys() {
+        KeyStroke saveKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_DOWN_MASK);
+        Action saveAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (DEV_MODE) {
+                    System.setProperty("dev.mode", "false");
+                } else {
+                    System.setProperty("dev.mode", "true");
+                }
+                ApplicationConfig.reloadDevMode();
+                log.debug("DEV_MODE: {}", DEV_MODE);
+            }
+        };
+        InputMap inputMap = this.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap actionMap = this.getRootPane().getActionMap();
+        inputMap.put(saveKeyStroke, "devModeActionMap");
+        actionMap.put("devModeActionMap", saveAction);
     }
 
     private boolean shouldStressTestStop() {
@@ -206,13 +229,13 @@ public class GUIOrchestrator extends JFrame {
                 .convertComponent(convertComponent)
                 .applicationStatusLabel(applicationStatusLabel)
                 .secondaryApplicationStatusLabel(secondaryApplicationStatusLabel)
-                .conversionFileList(conversionFileList)
+                .conversionFileJList(conversionFileList)
                 .build();
         return new ConversionController(conversionDTO);
     }
 
     private void initializeWindow() {
-        setTitle("NoCloud Bulk Image Converter " + (ApplicationConfig.DEV_MODE ? "(dev_mode)" : ""));
+        setTitle("NoCloud Bulk Image Converter " + (DEV_MODE ? "(dev_mode)" : ""));
         setContentPane(mainPanel);
         // setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         revalidate();
@@ -297,7 +320,7 @@ public class GUIOrchestrator extends JFrame {
         Font label1Font = this.$$$getFont$$$(null, Font.BOLD, 14, label1.getFont());
         if (label1Font != null) label1.setFont(label1Font);
         label1.setForeground(new Color(-8289660));
-        label1.setText("noc-convert v.2.1.1");
+        label1.setText("noc-convert v.2.1.2");
         panel5.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         Font label2Font = this.$$$getFont$$$(null, -1, 12, label2.getFont());
@@ -429,7 +452,7 @@ public class GUIOrchestrator extends JFrame {
             Color headerBorderColor = new Color(168, 172, 174, 255);
             headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, headerBorderColor));
 
-            //conversionFileList.setCellRenderer(new PerformantListItemRenderer());
+            //conversionFileJList.setCellRenderer(new PerformantListItemRenderer());
 
             footerPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, headerBorderColor));
 
@@ -482,11 +505,21 @@ public class GUIOrchestrator extends JFrame {
             secondaryApplicationStatusLabel.setText(messageShortProcessing);
         });
 
-        convertionStatusController.enableProgressBar(true);
+        convertionStatusController.enableJListAndProgressBar(true);
 
         Path destinationDirectory = pathSelectionController.getPathSelectionRawDTO().getDestinationDirectory();
         convertionStatusController.onSearchStepFinish(destinationDirectory, targetFormat, paths);
     }
+
+    public void enableProgressBarPanelFromEDT() {
+        convertionStatusController.enableProgressBarPanelFromEDT(true);
+    }
+
+
+    public void resetProgressBarPanelFromEDT() {
+        convertionStatusController.updateMainProgressBarProgress(0);
+    }
+
 
     public void onRenderingDone(List<ConversionItemDTO> list) {
         conversionController.startConversion(list);

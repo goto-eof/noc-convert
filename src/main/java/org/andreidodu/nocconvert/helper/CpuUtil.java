@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.util;
+package org.andreidodu.nocconvert.helper;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;

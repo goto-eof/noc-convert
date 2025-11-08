@@ -13,6 +13,6 @@ public record ConversionDTO(GUIOrchestrator guiOrchestrator,
                             SplitButtonComponent convertComponent,
                             JLabel applicationStatusLabel,
                             JLabel secondaryApplicationStatusLabel,
-                            JList<ConversionItemDTO> conversionFileList,
+                            JList<ConversionItemDTO> conversionFileJList,
                             ButtonComponent openDestinationDirectoryButton) {
 }

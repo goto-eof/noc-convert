@@ -1,15 +1,15 @@
 package org.andreidodu.nocconvert.exception;
 
-public class SearchManuallyAbortedException extends RuntimeException {
+public class SearchManuallyAbortedException extends ManualAbortedException {
     public SearchManuallyAbortedException() {
-        super("", null, false, false);
+        super();
     }
 
     public SearchManuallyAbortedException(String message) {
-        super(message, null, false, false);
+        super(message);
     }
 
     public SearchManuallyAbortedException(String message, Throwable cause) {
-        super(message, null, false, false);
+        super(message, cause);
     }
 }

@@ -2,7 +2,6 @@ package org.andreidodu.nocconvert.task;
 
 import org.andreidodu.nocconvert.exception.SearchManuallyAbortedException;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
-import org.andreidodu.nocconvert.util.ImageUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -14,67 +13,58 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PictureSearcher {
     private static final Logger log = LogManager.getLogger(PictureSearcher.class);
 
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
+    private long limiterCounter = 0;
+    private final static int LIMITER_INTERVAL = 200;
 
-    public Collection<File> search(Path directory, FilesInDirectoryListener listener, List<String> allowedExtensions) throws IOException {
+    public Collection<File> search(Path directory, FilesInDirectoryListener listener) throws IOException {
 
-        // here we are checking if we have the access to the root directory
+        // NOTE: here we are checking if we have the access to the root directory
+        // NOTE: if is negative, then it will throw an exception that will be caught by the caller
         try (var stream = Files.newDirectoryStream(directory)) {
             stream.iterator().next();
         }
 
-        return FileUtils.listFiles(directory.toFile(), getFileFilter(listener, allowedExtensions), TrueFileFilter.TRUE);
+        return FileUtils.listFiles(directory.toFile(), getFileFilter(listener), TrueFileFilter.TRUE);
     }
 
     public void cancel() {
         this.cancelled.set(true);
     }
 
-    private IOFileFilter getFileFilter(FilesInDirectoryListener listener, List<String> allowedExtensions) {
+    private IOFileFilter getFileFilter(FilesInDirectoryListener listener) {
         return new IOFileFilter() {
             @Override
             public boolean accept(File file) {
                 if (cancelled.get()) {
-                    throw new SearchManuallyAbortedException("operation aborted");
+                    throw new SearchManuallyAbortedException("manually aborted");
                 }
+
                 if (file.isDirectory()) {
                     return false;
                 }
-                // String name = file.getName().toLowerCase();
-                boolean accept = hasValidImageHeaders(file); // slower, but it finds more images and avoids to process not valid images
-                if (accept) {
+
+                if (limiterCounter++ % LIMITER_INTERVAL == 0) {
                     listener.onFileFound(file.toPath());
                 }
-                return accept;
-                // we can use also search by extension, but we will not find all supported images -> some images could not have the extension
-                //allowedExtensions.stream().anyMatch(ext -> name.toLowerCase().endsWith("." + ext.toLowerCase())) && hasValidImageHeaders(file) ||
-            }
 
-            private boolean hasValidImageHeaders(File file) {
-                try {
-                    return ImageUtil.getImageHeaders(file.toPath()).isHeaderFound();
-                } catch (Exception e) {
-                    return false;
-                }
+                return true;
             }
 
             @Override
             public boolean accept(File file, String s) {
                 if (cancelled.get()) {
-                    throw new SearchManuallyAbortedException("operation aborted");
+                    throw new SearchManuallyAbortedException("manually aborted");
                 }
-                boolean accept = hasValidImageHeaders(file);
-                // accept = allowedExtensions.stream().anyMatch(ext -> s.toLowerCase().endsWith("." + ext.toLowerCase())) && hasValidImageHeaders(file)
-                if (accept) {
+                if (limiterCounter++ % LIMITER_INTERVAL == 0) {
                     listener.onFileFound(file.toPath());
                 }
-                return accept;
+                return true;
             }
 
         };

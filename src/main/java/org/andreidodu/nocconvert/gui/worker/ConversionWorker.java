@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import java.util.List;
 
-public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
+public class ConversionWorker extends SwingWorker<List<ConversionItemDTO>, ConversionItemDTO> {
     private static final Logger log = LogManager.getLogger(ConversionWorker.class);
     @Getter
     private ConversionOrchestrator conversionOrchestrator;
@@ -21,7 +21,7 @@ public class ConversionWorker extends SwingWorker<Void, ConversionItemDTO> {
     }
 
     @Override
-    protected Void doInBackground() {
+    protected List<ConversionItemDTO> doInBackground() {
         ConversionOrchestratorInputDTO conversionOrchestratorInputDTO = buildInput();
         conversionOrchestrator = new ConversionOrchestrator(conversionOrchestratorInputDTO);
         conversionOrchestrator.startConversion();

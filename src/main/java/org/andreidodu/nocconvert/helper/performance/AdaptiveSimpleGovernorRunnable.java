@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.util.performance;
+package org.andreidodu.nocconvert.helper.performance;
 
 import lombok.Getter;
 import org.andreidodu.nocconvert.listener.AdaptiveTestListener;
@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
-import static org.andreidodu.nocconvert.util.CpuUtil.calculateCpuLoadPercentage;
+import static org.andreidodu.nocconvert.helper.CpuUtil.calculateCpuLoadPercentage;
 
 public class AdaptiveSimpleGovernorRunnable {
     private static final Logger log = LogManager.getLogger(AdaptiveSimpleGovernorRunnable.class);

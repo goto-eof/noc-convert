@@ -8,7 +8,7 @@ import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 import org.andreidodu.nocconvert.enums.NotificationLevel;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.exception.InvalidFileFormatException;
-import org.andreidodu.nocconvert.util.ImageUtil;
+import org.andreidodu.nocconvert.helper.ImageUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,15 +26,12 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import static org.andreidodu.nocconvert.util.ImageUtil.*;
+import static org.andreidodu.nocconvert.helper.ImageUtil.*;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class SingleImageConverter {
@@ -46,6 +43,7 @@ public class SingleImageConverter {
     private final static Object IMAGE_IO_LOCK = new Object();
     private NotificationLevel notificationLevel = NotificationLevel.MEDIUM;
     private final static Object RENAME_LOCK = new Object();
+    private ConvertImageInputDTO convertImageInputDTO;
 
     public SingleImageConverter(ExecutorService platformExecutorService) {
         this.platformExecutorService = platformExecutorService;
@@ -55,6 +53,7 @@ public class SingleImageConverter {
         if (canceled.get()) {
             throw new ConversionManualAbortedException();
         }
+        this.convertImageInputDTO = convertImageInputDTO;
 
         log.debug("Converting image {} from {} to {}", convertImageInputDTO.sourceFile().getFileName(), convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension());
 
@@ -112,6 +111,12 @@ public class SingleImageConverter {
 
             interruptIfNecessary();
 
+
+            image = safeDeepCopy(image);
+//            if (ICNS_FORMAT.equalsIgnoreCase(convertImageInputDTO.targetExtension())){
+//                image = safeDeepCopy2(image);
+//            }
+
             image = preprocessImage(convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension(), image, platformExecutorService);
 
             interruptIfNecessary();
@@ -125,7 +130,6 @@ public class SingleImageConverter {
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }
-
 
     private static void validateReader(Iterator<ImageReader> readers, Path file) {
         if (!readers.hasNext()) {
@@ -256,8 +260,31 @@ public class SingleImageConverter {
                 throw new ConversionManualAbortedException("Operation aborted");
             }
             try {
-                writer.write(null, new IIOImage(image, null, null), null);
+
+//                if (ICNS_FORMAT.equalsIgnoreCase(newFileFormat)) {
+//                    var writeParam = writer.getDefaultWriteParam();
+//                    if (writeParam != null) {
+//                        java.awt.Rectangle sourceRegion = new java.awt.Rectangle(
+//                                0,
+//                                0,
+//                                ICNS_MAX_SIZE,
+//                                ICNS_MAX_SIZE
+//                        );
+//
+//                        writeParam.setSourceRegion(sourceRegion);
+//                    }
+//                    writer.write(null, new IIOImage(image, null, null), writeParam);
+//                }
+//                if (ICNS_FORMAT.equalsIgnoreCase(newFileFormat)) {
+//                    List<BufferedImage> icnsImages = new ArrayList<>();
+//                    icnsImages.add(image);
+//                    writer.prepareWriteSequence(null);
+//                    writer.writeToSequence(new IIOImage(image, null, null), null);
+//                    writer.endWriteSequence();
+//                } else
+                    writer.write(null, new IIOImage(image, null, null), null);
             } catch (Exception e) {
+                log.debug("unable to write: {}", convertImageInputDTO.sourceFile());
                 throw new RuntimeException(getRootCauseMessage(e), e);
             }
 
@@ -375,7 +402,7 @@ public class SingleImageConverter {
         }
     }
 
-    private interface ExtendedIIOReadProgressListener extends IIOReadProgressListener {
+    public interface ExtendedIIOReadProgressListener extends IIOReadProgressListener {
         Exception getException();
     }
 

@@ -1,19 +1,18 @@
 package org.andreidodu.nocconvert.gui.controller;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
-import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.gui.components.performant.PerformantListModel;
 import org.andreidodu.nocconvert.gui.constants.Colors;
 import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
 import org.andreidodu.nocconvert.gui.worker.ListRendererWorker;
-import org.andreidodu.nocconvert.util.FileUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
+
+import static org.andreidodu.nocconvert.mapper.ConcurrentItemDTOMapper.convertPathListToDTOList;
 
 public class ConvertionStatusController {
     private static final Logger log = LogManager.getLogger(ConvertionStatusController.class);
@@ -37,7 +36,7 @@ public class ConvertionStatusController {
             convertionStatusDTO.conversionFileList().setModel(modelProgress);
             modelProgress.setJList(convertionStatusDTO.conversionFileList());
 //            PerformantListItemRenderer renderer = new PerformantListItemRenderer();
-//            convertionStatusDTO.conversionFileList().setCellRenderer(renderer);
+//            convertionStatusDTO.conversionFileJList().setCellRenderer(renderer);
 
             long endTime = System.nanoTime();
             long durationNs = endTime - startTime;
@@ -51,35 +50,7 @@ public class ConvertionStatusController {
         listRendererWorker.execute();
     }
 
-    private static List<ConversionItemDTO> convertPathListToDTOList(Path destPath, String targetFormat, List<Path> paths) {
-        int index = 0;
-        List<ConversionItemDTO> list = new ArrayList<>();
-        for (Path path : paths) {
-            ConversionItemDTO item = ConversionItemDTO.builder()
-                    .index(index++)
-                    .targetFormat(targetFormat)
-                    .targetExtension(targetFormat)
-                    .sourceFile(path)
-                    .fileName(prepareFileName(path))
-                    .status(ConversionStatus.QUEUED)
-                    .progressPercentage(0f)
-                    .sourceFile(path)
-                    .destinationDirectory(destPath)
-                    .fileSize(FileUtil.getHumanableFileSize(path.toFile()))
-                    .build();
-            list.add(item);
-        }
-        return list;
-    }
 
-    private static String prepareFileName(Path path) {
-        String filename = path.getFileName().toString();
-        int maxLength = 50;
-        if (filename.length() > maxLength) {
-            filename = filename.substring(0, maxLength) + "...";
-        }
-        return filename;
-    }
 
     public void updateList(List<ConversionItemDTO> list) {
         PerformantListModel model = (PerformantListModel) convertionStatusDTO.conversionFileList().getModel();
@@ -89,7 +60,7 @@ public class ConvertionStatusController {
 //        });
     }
 
-    public void enableProgressBar(boolean bool) {
+    public void enableJListAndProgressBar(boolean bool) {
         SwingUtilities.invokeLater(() -> {
 
             PerformantListModel jListModel = new PerformantListModel();
@@ -98,9 +69,20 @@ public class ConvertionStatusController {
 
 
             convertionStatusDTO.conversionFileListScrollPane().setVisible(bool);
-            convertionStatusDTO.progressBarAndStatusPanel().setVisible(bool);
-            convertionStatusDTO.progressBar().setVisible(bool);
+            enableProgressBarPanel(bool);
         });
+    }
+
+
+    public void enableProgressBarPanelFromEDT(boolean bool) {
+        SwingUtilities.invokeLater(() -> {
+            enableProgressBarPanel(bool);
+        });
+    }
+
+    private void enableProgressBarPanel(boolean bool) {
+        convertionStatusDTO.progressBarAndStatusPanel().setVisible(bool);
+        convertionStatusDTO.progressBar().setVisible(bool);
     }
 
     public void updateMainProgressBarMaxValue(int size) {
@@ -134,8 +116,7 @@ public class ConvertionStatusController {
     public void disableProcessStatus() {
         SwingUtilities.invokeLater(() -> {
             convertionStatusDTO.conversionFileListScrollPane().setVisible(false);
-            convertionStatusDTO.progressBarAndStatusPanel().setVisible(false);
-            convertionStatusDTO.progressBar().setVisible(false);
+            enableProgressBarPanel(false);
         });
     }
 
@@ -157,6 +138,7 @@ public class ConvertionStatusController {
     }
 
     public void disableProgressBar() {
-        enableProgressBar(false);
+        enableJListAndProgressBar(false);
     }
+
 }
