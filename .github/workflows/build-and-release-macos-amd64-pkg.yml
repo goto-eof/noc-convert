@@ -68,7 +68,7 @@ jobs:
           jpackage \
             --input "$INPUT_PATH" \
             --dest "$OUTPUT_PATH" \
-            --name "NoCloud Bulk Image Converter" \
+            --name "noc-convert" \
             --vendor "Andrei Dodu" \
             --app-version "$RELEASE_TAG" \
             --main-jar "$MAIN_JAR" \

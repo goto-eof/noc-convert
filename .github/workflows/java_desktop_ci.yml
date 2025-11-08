@@ -30,6 +30,6 @@ jobs:
       - name: upload jar
         uses: actions/upload-artifact@v4
         with:
-          name: NoCloud Bulk Image Converter
+          name: noc-convert
           path: target/*.jar
           retention-days: 5
