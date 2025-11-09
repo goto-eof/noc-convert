@@ -1,5 +1,6 @@
 package org.andreidodu.nocconvert.helper;
 
+import com.twelvemonkeys.image.ResampleOp;
 import org.andreidodu.nocconvert.dto.ImageHeaderDTO;
 import org.andreidodu.nocconvert.exception.ManualAbortedException;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
@@ -13,6 +14,7 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
@@ -214,9 +216,17 @@ public class ImageUtil {
             return bufferedImage;
         }
 
+        if (ICO_FORMAT.equalsIgnoreCase(format) && width == height && width < targetSize) {
+            targetSize = width;
+        }
+
+        List<Integer> validICNSSizes = List.of(1024, 512, 256, 128, 64, 32, 16);
+        if (ICNS_FORMAT.equalsIgnoreCase(format) && (width == height && validICNSSizes.contains(width))) {
+            return bufferedImage;
+        }
+
         if (ICNS_FORMAT.equalsIgnoreCase(format) && width < ICNS_MAX_SIZE) {
-            List<Integer> validSizes = List.of(1024, 512, 256, 128, 64, 32, 16);
-            for (Integer size : validSizes) {
+            for (Integer size : validICNSSizes) {
                 if (width > size) {
                     targetSize = size;
                     break;
@@ -230,8 +240,12 @@ public class ImageUtil {
         int scaledW = Math.max(16, (int) Math.round(width * scale));
         int scaledH = Math.max(16, (int) Math.round(height * scale));
 
-        BufferedImage out = new BufferedImage(targetSize, targetSize, imageType);
-        Graphics2D g2 = out.createGraphics();
+        BufferedImageOp resampler = new ResampleOp(scaledW, scaledH, ResampleOp.FILTER_LANCZOS);
+        BufferedImage out = resampler.filter(bufferedImage, null);
+
+
+        BufferedImage finalOut = new BufferedImage(targetSize, targetSize, imageType);
+        Graphics2D g2 = finalOut.createGraphics();
 
         if (isOpaque) {
             g2.setColor(Color.black);
@@ -245,19 +259,14 @@ public class ImageUtil {
         int x = (targetSize - scaledW) / 2;
         int y = (targetSize - scaledH) / 2;
 
-        if (targetSize < width || targetSize < height) {
-            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        }
-
-        g2.drawImage(bufferedImage, x, y, x + scaledW, y + scaledH, 0, 0, width, height, null);
+        g2.drawImage(out, x, y, null);
         g2.dispose();
 
         if (ICO_FORMAT.equalsIgnoreCase(format)) {
-            swapRBGChannels(out);
+            swapRBGChannels(finalOut);
         }
-        return out;
+
+        return finalOut;
     }
 
     private static void swapRBGChannels(BufferedImage image) {

@@ -8,14 +8,10 @@ import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 import org.andreidodu.nocconvert.enums.NotificationLevel;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.exception.InvalidFileFormatException;
-import org.andreidodu.nocconvert.helper.ImageUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.ImageWriter;
+import javax.imageio.*;
 import javax.imageio.event.IIOReadProgressListener;
 import javax.imageio.event.IIOWriteProgressListener;
 import javax.imageio.stream.ImageInputStream;
@@ -41,6 +37,8 @@ public class SingleImageConverter {
     private final ExecutorService platformExecutorService;
 
     private final static Object IMAGE_IO_LOCK = new Object();
+    @Setter
+    @Getter
     private NotificationLevel notificationLevel = NotificationLevel.MEDIUM;
     private final static Object RENAME_LOCK = new Object();
     private ConvertImageInputDTO convertImageInputDTO;
@@ -58,8 +56,6 @@ public class SingleImageConverter {
         log.debug("Converting image {} from {} to {}", convertImageInputDTO.sourceFile().getFileName(), convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension());
 
         interruptIfNecessary();
-
-        this.notificationLevel = convertImageInputDTO.notificationLevel();
 
         convertImageInputDTO.onStart().run();
         convertImageInputDTO.onProgress().accept(1f);
@@ -98,30 +94,28 @@ public class SingleImageConverter {
 
         Path outputFile = calculateOutputFile(convertImageInputDTO.sourceFile(), convertImageInputDTO.destinationPath(), convertImageInputDTO.targetExtension(), false);
         convertImageInputDTO.addToFileQueue().accept(outputFile);
+        BufferedImage image = null;
+        TotalReadPercentageDTO totalReadPercentageDTO = TotalReadPercentageDTO.builder().build();
 
         try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(sourceFile.toFile())) {
+            image = loadHealthyImage(convertImageInputDTO, imageInputStream, sourceFile, totalReadPercentageDTO);
+        } catch (IOException e) {
+            image = tryToLoadCorruptedImage(convertImageInputDTO, e, sourceFile, totalReadPercentageDTO, convertImageInputDTO.onProgress());
+        }
 
-            Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
+        Objects.requireNonNull(image, "why here the image is null bro?!");
 
-            validateReader(readers, sourceFile);
-
-            TotalReadPercentageDTO totalReadPercentageDTO = TotalReadPercentageDTO.builder().build();
-
-            BufferedImage image = readImage(imageInputStream, readers, totalReadPercentageDTO, convertImageInputDTO.onProgress());
-
+        try {
             interruptIfNecessary();
 
-
             image = safeDeepCopy(image);
-//            if (ICNS_FORMAT.equalsIgnoreCase(convertImageInputDTO.targetExtension())){
-//                image = safeDeepCopy2(image);
-//            }
 
             image = preprocessImage(convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension(), image, platformExecutorService);
 
             interruptIfNecessary();
 
             writeImageOuter(outputFile, convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image, convertImageInputDTO.addToFileQueue());
+
             convertImageInputDTO.pass().run();
         } catch (ConversionManualAbortedException e) {
             throw e;
@@ -129,6 +123,47 @@ public class SingleImageConverter {
             convertImageInputDTO.fail().accept(new RuntimeException(getRootCauseMessage(e), e));
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
+    }
+
+    /**
+     * Corrupt Data Handling -> sometimes it succeeds
+     */
+    private static BufferedImage tryToLoadCorruptedImage(ConvertImageInputDTO convertImageInputDTO, IOException e, Path sourceFile, TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> updateProgressFloatValue) {
+        try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(sourceFile.toFile())) {
+            return loadCorruptedImage(sourceFile, totalReadPercentageDTO, updateProgressFloatValue, imageInputStream, convertImageInputDTO);
+        } catch (Exception eee) {
+            convertImageInputDTO.fail().accept(new RuntimeException(getRootCauseMessage(e), e));
+            throw new RuntimeException(getRootCauseMessage(e), e);
+        }
+    }
+
+    private static BufferedImage loadCorruptedImage(Path sourceFile, TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> updateProgressFloatValue, ImageInputStream imageInputStream, ConvertImageInputDTO convertImageInputDTO) throws IOException {
+        BufferedImage image;
+        ImageReader reader = getReader(imageInputStream, sourceFile);
+        reader.setInput(imageInputStream);
+        ExtendedIIOReadProgressListener readerListener = getReaderListener(totalReadPercentageDTO, updateProgressFloatValue, convertImageInputDTO.notificationLevel());
+
+        reader.addIIOReadProgressListener(readerListener);
+        int width = reader.getWidth(0);
+        int height = reader.getHeight(0);
+        ImageTypeSpecifier imageType = reader.getRawImageType(0);
+        image = imageType.createBufferedImage(width, height);
+        ImageReadParam param = reader.getDefaultReadParam();
+        param.setDestination(image);
+        reader.read(0, param);
+        reader.dispose();
+        return image;
+    }
+
+    private BufferedImage loadHealthyImage(ConvertImageInputDTO convertImageInputDTO, ImageInputStream imageInputStream, Path sourceFile, TotalReadPercentageDTO totalReadPercentageDTO) throws IOException {
+        ImageReader reader = getReader(imageInputStream, sourceFile);
+        return readImage(imageInputStream, reader, totalReadPercentageDTO, convertImageInputDTO.onProgress(), convertImageInputDTO);
+    }
+
+    private static ImageReader getReader(ImageInputStream imageInputStream, Path sourceFile) {
+        Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
+        validateReader(readers, sourceFile);
+        return readers.next();
     }
 
     private static void validateReader(Iterator<ImageReader> readers, Path file) {
@@ -152,13 +187,11 @@ public class SingleImageConverter {
         return outputFilePath;
     }
 
-    private BufferedImage readImage(ImageInputStream imageInputStream, Iterator<ImageReader> readers, TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> updateProgressFloatValue) throws IOException {
+    private BufferedImage readImage(ImageInputStream imageInputStream, ImageReader reader, TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> updateProgressFloatValue, ConvertImageInputDTO convertImageInputDTO) throws IOException {
         try {
-            ImageReader reader = readers.next();
-
             try {
                 reader.setInput(imageInputStream, true, true);
-                ExtendedIIOReadProgressListener readerListener = getReaderListener(totalReadPercentageDTO, updateProgressFloatValue);
+                ExtendedIIOReadProgressListener readerListener = getReaderListener(totalReadPercentageDTO, updateProgressFloatValue, convertImageInputDTO.notificationLevel());
 
                 reader.addIIOReadProgressListener(readerListener);
 
@@ -176,7 +209,8 @@ public class SingleImageConverter {
             } finally {
                 reader.dispose();
             }
-
+        } catch (IOException e) {
+            throw e;
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);
@@ -223,7 +257,7 @@ public class SingleImageConverter {
     private static void validateFileCompletion(Path tmpOutputFile, Path outputFile) throws IOException {
         try {
             Files.move(tmpOutputFile, outputFile, StandardCopyOption.ATOMIC_MOVE);
-            ImageUtil.getImageHeaders(outputFile);
+            getImageHeaders(outputFile);
         } catch (NoSuchFileException ex) {
             log.warn("file not found: {}", ex.getMessage());
         }
@@ -282,7 +316,7 @@ public class SingleImageConverter {
 //                    writer.writeToSequence(new IIOImage(image, null, null), null);
 //                    writer.endWriteSequence();
 //                } else
-                    writer.write(null, new IIOImage(image, null, null), null);
+                writer.write(null, new IIOImage(image, null, null), null);
             } catch (Exception e) {
                 log.debug("unable to write: {}", convertImageInputDTO.sourceFile());
                 throw new RuntimeException(getRootCauseMessage(e), e);
@@ -406,7 +440,7 @@ public class SingleImageConverter {
         Exception getException();
     }
 
-    private ExtendedIIOReadProgressListener getReaderListener(TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> onProgress) {
+    private static ExtendedIIOReadProgressListener getReaderListener(TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> onProgress, NotificationLevel notificationLevel) {
         return new ExtendedIIOReadProgressListener() {
             private Exception exception;
 
