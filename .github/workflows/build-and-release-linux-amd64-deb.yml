@@ -19,7 +19,7 @@ jobs:
 
       - name: Build JAR with Maven
         run: |
-          mvn clean package
+          mvn clean verify package
           mkdir -p target/lib
           mvn dependency:copy-dependencies -DoutputDirectory=target/lib
 
