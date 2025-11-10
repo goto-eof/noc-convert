@@ -79,8 +79,6 @@ public class OutputFormatsTestIT {
     void shouldTestAllImageFormats(String targetFileFormat) throws ExecutionException, InterruptedException, IOException {
 
         ConversionController conversionController = prepareConversionController();
-        // doNothing().when(conversionController).onAllItemsCompleted();
-        // Mockito.doNothing().when(conversionController).initializeConvertComponent();
 
         List<ConversionItemDTO> conversionItemDTOList = ConcurrentItemDTOMapper.convertPathListToDTOList(temporaryOutputFolder, targetFileFormat, sourceFileList);
 

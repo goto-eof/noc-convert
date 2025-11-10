@@ -36,6 +36,7 @@ public class ConversionWorker extends SwingWorker<List<ConversionItemDTO>, Conve
                 .publishItemUpdate(this::publishItemUpdate)
                 .incrementFailures(conversionWorkerInputDTO.incrementFailures())
                 .incrementPasses(conversionWorkerInputDTO.incrementPasses())
+                .onConversionAborted(conversionWorkerInputDTO.onConversionAborted())
                 .build();
     }
 
@@ -50,7 +51,7 @@ public class ConversionWorker extends SwingWorker<List<ConversionItemDTO>, Conve
 
     private void cancelOrchestratorJob() {
         if (conversionOrchestrator != null) {
-            conversionOrchestrator.shutdown();
+            conversionOrchestrator.shutdown(true);
         }
     }
 
@@ -60,6 +61,9 @@ public class ConversionWorker extends SwingWorker<List<ConversionItemDTO>, Conve
     }
 
     private void publishItemUpdate(ConversionItemDTO conversionItemDTO) {
+        if (isCancelled()) {
+            return;
+        }
         publish(conversionItemDTO);
     }
 
@@ -67,11 +71,13 @@ public class ConversionWorker extends SwingWorker<List<ConversionItemDTO>, Conve
     protected void done() {
         if (isCancelled()) {
             log.debug("Conversion Worker cancelled.");
+            conversionWorkerInputDTO.onConversionAborted().run();
+            return;
         }
         this.conversionOrchestrator.onAllTasksCompleteEnableComponents();
     }
 
-    public Void shutdownThreads() {
+    public Void manualShutdownThreads() {
         cancelOrchestratorJob();
         conversionOrchestrator.onAllTasksCompleteEnableComponents();
         cancel(true);

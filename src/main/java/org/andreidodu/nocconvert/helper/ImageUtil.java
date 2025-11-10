@@ -111,6 +111,48 @@ public class ImageUtil {
         }
     }
 
+    public static boolean getImageHeadersNoException(Path file) {
+
+        try (ImageInputStream iis = ImageIO.createImageInputStream(file.toFile())) {
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
+            if (!readers.hasNext()) {
+                return false;
+            }
+
+            ImageReader reader = readers.next();
+            SingleImageConverter.ExtendedIIOReadProgressListener readerListener = getReaderListener();
+            reader.addIIOReadProgressListener(readerListener);
+
+            reader.setInput(iis, true, true);
+
+            if (readerListener.getException() != null) {
+                return false;
+            }
+
+            int width = reader.getWidth(0);
+            int height = reader.getHeight(0);
+
+            if (width <= 0 || height <= 0) {
+                return false;
+            }
+
+            String format = reader.getFormatName();
+
+            if (format == null || new ImageConverterUtil().getAvailableReadFormatList()
+                    .stream()
+                    .map(dtoFormat -> dtoFormat.getFormat().toLowerCase())
+                    .noneMatch(formatFromList -> formatFromList.equalsIgnoreCase(format))) {
+                return false;
+            }
+
+            reader.dispose();
+
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private static SingleImageConverter.ExtendedIIOReadProgressListener getReaderListener() {
         return new SingleImageConverter.ExtendedIIOReadProgressListener() {
             private Exception exception;

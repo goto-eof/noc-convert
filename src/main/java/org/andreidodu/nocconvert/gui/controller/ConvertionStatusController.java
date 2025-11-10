@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 import static org.andreidodu.nocconvert.mapper.ConcurrentItemDTOMapper.convertPathListToDTOList;
 
@@ -49,7 +50,6 @@ public class ConvertionStatusController {
         ListRendererWorker listRendererWorker = new ListRendererWorker(list, convertionStatusDTO.conversionFileList(), () -> convertionStatusDTO.guiOrchestrator().onRenderingDone(list));
         listRendererWorker.execute();
     }
-
 
 
     public void updateList(List<ConversionItemDTO> list) {
@@ -101,9 +101,10 @@ public class ConvertionStatusController {
         });
     }
 
-    public void incrementMainProgressBarProgress() {
+    public void incrementMainProgressBarProgress(Integer totalNumberOfUpdates) {
         SwingUtilities.invokeLater(() -> {
-            convertionStatusDTO.progressBar().setValue(convertionStatusDTO.progressBar().getValue() + 1);
+            convertionStatusDTO.progressBar().setForeground(Colors.LIME_DARK);
+            convertionStatusDTO.progressBar().setValue(convertionStatusDTO.progressBar().getValue() + Optional.ofNullable(totalNumberOfUpdates).orElseGet(() -> 1));
         });
     }
 

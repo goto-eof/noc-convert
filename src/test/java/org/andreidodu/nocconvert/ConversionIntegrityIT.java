@@ -52,7 +52,6 @@ public class ConversionIntegrityIT {
     private GUIOrchestrator mockedGuiOrchestrator;
     @Mock
     private JButton mockedButton;
-    private final int TOTAL_FILES_TO_PROCESS = 11;
     private final int VALID_FILES_TO_CREATE = 10;
 
     private ConversionController controller;

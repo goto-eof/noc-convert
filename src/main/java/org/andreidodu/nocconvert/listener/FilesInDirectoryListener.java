@@ -1,7 +1,6 @@
 package org.andreidodu.nocconvert.listener;
 
 import java.nio.file.Path;
-import java.util.List;
 
 public interface FilesInDirectoryListener {
     void onDirectoryProcessed(long totalFiles, Path directory, long filesInDirectory);
@@ -10,13 +9,11 @@ public interface FilesInDirectoryListener {
 
     void onFileAnalyzationStart(int totalNumberFiles);
 
-    void onFileAnalyzationProgress();
+    void onFileAnalyzationProgress(Integer totalNumberOfUpdates);
 
-    void onFileAnalyzation(Path filename);
+    void onFileAnalyzationComplete(Path filename);
 
     void onUpdateTotalFile(Long numberOfDirectories);
-
-    void onSearchDone(List<Path> result);
 
     void onOperationAborted();
 

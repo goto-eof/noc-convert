@@ -8,11 +8,11 @@ import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.gui.worker.ConversionWorker;
 import org.andreidodu.nocconvert.gui.worker.ImageSearcherSwingWorker;
-import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
-import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
 import org.andreidodu.nocconvert.helper.FileUtil;
 import org.andreidodu.nocconvert.helper.ImageConverterUtil;
 import org.andreidodu.nocconvert.helper.check.FormatCheckUtil;
+import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
+import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,6 +22,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.lang.System.exit;
 import static org.andreidodu.nocconvert.helper.CpuUtil.calculateCpuLoadPercentage;
@@ -32,6 +34,8 @@ import static org.andreidodu.nocconvert.helper.PathNameUtil.normalizePathAdvance
 public class ConversionController {
     private static final Logger log = LogManager.getLogger(ConversionController.class);
     public static final int DELETE_SEMAPHORE_SIZE = 100;
+    private static final int UI_UPDATE_INTERVAL = 200;
+    private final AtomicLong counter = new AtomicLong(0);
     private final ConversionDTO conversionDTO;
     private final ImageConverterUtil imageConverterUtil;
     private final JLabel applicationStatusLabel;
@@ -39,8 +43,8 @@ public class ConversionController {
     private ConversionWorker conversionWorker;
     private ImageSearcherSwingWorker imageSearcherSwingWorker;
     private List<Path> paths;
-    private int processedItems;
-    private int cpuLoadPercentage;
+    private final AtomicInteger processedItems = new AtomicInteger(0);
+    private final AtomicInteger cpuLoadPercentage = new AtomicInteger(0);
     private long lastTime = System.currentTimeMillis();
     private Date past = new Date();
 
@@ -48,7 +52,7 @@ public class ConversionController {
     private final AtomicInteger failures = new AtomicInteger(0);
     private final AtomicInteger totalFound = new AtomicInteger(0);
 
-    private String timeElapsed = "0s";
+    private final AtomicReference<String> timeElapsed = new AtomicReference<>("0s");
 
     public ConversionController(ConversionDTO conversionDTO) {
         this.conversionDTO = conversionDTO;
@@ -88,7 +92,8 @@ public class ConversionController {
                 conversionDTO.guiOrchestrator().setEnableSearchStepComponents(false);
                 startSearchForImagesStep();
 
-                imageSearcherSwingWorker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), new FilesInDirectoryListenerImpl());
+                FilesInDirectoryListenerImpl filesInDirectoryListener = new FilesInDirectoryListenerImpl(this);
+                imageSearcherSwingWorker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), filesInDirectoryListener, this::onSearchComplete);
                 imageSearcherSwingWorker.execute();
             } else if (SplitButtonComponent.Action.STOP.equals(conversionDTO.convertComponent().getAction())) {
                 manualShutdownWithExit(false);
@@ -114,6 +119,11 @@ public class ConversionController {
 
 
     private class FilesInDirectoryListenerImpl implements FilesInDirectoryListener {
+        private final ConversionController parent;
+
+        public FilesInDirectoryListenerImpl(ConversionController conversionController) {
+            parent = conversionController;
+        }
 
         @Override
         public void onDirectoryProcessed(long totalFiles, Path directory, long filesInDirectory) {
@@ -142,16 +152,46 @@ public class ConversionController {
         }
 
         @Override
-        public void onFileAnalyzationProgress() {
-            conversionDTO.guiOrchestrator().incrementMainProgressBarProgress();
+        public void onFileAnalyzationProgress(Integer totalNumberOfUpdates) {
+            conversionDTO.guiOrchestrator().incrementMainProgressBarProgress(totalNumberOfUpdates);
         }
 
         @Override
-        public void onFileAnalyzation(Path filename) {
-            SwingUtilities.invokeLater(() -> {
-                applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Format Identification and Image Header Validation...</center>" +
-                        "<span style=\"color: #007bff;\">" + normalizePathAdvanced(filename.getParent().toString(), 60) + " &#8658; " + normalizePath(filename.getFileName().toString(), 30) + "</span></html>");
-            });
+        public void onFileAnalyzationComplete(Path filename) {
+            long now = System.currentTimeMillis();
+            if (now - lastTime >= 1000) {
+
+                parent.cpuLoadPercentage.set(calculateCpuLoadPercentage());
+                parent.timeElapsed.set(calculateTimeElapsed());
+                String normalizedPath = normalizePathAdvanced(filename.getParent().toString(), 60);
+                String normalizedFilename = normalizePath(filename.getFileName().toString(), 30);
+                if (ApplicationConfig.DEV_MODE) {
+                    String mainMessage = "<html>" +
+                            "<center style=\"font-weight: bold;color: #0078D4;\">Format Identification and Image Header Validation...</center>" +
+                            "<span style=\"color: #007bff;\">" + normalizedPath + " &#8658; " + normalizedFilename + "</span>" +
+                            "</html>";
+                    String secondaryMessage = timeElapsed + " | " +
+                            cpuLoadPercentage + "% CPU load | Phase 2 - Validation search result...";
+
+                    SwingUtilities.invokeLater(() -> {
+                        applicationStatusLabel.setText(mainMessage);
+                        conversionDTO.secondaryApplicationStatusLabel().setText(secondaryMessage);
+                    });
+                    lastTime = now;
+                    return;
+                }
+                String mainMessage = "<html>" +
+                        "<center style=\"font-weight: bold;color: #0078D4;\">Format Identification and Image Header Validation...</center>" +
+                        "<span style=\"color: #007bff;\">" + normalizedPath + " &#8658; " + normalizedFilename + "</span>" +
+                        "</html>";
+                String secondaryMessage = "Phase 2 - Validation search result...";
+
+                SwingUtilities.invokeLater(() -> {
+                    applicationStatusLabel.setText(mainMessage);
+                    conversionDTO.secondaryApplicationStatusLabel().setText(secondaryMessage);
+                });
+                lastTime = now;
+            }
         }
 
         @Override
@@ -159,11 +199,6 @@ public class ConversionController {
             SwingUtilities.invokeLater(() -> {
                 secondaryApplicationStatusLabel.setText("<html><span style=\"font-weight: bold;\">" + numberOfFiles + " Total Images</span></html>");
             });
-        }
-
-        @Override
-        public void onSearchDone(List<Path> result) {
-            onSearchComplete(result);
         }
 
         @Override
@@ -194,7 +229,7 @@ public class ConversionController {
             if (conversionWorker != null && !conversionWorker.isDone()) {
                 log.info("Cancelling active conversion process.");
                 callableList.add(() -> {
-                    return conversionWorker.shutdownThreads();
+                    return conversionWorker.manualShutdownThreads();
                 });
             }
 
@@ -277,7 +312,7 @@ public class ConversionController {
             conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.STOP);
             String message = "Searching for image...";
             applicationStatusLabel.setText(message);
-            secondaryApplicationStatusLabel.setText("Searching for images...");
+            secondaryApplicationStatusLabel.setText("Phase 1 - Searching for images...");
             conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(false);
         });
 
@@ -299,7 +334,7 @@ public class ConversionController {
         list = list.stream().map(conversionItemDTOMapper::clone).toList();
         conversionDTO.guiOrchestrator().onConversionStart();
 
-        this.processedItems = 0;
+        this.processedItems.set(0);
         this.past = new Date();
 
         failures.set(0);
@@ -321,9 +356,17 @@ public class ConversionController {
                 .updateGui(this::updateList)
                 .onAllTasksComplete(this::onAllItemsCompleted)
                 .completeItem(this::onItemCompleted)
+                .onConversionAborted(this::onConvertionAborted)
                 .incrementPasses(this::incrementPasses)
                 .incrementFailures(this::incrementFailures)
                 .build();
+    }
+
+    private void onConvertionAborted() {
+        SwingUtilities.invokeLater(() -> {
+            applicationStatusLabel.setText("Convertion aborted by the user");
+            secondaryApplicationStatusLabel.setText("Convertion aborted");
+        });
     }
 
     private void incrementFailures() {
@@ -339,27 +382,44 @@ public class ConversionController {
     }
 
     private void onItemCompleted(ConversionItemDTO item) {
-        conversionDTO.guiOrchestrator().incrementMainProgressBarProgress();
-        processedItems++;
+        conversionDTO.guiOrchestrator().incrementMainProgressBarProgress(1);
+        processedItems.incrementAndGet();
         if (!isWorking()) {
             return;
         }
 
-        Optional.ofNullable(paths).ifPresent(paths -> {
-            applicationStatusLabel.setText("Converted " + processedItems + " of " + paths.size() + " Images (" + failures.get() + " failures). Please wait.");
-            long now = System.currentTimeMillis();
-            if (now - lastTime >= 1000) {
-                lastTime = now;
-                this.cpuLoadPercentage = calculateCpuLoadPercentage();
-                this.timeElapsed = calculateTimeElapsed();
-            }
-            if (ApplicationConfig.DEV_MODE) {
-                conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | " + cpuLoadPercentage + "% CPU load | " + (conversionWorker != null ? conversionWorker.getPlatformThreadsPermits() : -1) + " P-Threads | " + (conversionWorker != null ? conversionWorker.getVirtualThreadsPermits() : -1) + " V-Threads | Processed " + processedItems + "/" + paths.size() + " Images");
-                return;
+        int cpuPercentage = calculateCpuLoadPercentage();
+
+        SwingUtilities.invokeLater(() -> {
+            int startIndex = conversionDTO.conversionFileJList().getFirstVisibleIndex();
+            int endIndex = conversionDTO.conversionFileJList().getLastVisibleIndex();
+
+            if (item.getIndex() >= startIndex && item.getIndex() <= endIndex) {
+                conversionDTO.conversionFileJList().repaint();
             }
 
-            conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | Processed " + processedItems + " / " + paths.size() + " Images");
+
+            Optional.ofNullable(paths).ifPresent(paths -> {
+                if (paths.size() > 10_000 && counter.get() % UI_UPDATE_INTERVAL != 0) {
+                    return;
+                }
+
+                applicationStatusLabel.setText("Converted " + processedItems + " of " + paths.size() + " Images (" + failures.get() + " failures). Please wait.");
+                long now = System.currentTimeMillis();
+                if (now - lastTime >= 1000) {
+                    lastTime = now;
+                    this.cpuLoadPercentage.set(cpuPercentage);
+                    this.timeElapsed.set(calculateTimeElapsed());
+                    if (ApplicationConfig.DEV_MODE) {
+                        conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | " + cpuLoadPercentage + "% CPU load | " + (conversionWorker != null ? conversionWorker.getPlatformThreadsPermits() : -1) + " P-Threads | " + (conversionWorker != null ? conversionWorker.getVirtualThreadsPermits() : -1) + " V-Threads | Phase 3 - Processed " + processedItems + "/" + paths.size() + " Images");
+                        return;
+                    }
+                    conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | Phase 3 - Processed " + processedItems + " / " + paths.size() + " Images");
+                }
+
+            });
         });
+
     }
 
     private String calculateTimeElapsed() {

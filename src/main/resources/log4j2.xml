@@ -9,8 +9,11 @@
         </File>
     </Appenders>
     <Loggers>
-        <Root level="debug">
-            <AppenderRef ref="Console" level="debug"/>
+        <Logger name="EDT_TRACE_MONITOR" level="TRACE" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Root level="TRACE">
+            <AppenderRef ref="Console" level="TRACE"/>
             <AppenderRef ref="FileAppender" level="info"/>
         </Root>
     </Loggers>

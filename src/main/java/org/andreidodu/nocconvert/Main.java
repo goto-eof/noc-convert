@@ -18,6 +18,7 @@ public class Main {
 //            System.setProperty("awt.toolkit.name", "sun.awt.image.GtkFactory");
 //        }
 
+        System.out.println(System.getProperty("my.custom.log.test"));
         ImageIO.scanForPlugins();
 
         log.info("==========================[ START READERS ]=============================");
@@ -36,7 +37,7 @@ public class Main {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
-
+        // LEDTLogger.logEDTActivity("EDT", );
         new GUIOrchestrator();
     }
 

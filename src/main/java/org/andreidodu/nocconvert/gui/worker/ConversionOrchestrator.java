@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.andreidodu.nocconvert.helper.OperationUtil.retryable;
 import static org.andreidodu.nocconvert.helper.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
@@ -44,6 +45,7 @@ public class ConversionOrchestrator {
     @Getter
     private final ConcurrentLinkedQueue<Path> filesQueue = new ConcurrentLinkedQueue<>();
     private final String targetExtension;
+    private final AtomicBoolean manualShutdown = new AtomicBoolean(false);
 
     public ConversionOrchestrator(ConversionOrchestratorInputDTO conversionOrchestratorInputDTO) {
         this.conversionOrchestratorInputDTO = conversionOrchestratorInputDTO;
@@ -139,8 +141,6 @@ public class ConversionOrchestrator {
 
     private void onCompleteAll() {
         try {
-
-
             boolean rename = true;
 
             try {
@@ -164,7 +164,7 @@ public class ConversionOrchestrator {
             }
 
         } finally {
-            shutdown();
+            // shutdown(false);
             onAllTasksCompleteEnableComponents();
         }
     }
@@ -223,7 +223,9 @@ public class ConversionOrchestrator {
         conversionOrchestratorInputDTO.onAllTasksCompleteEnableComponents().run();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean manualShutdown) {
+
+        this.manualShutdown.set(manualShutdown);
 
         if (platformExecutorService != null && !platformExecutorService.isTerminated()) {
             platformExecutorService.shutdownNow();
@@ -231,6 +233,10 @@ public class ConversionOrchestrator {
 
         if (virtualThreadExecutor != null && !virtualThreadExecutor.isTerminated()) {
             this.virtualThreadExecutor.shutdownNow();
+        }
+
+        if (this.manualShutdown.get()) {
+            conversionOrchestratorInputDTO.onConversionAborted().run();
         }
 
     }

@@ -13,6 +13,7 @@ public record ConversionOrchestratorInputDTO(
         Consumer<ConversionItemDTO> setItemAsCompleted,
         Runnable onAllTasksCompleteEnableComponents,
         Runnable incrementPasses,
-        Runnable incrementFailures
+        Runnable incrementFailures,
+        Runnable onConversionAborted
 ) {
 }
