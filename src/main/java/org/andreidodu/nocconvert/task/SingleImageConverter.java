@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -121,6 +122,9 @@ public class SingleImageConverter {
             throw e;
         } catch (Throwable e) {
             convertImageInputDTO.fail().accept(new RuntimeException(getRootCauseMessage(e), e));
+            if (e instanceof RejectedExecutionException) {
+                throw new ConversionManualAbortedException("operation aborted");
+            }
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }

@@ -199,4 +199,11 @@ public class FileUtil {
 //        }
 //        return filename.substring(0, lastDotIndex + 1) + "duplicate-id-" + fileID + filename.substring(lastDotIndex);
     }
+
+    public static String getExtension(String filename) {
+        if (filename == null) {
+            return "";
+        }
+        return filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
+    }
 }

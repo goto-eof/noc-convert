@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
@@ -42,10 +41,11 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<Path>, Imag
     private final int uiUpdateIntervalFileCounter = 0;
     private final int UI_UPDATE_INTERVAL_DIRECTORY = 200;
     private final int uiUpdateIntervalDirectoryCounter = 0;
+    private final static long GUI_UPDATE_INTERVAL = 50;
 
     private LocalDateTime lastFileInfoPrintTS = LocalDateTime.now();
-    private LocalDateTime lastDirectoryInfoPrintTS = LocalDateTime.now();
-    private LocalDateTime lastTotalInfoPrintTS = LocalDateTime.now();
+    private final LocalDateTime lastDirectoryInfoPrintTS = LocalDateTime.now();
+    private final LocalDateTime lastTotalInfoPrintTS = LocalDateTime.now();
 
     enum STATUS {
         SEARCHING, ANALYZING
@@ -64,13 +64,13 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<Path>, Imag
         log.debug("Starting to search image from directory {}", sourceDirectory);
         FilesInDirectoryListenerImpl listener = new FilesInDirectoryListenerImpl();
         try {
-            List<Path> rawSearchResult = pictureSearcherTask.search(sourceDirectory, listener).stream().map(File::toPath).toList();
+            validSearchResult = pictureSearcherTask.search(sourceDirectory, listener).stream().map(File::toPath).toList();
             log.debug("Finished searching image from directory {}", sourceDirectory);
             if (listener.getError() != null) {
                 throw listener.getError();
             }
-            validationPictureTask = new ValidationPictureTask(rawSearchResult, listener, super::isCancelled);
-            validSearchResult = validationPictureTask.validateAndGetSearchResult();
+            // validationPictureTask = new ValidationPictureTask(rawSearchResult, listener, super::isCancelled);
+            // validSearchResult = validationPictureTask.validateAndGetSearchResult();
             return validSearchResult;
         } catch (AccessDeniedException e) {
             listener.onAccessDenied();
@@ -107,7 +107,7 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<Path>, Imag
 
     @Override
     protected void process(List<ChunkDTO> chunks) {
-        EDTLogger.logEDTActivity("Why?", ()->{
+        EDTLogger.logEDTActivity("Why?", () -> {
             Path directory = chunks.getLast().directory;
             if (status == STATUS.SEARCHING) {
                 filesInDirectoryListener.onFileFound(directory);
@@ -137,7 +137,7 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<Path>, Imag
 
         @Override
         public void onFileFound(Path filename) {
-            if (Duration.between(lastFileInfoPrintTS, LocalDateTime.now()).toMillis() < 1000 || isCancelled() || pictureSearcherTask == null || pictureSearcherTask.isCancelled()) {
+            if (Duration.between(lastFileInfoPrintTS, LocalDateTime.now()).toMillis() < GUI_UPDATE_INTERVAL || isCancelled() || pictureSearcherTask == null || pictureSearcherTask.isCancelled()) {
                 return;
             }
             publish(ChunkDTO.builder().directory(filename).build());
@@ -161,7 +161,7 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<Path>, Imag
 
         @Override
         public void onFileAnalyzationComplete(Path filename) {
-            if (Duration.between(lastFileInfoPrintTS, LocalDateTime.now()).toMillis() < 1000 || isCancelled() || pictureSearcherTask == null || pictureSearcherTask.isCancelled()) {
+            if (Duration.between(lastFileInfoPrintTS, LocalDateTime.now()).toMillis() < GUI_UPDATE_INTERVAL || isCancelled() || pictureSearcherTask == null || pictureSearcherTask.isCancelled()) {
                 return;
             }
             publish(ChunkDTO.builder().directory(filename).build());

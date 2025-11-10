@@ -2,6 +2,9 @@ package org.andreidodu.nocconvert.task;
 
 import lombok.Getter;
 import org.andreidodu.nocconvert.exception.SearchManuallyAbortedException;
+import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
+import org.andreidodu.nocconvert.helper.FileUtil;
+import org.andreidodu.nocconvert.helper.ImageConverterUtil;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
@@ -13,7 +16,9 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 public class PictureSearcherTask {
     private static final Logger log = LogManager.getLogger(PictureSearcherTask.class);
@@ -30,7 +35,15 @@ public class PictureSearcherTask {
             stream.iterator().next();
         }
         try {
-            CustomIOFilter listener = getFileFilter(parentListener);
+            List<String> availableExtensionList = Stream.concat(
+                            new ImageConverterUtil().getAvailableReadFormatList()
+                                    .stream()
+                                    .map(FormatExtensionDTO::getExtension)
+                                    .map(String::toLowerCase),
+                            Stream.of("jpeg")
+                    )
+                    .toList();
+            CustomIOFilter listener = getFileFilter(parentListener, availableExtensionList);
             Collection<File> result = FileUtils.listFiles(directory.toFile(), listener, TrueFileFilter.TRUE);
             log.debug("Found {} files in directory {}", result.size(), directory);
             if (listener.getError() != null) {
@@ -46,8 +59,8 @@ public class PictureSearcherTask {
         this.cancelled.set(true);
     }
 
-    private CustomIOFilter getFileFilter(FilesInDirectoryListener listener) {
-        return new CustomIOFilter(listener);
+    private CustomIOFilter getFileFilter(FilesInDirectoryListener listener, List<String> availableExtensionList) {
+        return new CustomIOFilter(listener, availableExtensionList);
     }
 
     public boolean isCancelled() {
@@ -60,9 +73,11 @@ public class PictureSearcherTask {
         private Exception error;
 
         private final FilesInDirectoryListener listener;
+        private final List<String> availableExtensionList;
 
-        public CustomIOFilter(FilesInDirectoryListener listener) {
+        public CustomIOFilter(FilesInDirectoryListener listener, List<String> availableExtensionList) {
             this.listener = listener;
+            this.availableExtensionList = availableExtensionList;
         }
 
         @Override
@@ -80,7 +95,7 @@ public class PictureSearcherTask {
                 listener.onFileFound(file.toPath());
             }
 
-            return true;
+            return availableExtensionList.contains(FileUtil.getExtension(file.getName()));
         }
 
         @Override
@@ -92,7 +107,7 @@ public class PictureSearcherTask {
             if (limiterCounter++ % LIMITER_INTERVAL == 0 && !cancelled.get()) {
                 listener.onFileFound(file.toPath());
             }
-            return true;
+            return availableExtensionList.contains(FileUtil.getExtension(file.getName()));
         }
 
     }
