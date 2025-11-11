@@ -1,0 +1,50 @@
+name: noc-convert
+version: '2.1.19'
+summary: Fast, no-cloud bulk image converter.
+description: |
+  Bulk Image Converter (NoCloud). The easy way to batch convert all your images.
+base: core24
+confinement: strict
+icon: snap/gui/icon.png
+title: NoCloud Bulk Image Converter
+website: https://github.com/goto-eof/noc-convert
+issues: https://github.com/goto-eof/noc-convert/issues
+source-code: https://github.com/goto-eof/noc-convert
+donation: https://github.com/sponsors/goto-eof
+contact: https://andre-i.eu/#contactme
+compression: lzo
+license: CC-BY-NC-4.0
+apps:
+  noc-convert:
+    environment:
+    extensions: [ gnome ]
+    command: executor
+    plugs:
+      - browser-support
+      - home
+      - unity7
+      - wayland
+      - x11
+      - desktop
+      - desktop-legacy
+platforms:
+  amd64:
+    build-on: [ amd64 ]
+    build-for: [ amd64 ]
+  arm64:
+    build-on: [ arm64 ]
+    build-for: [ arm64 ]
+parts:
+  wrapper:
+    plugin: dump
+    source: snap/local
+    source-type: local
+  application:
+    plugin: maven
+    source: .
+    build-packages:
+      - openjdk-21-jdk
+      - maven
+    stage-packages:
+      - openjdk-21-jre
+      - xdg-utils

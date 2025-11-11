@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=NoCloud Bulk Image Converter
+Comment=Fast, NoCloud bulk image converter. Convert thousands of photos in batch mode, locally.
+Exec=noc-convert
+Icon=${SNAP}/meta/gui/icon.png
+Terminal=false
+Type=Application
+StartupNotify=true
+Keywords=converter;image;photo;batch;bulk;utility;noc;nocloud;
+Categories=Utility;Graphics;

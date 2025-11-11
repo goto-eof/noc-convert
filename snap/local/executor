@@ -1,0 +1,28 @@
+#!/bin/bash
+
+USER_HOME_DIR="$(echo "$SNAP_USER_DATA" | cut -d'/' -f1-3)"
+TMP_DIR="$SNAP_USER_DATA/tmp"
+mkdir -p "$TMP_DIR"
+
+USER_PREFERENCES_DIR="$USER_HOME_DIR/noc-convert"
+mkdir -p "$USER_PREFERENCES_DIR"
+
+LIB_PATH="$SNAP/jar/lib"
+mkdir -p "$LIB_PATH"
+
+ALL_JARS=$(find "$LIB_PATH" -name "*.jar" | tr '\n' ':')
+MAIN_CLASS="org.andreidodu.nocconvert.Main"
+
+exec "$SNAP/bin/java" \
+    --add-opens java.desktop/javax.imageio.spi=ALL-UNNAMED \
+    -cp "$ALL_JARS:$SNAP/jar/noc-convert.jar" \
+    -Dlog4j2.skipJansi=true \
+    -DLOG_DIR=$SNAP \
+    -Dlog4j2.hostName=localhost \
+    -Djava.io.tmpdir="$TMP_DIR" \
+    -Duser.home="$USER_HOME_DIR" \
+    -Djava.util.prefs.userRoot="$USER_PREFERENCES_DIR" \
+    -Dawt.useSystemAAFontSettings=on \
+    -Dswing.aatext=true \
+    -Djava.desktop.appName=$SNAP/meta/gui/noc-convert.desktop \
+    "$MAIN_CLASS" "$@"

@@ -1,0 +1,60 @@
+name: noc-convert
+version: '2.0.90'
+summary: Fast, no-cloud bulk image converter.
+description: |
+  Bulk Image Converter (NoCloud). The easy way to batch convert all your images.
+base: core24
+grade: stable
+# build-base: devel
+confinement: strict
+icon: snap/gui/icon.png
+title: NoCloud Bulk Image Converter
+website: https://andre-i.eu
+issues: https://github.com/goto-eof
+source-code: https://github.com/goto-eof/noc-convert
+donation: https://github.com/sponsors/goto-eof
+contact: https://andre-i.eu/#contactme
+compression: lzo
+license: CC-BY-NC-4.0
+apps:
+  noc-convert:
+    environment:
+    command: executor
+    extensions: [ gnome ]
+    plugs:
+      - browser-support
+      - home
+      - unity7
+      - wayland
+      - x11
+      - desktop
+      - desktop-legacy
+platforms:
+  amd64:
+    build-on: [ amd64 ]
+    build-for: [ amd64 ]
+  arm64:
+    build-on: [ arm64 ]
+    build-for: [ arm64 ]
+parts:
+  wrapper:
+    plugin: dump
+    source: snap/local
+    source-type: local
+  application:
+    plugin: maven
+    source: .
+    build-packages:
+      - openjdk-25-jdk
+      - maven
+    stage-packages:
+      - openjdk-25-jre
+      - xdg-utils
+    override-prime: |
+      snapcraftctl prime
+      rm $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/jaxp-strict.properties.template
+      cp /etc/java-25-openjdk/jaxp-strict.properties.template $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/jaxp-strict.properties.template 
+      rm $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/security/java.policy
+      cp /etc/java-25-openjdk/security/java.policy $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/conf/security/java.policy
+      rm $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/lib/security/default.policy
+      cp /etc/java-25-openjdk/security/default.policy lint-snap-v2_external_symlinks $SNAP_USER_DATA/usr/lib/jvm/java-25-openjdk-arm64/lib/security/default.policy
