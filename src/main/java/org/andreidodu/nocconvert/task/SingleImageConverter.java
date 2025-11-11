@@ -259,23 +259,6 @@ public class SingleImageConverter {
         }
     }
 
-    private static void moveFailedImageToTmp(Path tmpOutputFile, Path outputFile) {
-        try {
-            Files.move(outputFile, tmpOutputFile, StandardCopyOption.ATOMIC_MOVE);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-//    private static void validateFileCompletion(Path tmpOutputFile, Path outputFile) throws IOException {
-//        try {
-//            Files.move(tmpOutputFile, outputFile, StandardCopyOption.ATOMIC_MOVE);
-//            getImageHeaders(outputFile);
-//        } catch (NoSuchFileException ex) {
-//            log.warn("file not found: {}", ex.getMessage());
-//        }
-//    }
-
     private static void validationSleep() {
         try {
             Thread.sleep(100);

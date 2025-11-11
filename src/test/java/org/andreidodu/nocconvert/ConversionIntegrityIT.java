@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
+import static org.andreidodu.nocconvert.gui.worker.ConversionOrchestrator.FINAL_OUTPUT_DIRECTORY_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -103,7 +104,6 @@ public class ConversionIntegrityIT {
         conversionItemDTOList = ConcurrentItemDTOMapper.convertPathListToDTOList(tempOutputFolder, "png", conversionFileList);
         when(mockedSplitButtonComponent.getDropdownToggleButton()).thenReturn(mockedButton);
         when(mockedSplitButtonComponent.getMainActionButton()).thenReturn(mockedButton);
-        //doNothing().when(mockedSplitButtonComponent).setImageList(anyList());
 
         ConversionDTO conversionDTO = ConversionDTO.builder()
                 .guiOrchestrator(mockedGuiOrchestrator)
@@ -142,8 +142,9 @@ public class ConversionIntegrityIT {
         controller.startConversion(conversionItemDTOList);
         List<ConversionItemDTO> result = controller.getWorker().get();
 
-        long actualFilesOnFS;
-        try (Stream<Path> files = Files.list(tempOutputFolder)) {
+        long actualFilesOnFS;        Path tmpDirectory = Path.of(tempOutputFolder.toString(), FINAL_OUTPUT_DIRECTORY_NAME);
+
+        try (Stream<Path> files = Files.list(tmpDirectory)) {
             actualFilesOnFS = files.filter(Files::isRegularFile).count();
         }
 

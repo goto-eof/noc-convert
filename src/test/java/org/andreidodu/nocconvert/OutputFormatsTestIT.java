@@ -7,6 +7,8 @@ import org.andreidodu.nocconvert.gui.controller.ConversionController;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.helper.TestHelper;
 import org.andreidodu.nocconvert.mapper.ConcurrentItemDTOMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
+import static org.andreidodu.nocconvert.gui.worker.ConversionOrchestrator.FINAL_OUTPUT_DIRECTORY_NAME;
 import static org.andreidodu.nocconvert.helper.TestHelper.prepareInputFiles;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doNothing;
@@ -31,6 +34,7 @@ import static org.mockito.Mockito.when;
 
 
 public class OutputFormatsTestIT {
+    private static final Logger log = LogManager.getLogger(OutputFormatsTestIT.class);
 
     private static final long NUMBER_FILES_IN_TEST_DIRECTORY = 10;
 
@@ -72,20 +76,23 @@ public class OutputFormatsTestIT {
 
         doNothing().when(mockedButton).setEnabled(Mockito.anyBoolean());
         doNothing().when(mockedGuiOrchestrator).setEnableSearchStepComponents(Mockito.anyBoolean());
+
+
     }
 
     @ParameterizedTest
     @MethodSource("org.andreidodu.nocconvert.helper.TestHelper#getAllAvailableWriteFormats")
     void shouldTestAllImageFormats(String targetFileFormat) throws ExecutionException, InterruptedException, IOException {
 
+        Path tmpDirectory = temporaryOutputFolder;
         ConversionController conversionController = prepareConversionController();
 
-        List<ConversionItemDTO> conversionItemDTOList = ConcurrentItemDTOMapper.convertPathListToDTOList(temporaryOutputFolder, targetFileFormat, sourceFileList);
+        List<ConversionItemDTO> conversionItemDTOList = ConcurrentItemDTOMapper.convertPathListToDTOList(tmpDirectory, targetFileFormat, sourceFileList);
 
         conversionController.startConversion(conversionItemDTOList);
         conversionController.getWorker().get();
 
-        long successFilesFomFileSystem = countFilesInTmpDirectory(temporaryOutputFolder);
+        long successFilesFomFileSystem = countFilesInTmpDirectory(tmpDirectory);
         long successFilesFromController = conversionController.getInternalSuccessCount();
 
         assertEquals(successFilesFromController, successFilesFomFileSystem, "The number of File System files does not match with the controller's one");
@@ -93,7 +100,8 @@ public class OutputFormatsTestIT {
     }
 
     public long countFilesInTmpDirectory(Path temporaryOutputFolder) throws IOException {
-        try (Stream<Path> files = Files.list(temporaryOutputFolder)) {
+        Path tmpDirectory = Path.of(temporaryOutputFolder.toString(), FINAL_OUTPUT_DIRECTORY_NAME);
+        try (Stream<Path> files = Files.list(tmpDirectory)) {
             return files.filter(Files::isRegularFile).count();
         }
     }

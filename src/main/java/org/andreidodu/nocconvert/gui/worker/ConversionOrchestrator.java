@@ -45,8 +45,6 @@ public class ConversionOrchestrator {
     @Getter
     private Path tmpDirPath;
     private Path finalDir;
-    //    @Getter
-//    private Path tmpParentDirPath;
     @Getter
     private final ConcurrentLinkedQueue<Path> filesQueue = new ConcurrentLinkedQueue<>();
     private final String targetExtension;
@@ -241,15 +239,15 @@ public class ConversionOrchestrator {
             Path uniqueOutputFilename = FileUtil.calculateNonExistingOutputFilename(potentiallyDuplicateOutputFilenameWithNewExtension, convertImageInputDTO.targetExtension(), false);
             try {
                 doublecheckExistenceAndThrowExceptionIfNecessary(uniqueOutputFilename);
-                FileUtils.moveFile(existingTemporaryFile.toFile(), uniqueOutputFilename.toFile(), StandardCopyOption.ATOMIC_MOVE);
+                FileUtils.moveFile(existingTemporaryFile.toFile(), uniqueOutputFilename.toFile(), StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
-                log.error("Unable to rename image file from {} to {}. Error: {}", existingTemporaryFile.toFile(), uniqueOutputFilename, e.getMessage());
+                log.error("Unable to rename image file from {} to {}.\nError: {}", existingTemporaryFile.toFile(), uniqueOutputFilename, e.getMessage());
             }
         }
     }
 
     private Path getPotentiallyDuplicateOutputFilenameWithNewExtension(ConvertImageInputDTO convertImageInputDTO, Path sourceFile) {
-        return Path.of(tmpDirPath.toString(), FileUtil.removeFileExtension(sourceFile.getFileName().toString()) + "." + FileUtil.getExtension(convertImageInputDTO.targetExtension()));
+        return Path.of(convertImageInputDTO.tmpPath().toString(), FileUtil.removeFileExtension(sourceFile.getFileName().toString()) + "." + FileUtil.getExtension(convertImageInputDTO.targetExtension()));
     }
 
     private static void doublecheckExistenceAndThrowExceptionIfNecessary(Path uniqueOutputFilename) {
@@ -257,32 +255,6 @@ public class ConversionOrchestrator {
             throw new RuntimeException("File already exists: " + uniqueOutputFilename.toFile().getAbsolutePath());
         }
     }
-
-
-//    private void renameFilesOnNewThread() {
-//        filesQueue.forEach(filePath -> {
-//            if (filePath.toFile().exists()) {
-//                FileUtil.renameFile(filePath, targetExtension);
-//            }
-//        });
-//    }
-
-//    private void deleteTmpDirectoryOnNewThread() {
-//        if (!ApplicationConfig.DEV_MODE && tmpParentDirPath != null) {
-//            Thread.ofVirtual().start(() -> {
-//                sleep(1000);
-//                retryable(null, tmpDirPath, FileUtil::deleteDirectoryIfExists);
-//            });
-//        }
-//    }
-
-//    private static void sleep(long time) {
-//        try {
-//            Thread.sleep(time);
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
 
     public void onAllTasksCompleteEnableComponents() {
         conversionOrchestratorInputDTO.onAllTasksCompleteEnableComponents().run();
