@@ -8,6 +8,7 @@ import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
 import org.andreidodu.nocconvert.enums.NotificationLevel;
 import org.andreidodu.nocconvert.helper.FileUtil;
+import org.andreidodu.nocconvert.helper.OSUtils;
 import org.andreidodu.nocconvert.helper.performance.AdaptiveSimpleGovernorRunnable;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -18,9 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,7 +31,7 @@ public class ConversionOrchestrator {
     public static final int RENAME_SEMAPHORE_SIZE = 100;
     public static final int MAX_NUM_ITEMS_FOR_NOTIFICATION_LEVEL_LOW = 10_000;
     private final ExecutorService virtualThreadExecutor;
-    private List<SingleItemConvertionTask> virtualTaskList;
+    // private List<SingleItemConvertionTask> virtualTaskList;
     private final Semaphore semaphore;
     private final ExecutorService platformExecutorService;
     @Getter
@@ -51,7 +50,7 @@ public class ConversionOrchestrator {
     private final AtomicBoolean manualShutdown = new AtomicBoolean(false);
     public static final String FINAL_OUTPUT_DIRECTORY_NAME = "noc-convert";
     public static final String TMP_OUTPUT_DIRECTORY_NAME = "noc-convert-tmp";
-
+    private CountDownLatch finishLatch;
     private final static Object COPY_RENAME_LOCK = new Object();
 
     public ConversionOrchestrator(ConversionOrchestratorInputDTO conversionOrchestratorInputDTO) {
@@ -68,7 +67,7 @@ public class ConversionOrchestrator {
 
 
     public void startConversion() {
-        virtualTaskList = new ArrayList<>();
+        // virtualTaskList = new ArrayList<>();
         try {
             Path conversionDestinationDirectory = conversionOrchestratorInputDTO.conversionItemDTOList()
                     .stream()
@@ -77,6 +76,8 @@ public class ConversionOrchestrator {
                     .getDestinationDirectory();
             tmpDirPath = buildTmpPathAndReturn(conversionDestinationDirectory);
             finalDir = Path.of(conversionDestinationDirectory.toString(), FINAL_OUTPUT_DIRECTORY_NAME);
+            conversionOrchestratorInputDTO.conversionItemDTOList()
+                    .forEach(dto -> dto.setDestinationDirectory(finalDir));
             log.debug("Creating temporary directory: {}", tmpDirPath);
         } catch (NoSuchElementException e) {
             log.error("Conversion list is empty. Cannot start conversion.", e);
@@ -86,17 +87,29 @@ public class ConversionOrchestrator {
             throw new RuntimeException(e);
         }
 
+        finishLatch = new CountDownLatch(conversionOrchestratorInputDTO.conversionItemDTOList().size());
         int index = 0;
-        for (ConversionItemDTO conversionItemDTO : conversionOrchestratorInputDTO.conversionItemDTOList()) {
-            conversionItemDTO.setStatus(ConversionStatus.QUEUED);
-            conversionItemDTO.setIndex(index++);
-            ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO = buildInput(conversionItemDTO, tmpDirPath);
-            SingleItemConvertionTask task = new SingleItemConvertionTask(convertSingleItemTaskInputDTO);
-            virtualTaskList.add(task);
-            virtualThreadExecutor.submit(task);
-        }
 
-        waitGentlyAndManageCompletion();
+        try {
+            for (ConversionItemDTO conversionItemDTO : conversionOrchestratorInputDTO.conversionItemDTOList()) {
+                SingleItemConvertionTask task = null;
+                semaphore.acquire();
+                conversionItemDTO.setStatus(ConversionStatus.QUEUED);
+                conversionItemDTO.setIndex(index++);
+                ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO = buildInput(conversionItemDTO, tmpDirPath);
+                task = new SingleItemConvertionTask(convertSingleItemTaskInputDTO);
+                // virtualTaskList.add(task);
+                virtualThreadExecutor.submit(task);
+            }
+        } catch (InterruptedException e) {
+            semaphore.drainPermits();
+            while (finishLatch.getCount() > 0) {
+                finishLatch.countDown();
+            }
+        }
+        if (!manualShutdown.get()) {
+            waitGentlyAndManageCompletion();
+        }
     }
 
     private static Path buildTmpPathAndReturn(Path tmpOutputDirectory) throws IOException {
@@ -117,7 +130,6 @@ public class ConversionOrchestrator {
                 .tmpPath(tmpDir)
                 .publishItemUpdate(conversionOrchestratorInputDTO.publishItemUpdate())
                 .setItemAsCompleted(this::setItemAsCompletedOverride)
-                .semaphore(semaphore)
                 .platformExecutorService(platformExecutorService)
                 .incrementFailures(conversionOrchestratorInputDTO.incrementFailures())
                 .incrementPasses(conversionOrchestratorInputDTO.incrementPasses())
@@ -126,6 +138,8 @@ public class ConversionOrchestrator {
                 .notificationLevel(calculateNotificationLevel())
                 .renameMe(this::renameMe)
                 .copyMe(this::copyMe)
+                .semaphore(semaphore)
+                .countFinish(finishLatch)
                 .calculateTemporaryFilenameForMe(this::calculateTemporaryFilenameForMe)
                 .readerFormatNames(Arrays.stream(ImageIO.getReaderFormatNames()).toList())
                 .build();
@@ -154,6 +168,8 @@ public class ConversionOrchestrator {
     private void waitGentlyAndManageCompletion() {
         try {
 
+            finishLatch.await();
+
             boolean rename = true;
 
             try {
@@ -174,7 +190,7 @@ public class ConversionOrchestrator {
                 retryableDirectoryRename(tmpDirPath, finalDir);
                 conversionOrchestratorInputDTO.onAllTasksCompleteEnableComponents().run();
             } else {
-                deleteTemporaryDirectoryIfExists();
+                Thread.ofVirtual().start(this::deleteTemporaryDirectoryIfExists);
                 conversionOrchestratorInputDTO.onConversionAborted().run();
             }
 
@@ -187,7 +203,6 @@ public class ConversionOrchestrator {
     private void waitForCompletionAndShutdownGentlyVirtualThreadExecutor() throws InterruptedException {
         virtualThreadExecutor.shutdown();
         boolean terminated = virtualThreadExecutor.awaitTermination(31, TimeUnit.DAYS);
-        virtualTaskList.forEach(SingleItemConvertionTask::closeStreams);
         if (!terminated) {
             log.error("virtualThreadExecutor did not terminate in time. Forcing emergency shutdown.");
             virtualThreadExecutor.shutdownNow();
@@ -197,34 +212,27 @@ public class ConversionOrchestrator {
     private void waitForCompletionAndShutdownGentlyPlatformThreadExecutor() throws InterruptedException {
         platformExecutorService.shutdown();
         boolean platformExecutorShutdown = platformExecutorService.awaitTermination(31, TimeUnit.DAYS);
-        virtualTaskList.forEach(SingleItemConvertionTask::closeStreams);
         if (!platformExecutorShutdown) {
             log.error("platformExecutorService did not terminate in time. Forcing emergencyConversionWorker shutdown.");
             platformExecutorService.shutdownNow();
         }
     }
 
-//    private void renameTmpDirectory() {
-//        boolean result = FileUtil.renameDirectory(tmpDirPath, finalDir);
-//        if (!result) {
-//            log.warn("Unable to rename the directory");
-//        }
-//    }
-
     private synchronized Path calculateTemporaryFilenameForMe(ConvertImageInputDTO convertImageInputDTO) {
-        Path sourceFile = convertImageInputDTO.sourceFile();
-        Path potentiallyDuplicateOutputFilenameWithNewExtension = getPotentiallyDuplicateOutputFilenameWithNewExtension(convertImageInputDTO, sourceFile);
-        return FileUtil.calculateNonExistingTemporaryOutputFilename(potentiallyDuplicateOutputFilenameWithNewExtension, convertImageInputDTO.targetExtension());
+        Path prototypeNewPathAndFilenameWithNewExtension = getPotentiallyDuplicateOutputRawFilenameWithNewExtension(convertImageInputDTO);
+        return FileUtil.calculateNonExistingTemporaryOutputFilename(prototypeNewPathAndFilenameWithNewExtension);
     }
 
     private void copyMe(ConvertImageInputDTO convertImageInputDTO) {
         synchronized (COPY_RENAME_LOCK) {
             Path sourceFile = convertImageInputDTO.sourceFile();
-            Path potentiallyDuplicateOutputFilenameWithNewExtension = getPotentiallyDuplicateOutputFilenameWithNewExtension(convertImageInputDTO, sourceFile);
-            Path uniqueOutputFilename = FileUtil.calculateNonExistingOutputFilename(potentiallyDuplicateOutputFilenameWithNewExtension, convertImageInputDTO.targetExtension(), false);
+            Path potentiallyDuplicateOutputFilenameWithNewExtension = getPotentiallyDuplicateOutputRawFilenameWithNewExtension(convertImageInputDTO);
             try {
-                doublecheckExistenceAndThrowExceptionIfNecessary(uniqueOutputFilename);
-                Files.copy(sourceFile, uniqueOutputFilename, StandardCopyOption.REPLACE_EXISTING);
+                if (potentiallyDuplicateOutputFilenameWithNewExtension.toFile().exists()) {
+                    potentiallyDuplicateOutputFilenameWithNewExtension = FileUtil.calculateNonExistingOutputFilename(potentiallyDuplicateOutputFilenameWithNewExtension, convertImageInputDTO.targetExtension());
+                }
+                doublecheckExistenceAndThrowExceptionIfNecessary(potentiallyDuplicateOutputFilenameWithNewExtension);
+                Files.copy(sourceFile, potentiallyDuplicateOutputFilenameWithNewExtension, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
                 log.error("Unable to copy image file: {}", convertImageInputDTO.sourceFile(), e);
             }
@@ -233,20 +241,23 @@ public class ConversionOrchestrator {
 
     private void renameMe(Path existingTemporaryFile, ConvertImageInputDTO convertImageInputDTO) {
         synchronized (COPY_RENAME_LOCK) {
-            Path sourceFile = convertImageInputDTO.sourceFile();
-            Path potentiallyDuplicateOutputFilenameWithNewExtension = getPotentiallyDuplicateOutputFilenameWithNewExtension(convertImageInputDTO, sourceFile);
-            Path uniqueOutputFilename = FileUtil.calculateNonExistingOutputFilename(potentiallyDuplicateOutputFilenameWithNewExtension, convertImageInputDTO.targetExtension(), false);
-            try {
-                doublecheckExistenceAndThrowExceptionIfNecessary(uniqueOutputFilename);
-                FileUtils.moveFile(existingTemporaryFile.toFile(), uniqueOutputFilename.toFile(), StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                log.error("Unable to rename image file from {} to {}.\nError: {}", existingTemporaryFile.toFile(), uniqueOutputFilename, e.getMessage());
+            Path potentiallyDuplicateOutputFilenameWithNewExtension = getPotentiallyDuplicateOutputRawFilenameWithNewExtension(convertImageInputDTO);
+//            try {
+            if (potentiallyDuplicateOutputFilenameWithNewExtension.toFile().exists()) {
+                potentiallyDuplicateOutputFilenameWithNewExtension = FileUtil.calculateNonExistingOutputFilename(potentiallyDuplicateOutputFilenameWithNewExtension, convertImageInputDTO.targetExtension());
             }
+            doublecheckExistenceAndThrowExceptionIfNecessary(potentiallyDuplicateOutputFilenameWithNewExtension);
+            existingTemporaryFile.toFile().renameTo(potentiallyDuplicateOutputFilenameWithNewExtension.toFile());
+            // FileUtils.moveFile(existingTemporaryFile.toFile(), potentiallyDuplicateOutputFilenameWithNewExtension.toFile(), StandardCopyOption.REPLACE_EXISTING);
+//            } catch (IOException e) {
+//                log.error("Unable to rename image file from {} to {}.\nError: {}", existingTemporaryFile.toFile(), potentiallyDuplicateOutputFilenameWithNewExtension, e.getMessage());
+//            }
         }
     }
 
-    private Path getPotentiallyDuplicateOutputFilenameWithNewExtension(ConvertImageInputDTO convertImageInputDTO, Path sourceFile) {
-        return Path.of(convertImageInputDTO.tmpPath().toString(), FileUtil.removeFileExtension(sourceFile.getFileName().toString()) + "." + FileUtil.getExtension(convertImageInputDTO.targetExtension()));
+    private Path getPotentiallyDuplicateOutputRawFilenameWithNewExtension(ConvertImageInputDTO convertImageInputDTO) {
+        // ex. filename.ico
+        return Path.of(convertImageInputDTO.tmpPath().toString(), FileUtil.removeFileExtension(convertImageInputDTO.sourceFile().getFileName().toString()) + "." + FileUtil.getExtension(convertImageInputDTO.targetExtension()));
     }
 
     private static void doublecheckExistenceAndThrowExceptionIfNecessary(Path uniqueOutputFilename) {
@@ -278,7 +289,12 @@ public class ConversionOrchestrator {
 
         this.manualShutdown.set(true);
 
-        virtualTaskList.forEach(SingleItemConvertionTask::closeStreams);
+        semaphore.drainPermits();
+
+        while (finishLatch.getCount() > 0) {
+            finishLatch.countDown();
+        }
+        // virtualTaskList.forEach(SingleItemConvertionTask::cancel);
 
         if (platformExecutorService != null && !platformExecutorService.isTerminated()) {
             platformExecutorService.shutdownNow();
@@ -288,13 +304,49 @@ public class ConversionOrchestrator {
             this.virtualThreadExecutor.shutdownNow();
         }
 
+        waitGentlyAndManageCompletion();
+
+
     }
 
     private void deleteTemporaryDirectoryIfExists() {
         try {
+            if (OSUtils.isLinux() || OSUtils.isMacOS()) {
+                deleteTemporaryDirectoryOnUnixLikeIfExists();
+                return;
+            }
+
             FileUtils.deleteDirectory(tmpDirPath.toFile());
         } catch (IOException e) {
             log.error("unable to delete temporary directory {}", tmpDirPath, e);
+        }
+    }
+
+    private void deleteTemporaryDirectoryOnUnixLikeIfExists() {
+        try {
+            log.warn("Starting deletion (rm -rf) for: {}", tmpDirPath);
+
+            ProcessBuilder pb = new ProcessBuilder("rm", "-rf", tmpDirPath.toString());
+            pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+            Process p = pb.start();
+            int exitCode = p.waitFor();
+
+            if (exitCode == 0) {
+                log.warn("Deletion completed with success: {}", tmpDirPath);
+            } else {
+                log.error("rm -rf failed with exit code {}. Fallback to FileUtils.deleteDirectory().", exitCode);
+                FileUtils.deleteDirectory(tmpDirPath.toFile());
+                log.warn("Fallback to FileUtils.deleteDirectory() completed.");
+            }
+        } catch (IOException | InterruptedException e) {
+            log.error("Unable to delete tmp directory with rm -rf {}. Error: {}", tmpDirPath, e.getMessage());
+            try {
+                log.error("Fallback to FileUtils.deleteDirectory().");
+                FileUtils.deleteDirectory(tmpDirPath.toFile());
+                log.warn("Fallback to FileUtils.deleteDirectory() completed.");
+            } catch (IOException fallbackE) {
+                log.error("Also classic faillback  failed for {}. Error message: {}", tmpDirPath, fallbackE.getMessage());
+            }
         }
     }
 

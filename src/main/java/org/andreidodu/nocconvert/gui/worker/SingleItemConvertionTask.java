@@ -6,7 +6,7 @@ import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
-import org.andreidodu.nocconvert.task.SingleImageConverter;
+import org.andreidodu.nocconvert.task.SingleImageConverterComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -19,16 +19,18 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMess
 public class SingleItemConvertionTask implements Runnable {
     private static final Logger log = LogManager.getLogger(SingleItemConvertionTask.class);
     private final ConversionItemDTO conversionItemDTO;
-    private final SingleImageConverter singleImageConverter;
+    private final SingleImageConverterComponent singleImageConverter;
     private final AtomicBoolean canceled = new AtomicBoolean(false);
     private final ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO;
     LocalDateTime lastCall = LocalDateTime.now();
 
+
     public SingleItemConvertionTask(ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO) {
         this.convertSingleItemTaskInputDTO = convertSingleItemTaskInputDTO;
         this.conversionItemDTO = new ConversionItemDTOMapper().clone(convertSingleItemTaskInputDTO.conversionItemDTO());
-        this.singleImageConverter = new SingleImageConverter(convertSingleItemTaskInputDTO.platformExecutorService());
+        this.singleImageConverter = new SingleImageConverterComponent(convertSingleItemTaskInputDTO.platformExecutorService());
     }
+
 
     private void onStart() {
         conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
@@ -38,35 +40,27 @@ public class SingleItemConvertionTask implements Runnable {
 
     public void run() {
         if (canceled.get() || Thread.currentThread().isInterrupted() || convertSingleItemTaskInputDTO.isParentInterrupted().get()) {
-//            cancelOperation();
             log.debug("thread is cancelled");
-            return;
-        }
-        try {
-            convertSingleItemTaskInputDTO.semaphore().acquire();
-        } catch (InterruptedException e) {
-//            cancelOperation();
-            log.debug("operation aborted");
-            return;
+            convertSingleItemTaskInputDTO.semaphore().release();
+            convertSingleItemTaskInputDTO.countFinish().countDown();
+            throw new ConversionManualAbortedException("operation aborted");
         }
         try {
             ConvertImageInputDTO convertImageInputDTO = buildInput();
             this.singleImageConverter.convertImage(convertImageInputDTO);
         } catch (ConversionManualAbortedException e) {
-//            cancelOperation();
-            log.error(e.getMessage());
+            log.error("operation aborted b1: {}", e.getMessage());
+            cancel();
+            throw new ConversionManualAbortedException("operation aborted");
         } catch (Exception e) {
-//            cancelOperation();
-            log.error(e.getMessage());
+            cancel();
+            log.error("aborted?:{}", e.getMessage());
+            throw new ConversionManualAbortedException("operation aborted");
         } finally {
             convertSingleItemTaskInputDTO.semaphore().release();
+            convertSingleItemTaskInputDTO.countFinish().countDown();
         }
     }
-
-//    private void cancelOperation() {
-//        updateAsCancelled();
-//        log.debug("CANCELED: {}", conversionItemDTO.getSourceFile());
-//    }
 
     private ConvertImageInputDTO buildInput() {
         return ConvertImageInputDTO.builder()
@@ -105,13 +99,6 @@ public class SingleItemConvertionTask implements Runnable {
         convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
     }
 
-//    private void updateAsCancelled() {
-//        conversionItemDTO.setStatus(ConversionStatus.CANCELED);
-//        conversionItemDTO.setProgressPercentage(100f);
-//        conversionItemDTO.setErrorMessage("cancelled");
-//        convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
-//    }
-
     private void updateProgressFloatValue(float progress) {
         if ((progress == 1 || progress % 3 == 0) && Duration.between(lastCall, LocalDateTime.now()).toMillis() >= 1000) {
             conversionItemDTO.setStatus(ConversionStatus.PROCESSING);
@@ -121,7 +108,7 @@ public class SingleItemConvertionTask implements Runnable {
         }
     }
 
-    public void closeStreams() {
+    public void cancel() {
         this.canceled.set(true);
         singleImageConverter.cancel();
     }

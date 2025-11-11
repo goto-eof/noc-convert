@@ -2,9 +2,11 @@ package org.andreidodu.nocconvert.helper;
 
 import com.twelvemonkeys.image.ResampleOp;
 import org.andreidodu.nocconvert.dto.ImageHeaderDTO;
+import org.andreidodu.nocconvert.exception.ManualAbortedException;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
-import org.andreidodu.nocconvert.task.SingleImageConverter;
+import org.andreidodu.nocconvert.task.CancellableConverterComponent;
+import org.andreidodu.nocconvert.task.SingleImageConverterComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -61,18 +63,21 @@ public class ImageUtil {
         return newImage;
     }
 
-    public static ImageHeaderDTO getImageHeaders(Path file) {
+    public static ImageHeaderDTO getImageHeaders(Path file, CancellableConverterComponent cancellableConverterComponent) {
         Objects.requireNonNull(file);
-
+        abortGetImageHeadersIfNecessary(cancellableConverterComponent);
         try (ImageInputStream iis = ImageIO.createImageInputStream(file.toFile())) {
             Iterator<ImageReader> readers;
+            abortGetImageHeadersIfNecessary(cancellableConverterComponent);
             synchronized (READER_LOCK) {
+                abortGetImageHeadersIfNecessary(cancellableConverterComponent);
                 readers = ImageIO.getImageReaders(iis);
             }
             while (readers.hasNext()) {
+                abortGetImageHeadersIfNecessary(cancellableConverterComponent);
                 try {
                     ImageReader reader = readers.next();
-                    SingleImageConverter.ExtendedIIOReadProgressListener readerListener = getReaderListener();
+                    SingleImageConverterComponent.ExtendedIIOReadProgressListener readerListener = getReaderListener();
                     reader.addIIOReadProgressListener(readerListener);
 
                     reader.setInput(iis, true, true);
@@ -111,9 +116,16 @@ public class ImageUtil {
                 }
             }
         } catch (Exception e) {
+            abortGetImageHeadersIfNecessary(cancellableConverterComponent);
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
         throw new RuntimeException("No reader found for " + file);
+    }
+
+    private static void abortGetImageHeadersIfNecessary(CancellableConverterComponent caller) {
+        if (caller != null && caller.isCancelled()) {
+            throw new ManualAbortedException("Abortion in getImageHeaders");
+        }
     }
 
     public static boolean getImageHeadersNoException(Path file) {
@@ -125,7 +137,7 @@ public class ImageUtil {
             }
 
             ImageReader reader = readers.next();
-            SingleImageConverter.ExtendedIIOReadProgressListener readerListener = getReaderListener();
+            SingleImageConverterComponent.ExtendedIIOReadProgressListener readerListener = getReaderListener();
             reader.addIIOReadProgressListener(readerListener);
 
             reader.setInput(iis, true, true);
@@ -158,8 +170,8 @@ public class ImageUtil {
         }
     }
 
-    private static SingleImageConverter.ExtendedIIOReadProgressListener getReaderListener() {
-        return new SingleImageConverter.ExtendedIIOReadProgressListener() {
+    private static SingleImageConverterComponent.ExtendedIIOReadProgressListener getReaderListener() {
+        return new SingleImageConverterComponent.ExtendedIIOReadProgressListener() {
             private Exception exception;
 
             public Exception getException() {

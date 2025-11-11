@@ -8,6 +8,7 @@ import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 import org.andreidodu.nocconvert.enums.NotificationLevel;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.exception.InvalidFileFormatException;
+import org.andreidodu.nocconvert.exception.ManualAbortedException;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,8 +32,8 @@ import java.util.function.Consumer;
 import static org.andreidodu.nocconvert.helper.ImageUtil.*;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
-public class SingleImageConverter {
-    private static final Logger log = LogManager.getLogger(SingleImageConverter.class);
+public class SingleImageConverterComponent implements CancellableConverterComponent {
+    private static final Logger log = LogManager.getLogger(SingleImageConverterComponent.class);
     private final AtomicBoolean canceled = new AtomicBoolean(false);
     private final ExecutorService platformExecutorService;
 
@@ -42,19 +43,27 @@ public class SingleImageConverter {
     private NotificationLevel notificationLevel = NotificationLevel.MEDIUM;
     private ConvertImageInputDTO convertImageInputDTO;
 
-    public SingleImageConverter(ExecutorService platformExecutorService) {
+    @Override
+    public boolean isCancelled() {
+        return canceled.get();
+    }
+
+    public SingleImageConverterComponent(ExecutorService platformExecutorService) {
         this.platformExecutorService = platformExecutorService;
     }
 
     public void convertImage(ConvertImageInputDTO convertImageInputDTO) {
-        if (canceled.get()) {
-            throw new ConversionManualAbortedException();
+        if (canceled.get() || Thread.currentThread().isInterrupted()) {
+            throw new ConversionManualAbortedException("conversion aborted a1");
         }
         this.convertImageInputDTO = convertImageInputDTO;
 
         log.debug("Converting image {} from {} to {}", convertImageInputDTO.sourceFile().getFileName(), convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension());
 
-        interruptIfNecessary();
+        if (Thread.currentThread().isInterrupted() || canceled.get()) {
+            throw new ConversionManualAbortedException("operation aborted");
+
+        }
 
         convertImageInputDTO.onStart().run();
         convertImageInputDTO.onProgress().accept(1f);
@@ -65,8 +74,10 @@ public class SingleImageConverter {
 
         try {
             ImageHeaderDTO sourceFileHeaders;
+            interruptIfNecessary();
             synchronized (IMAGE_IO_LOCK) {
-                sourceFileHeaders = getImageHeaders(sourceFile);
+                interruptIfNecessary();
+                sourceFileHeaders = getImageHeaders(sourceFile, this);
             }
             String sourceFileFormat = sourceFileHeaders.format();
             validateInputImage(convertImageInputDTO.sourceFile(), sourceFileFormat, convertImageInputDTO.readerFormatNames());
@@ -92,28 +103,59 @@ public class SingleImageConverter {
         TotalReadPercentageDTO totalReadPercentageDTO = TotalReadPercentageDTO.builder().build();
 
         try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(sourceFile.toFile())) {
+            if (Thread.currentThread().isInterrupted() || canceled.get()) {
+                throw new ConversionManualAbortedException("operation aborted");
+            }
             image = loadHealthyImage(convertImageInputDTO, imageInputStream, sourceFile, totalReadPercentageDTO);
         } catch (Exception e) {
+            if (Thread.currentThread().isInterrupted() || canceled.get()) {
+                throw new ConversionManualAbortedException("operation aborted");
+            }
             image = tryToLoadCorruptedImage(convertImageInputDTO, e, sourceFile, totalReadPercentageDTO, convertImageInputDTO.onProgress());
         }
 
         Objects.requireNonNull(image, "why here the image is null bro?!");
+
         try {
-            interruptIfNecessary();
+            if (Thread.currentThread().isInterrupted() || canceled.get()) {
+                throw new ConversionManualAbortedException("operation aborted");
+            }
 
             image = safeDeepCopy(image);
 
+            if (Thread.currentThread().isInterrupted() || canceled.get()) {
+                throw new ConversionManualAbortedException("operation aborted");
+            }
+
             image = preprocessImage(convertImageInputDTO.sourceFile(), convertImageInputDTO.targetExtension(), image, platformExecutorService);
 
-            interruptIfNecessary();
+            if (Thread.currentThread().isInterrupted() || canceled.get()) {
+                throw new ConversionManualAbortedException("operation aborted");
+            }
 
             writeImageOuter(convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image, convertImageInputDTO.addToFileQueue());
+
+            if (Thread.currentThread().isInterrupted() || canceled.get()) {
+                throw new ConversionManualAbortedException("operation aborted");
+            }
+
             convertImageInputDTO.renameMe().accept(tmpOutputFile, convertImageInputDTO);
+
+            if (Thread.currentThread().isInterrupted() || canceled.get()) {
+                throw new ConversionManualAbortedException("operation aborted");
+            }
+
             convertImageInputDTO.pass().run();
         } catch (ConversionManualAbortedException e) {
+            if (Thread.currentThread().isInterrupted() || canceled.get()) {
+                throw e;
+            }
             deleteCorruptedFile(tmpOutputFile);
             throw e;
         } catch (Throwable e) {
+            if (Thread.currentThread().isInterrupted() || canceled.get()) {
+                throw new ConversionManualAbortedException("operation aborted");
+            }
             deleteCorruptedFile(tmpOutputFile);
             convertImageInputDTO.fail().accept(new RuntimeException(getRootCauseMessage(e), e));
             if (e instanceof RejectedExecutionException || e instanceof InterruptedException) {
@@ -123,16 +165,8 @@ public class SingleImageConverter {
         }
     }
 
-//    private static void deleteCorruptedFile(boolean fileRenamed, Path oldFilename, Path newFilename) {
-//        if (fileRenamed) {
-//            deleteCorruptedFile(newFilename);
-//            return;
-//        }
-//        deleteCorruptedFile(oldFilename);
-//    }
-
-    private static void deleteCorruptedFile(Path tmpOutputFile) {
-        if (!tmpOutputFile.toFile().exists()) {
+    private void deleteCorruptedFile(Path tmpOutputFile) {
+        if (!tmpOutputFile.toFile().exists() || canceled.get() || Thread.currentThread().isInterrupted()) {
             return;
         }
         try {
@@ -145,7 +179,7 @@ public class SingleImageConverter {
     /**
      * Corrupt Data Handling -> sometimes it succeeds
      */
-    private static BufferedImage tryToLoadCorruptedImage(ConvertImageInputDTO convertImageInputDTO, Exception e, Path sourceFile, TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> updateProgressFloatValue) {
+    private BufferedImage tryToLoadCorruptedImage(ConvertImageInputDTO convertImageInputDTO, Exception e, Path sourceFile, TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> updateProgressFloatValue) {
         try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(sourceFile.toFile())) {
             return loadCorruptedImage(sourceFile, totalReadPercentageDTO, updateProgressFloatValue, imageInputStream, convertImageInputDTO);
         } catch (Exception eee) {
@@ -155,12 +189,13 @@ public class SingleImageConverter {
         }
     }
 
-    private static BufferedImage loadCorruptedImage(Path sourceFile, TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> updateProgressFloatValue, ImageInputStream imageInputStream, ConvertImageInputDTO convertImageInputDTO) throws IOException {
+    private BufferedImage loadCorruptedImage(Path sourceFile, TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> updateProgressFloatValue, ImageInputStream imageInputStream, ConvertImageInputDTO convertImageInputDTO) throws Exception {
         BufferedImage image;
         Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
         while (readers.hasNext()) {
+            interruptIfNecessary();
+            ImageReader reader = readers.next();
             try {
-                ImageReader reader = readers.next();
                 reader.setInput(imageInputStream);
                 ExtendedIIOReadProgressListener readerListener = getReaderListener(totalReadPercentageDTO, updateProgressFloatValue, convertImageInputDTO.notificationLevel());
 
@@ -172,11 +207,20 @@ public class SingleImageConverter {
                 ImageReadParam param = reader.getDefaultReadParam();
                 param.setDestination(image);
                 reader.read(0, param);
-                reader.dispose();
-
+                if (readerListener.getException() != null) {
+                    reader.dispose();
+                    throw readerListener.getException();
+                }
                 return image;
             } catch (IOException eee) {
                 log.error("Invalid reader (corrupted phase). Trying the next one if exists...{}", getRootCauseMessage(eee));
+            } catch (Exception e) {
+                if (e instanceof ManualAbortedException) {
+                    throw e;
+                }
+                throw new RuntimeException(getRootCauseMessage(e));
+            } finally {
+                reader.dispose();
             }
         }
         throw new RuntimeException("No ImageReader found for: " + sourceFile + " (corrupted phase)");
@@ -185,6 +229,7 @@ public class SingleImageConverter {
     private BufferedImage loadHealthyImage(ConvertImageInputDTO convertImageInputDTO, ImageInputStream imageInputStream, Path sourceFile, TotalReadPercentageDTO totalReadPercentageDTO) throws IOException {
         Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
         while (readers.hasNext()) {
+            interruptIfNecessary();
             try {
                 return readImage(imageInputStream, readers.next(), totalReadPercentageDTO, convertImageInputDTO.onProgress(), convertImageInputDTO);
             } catch (IOException eee) {
@@ -192,18 +237,6 @@ public class SingleImageConverter {
             }
         }
         throw new RuntimeException("No ImageReader found for: " + sourceFile + " (healthy phase)");
-    }
-
-//    private static ImageReader getReader(ImageReader readers, ImageInputStream imageInputStream, Path sourceFile) {
-//
-//        validateReader(readers, sourceFile);
-//        return readers.next();
-//    }
-
-    private static void validateReader(Iterator<ImageReader> readers, Path file) {
-        if (!readers.hasNext()) {
-            throw new RuntimeException("No ImageReader found for: " + file);
-        }
     }
 
     private BufferedImage readImage(ImageInputStream imageInputStream, ImageReader reader, TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> updateProgressFloatValue, ConvertImageInputDTO convertImageInputDTO) throws IOException {
@@ -216,6 +249,7 @@ public class SingleImageConverter {
 
                 interruptIfNecessary();
                 var data = reader.read(0);
+
                 if (readerListener.getException() != null) {
                     throw readerListener.getException();
                 }
@@ -248,7 +282,9 @@ public class SingleImageConverter {
 
     private void writeImageInner(String newFileFormat, Consumer<Float> updateProgressFloatValue, Path tmpOutputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image) throws Exception {
         Iterator<ImageWriter> writers;
+        interruptIfNecessary();
         synchronized (IMAGE_IO_LOCK) {
+            interruptIfNecessary();
             writers = ImageIO.getImageWritersByFormatName(newFileFormat);
         }
         if (!writers.hasNext()) {
@@ -258,7 +294,7 @@ public class SingleImageConverter {
 
         ImageWriter writer = writers.next();
         if (canceled.get() && !tmpOutputFile.toFile().exists()) {
-            log.error("Operation aborted and file deleted");
+            log.error("Operation aborted");
             throw new ConversionManualAbortedException("Operation aborted");
         }
         try (ImageOutputStream currentOutputStream = ImageIO.createImageOutputStream(tmpOutputFile.toFile())) {
@@ -271,30 +307,7 @@ public class SingleImageConverter {
                 throw new ConversionManualAbortedException("Operation aborted");
             }
             try {
-
-//                if (ICNS_FORMAT.equalsIgnoreCase(newFileFormat)) {
-//                    var writeParam = writer.getDefaultWriteParam();
-//                    if (writeParam != null) {
-//                        java.awt.Rectangle sourceRegion = new java.awt.Rectangle(
-//                                0,
-//                                0,
-//                                ICNS_MAX_SIZE,
-//                                ICNS_MAX_SIZE
-//                        );
-//
-//                        writeParam.setSourceRegion(sourceRegion);
-//                    }
-//                    writer.write(null, new IIOImage(image, null, null), writeParam);
-//                }
-//                if (ICNS_FORMAT.equalsIgnoreCase(newFileFormat)) {
-//                    List<BufferedImage> icnsImages = new ArrayList<>();
-//                    icnsImages.add(image);
-//                    writer.prepareWriteSequence(null);
-//                    writer.writeToSequence(new IIOImage(image, null, null), null);
-//                    writer.endWriteSequence();
-//                } else
                 writer.write(null, new IIOImage(image, null, null), null);
-
             } catch (Exception e) {
                 log.debug("unable to write: {}", convertImageInputDTO.sourceFile());
                 throw new RuntimeException(getRootCauseMessage(e), e);
@@ -417,7 +430,7 @@ public class SingleImageConverter {
         Exception getException();
     }
 
-    private static ExtendedIIOReadProgressListener getReaderListener(TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> onProgress, NotificationLevel notificationLevel) {
+    private ExtendedIIOReadProgressListener getReaderListener(TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> onProgress, NotificationLevel notificationLevel) {
         return new ExtendedIIOReadProgressListener() {
             private Exception exception;
 
@@ -428,32 +441,40 @@ public class SingleImageConverter {
             @Override
             public void sequenceStarted(ImageReader source, int minIndex) {
                 if (isInterrupted()) {
+                    throw new ManualAbortedException("Conversion aborted by thread interruption.");
                 }
             }
 
             @Override
             public void sequenceComplete(ImageReader source) {
                 if (isInterrupted()) {
+                    throw new ManualAbortedException("Conversion aborted by thread interruption.");
                 }
             }
 
             @Override
             public void imageStarted(ImageReader source, int imageIndex) {
-                if (isInterrupted() || notificationLevel == NotificationLevel.LOW) return;
+                if (isInterrupted()) {
+                    throw new ManualAbortedException("Conversion aborted by thread interruption.");
+                }
+                if (notificationLevel == NotificationLevel.LOW) return;
                 totalReadPercentageDTO.setTotalReadPercentage(1);
                 onProgress.accept(1f);
             }
 
             @Override
             public void imageProgress(ImageReader source, float percentageDone) {
-                if (isInterrupted() || notificationLevel == NotificationLevel.LOW) return;
+                if (isInterrupted()) {
+                    throw new ManualAbortedException("Conversion aborted by thread interruption.");
+                }
+                if (notificationLevel == NotificationLevel.LOW) return;
                 totalReadPercentageDTO.setTotalReadPercentage(percentageDone / 2);
                 onProgress.accept(totalReadPercentageDTO.getTotalReadPercentage());
 
             }
 
             private boolean isInterrupted() {
-                if (Thread.currentThread().isInterrupted() && exception == null) {
+                if (canceled.get() && exception == null || Thread.currentThread().isInterrupted() && exception == null) {
                     log.error("Operation aborted 5");
                     this.exception = new ConversionManualAbortedException("Conversion aborted by thread interruption.");
                     return true;
@@ -464,31 +485,35 @@ public class SingleImageConverter {
             @Override
             public void imageComplete(ImageReader source) {
                 if (isInterrupted()) {
+                    throw new ManualAbortedException("Conversion aborted by thread interruption.");
                 }
             }
 
             @Override
             public void thumbnailStarted(ImageReader source, int imageIndex, int thumbnailIndex) {
                 if (isInterrupted()) {
+                    throw new ManualAbortedException("Conversion aborted by thread interruption.");
                 }
             }
 
             @Override
             public void thumbnailProgress(ImageReader source, float percentageDone) {
                 if (isInterrupted()) {
+                    throw new ManualAbortedException("Conversion aborted by thread interruption.");
                 }
             }
 
             @Override
             public void thumbnailComplete(ImageReader source) {
                 if (isInterrupted()) {
+                    throw new ManualAbortedException("Conversion aborted by thread interruption.");
                 }
             }
 
             @Override
             public void readAborted(ImageReader source) {
                 if (isInterrupted()) return;
-                this.exception = new RuntimeException("Read aborted");
+                this.exception = new ManualAbortedException("Read aborted");
             }
         };
     }
