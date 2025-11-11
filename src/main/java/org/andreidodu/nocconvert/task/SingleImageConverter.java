@@ -19,9 +19,7 @@ import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -35,7 +33,6 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMess
 
 public class SingleImageConverter {
     private static final Logger log = LogManager.getLogger(SingleImageConverter.class);
-    public static final int VALIDATION_RETRY_TIMES = 5;
     private final AtomicBoolean canceled = new AtomicBoolean(false);
     private final ExecutorService platformExecutorService;
 
@@ -43,7 +40,6 @@ public class SingleImageConverter {
     @Setter
     @Getter
     private NotificationLevel notificationLevel = NotificationLevel.MEDIUM;
-    private final static Object RENAME_LOCK = new Object();
     private ConvertImageInputDTO convertImageInputDTO;
 
     public SingleImageConverter(ExecutorService platformExecutorService) {
@@ -81,7 +77,6 @@ public class SingleImageConverter {
                 if (tmpOutputFile == null) {
                     throw new RuntimeException("unable to copy the file");
                 }
-                // convertImageInputDTO.addToFileQueue().accept(tmpOutputFile);
                 convertImageInputDTO.copyMe().accept(convertImageInputDTO);
                 convertImageInputDTO.pass().run();
                 return;
@@ -98,7 +93,7 @@ public class SingleImageConverter {
 
         try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(sourceFile.toFile())) {
             image = loadHealthyImage(convertImageInputDTO, imageInputStream, sourceFile, totalReadPercentageDTO);
-        } catch (IOException e) {
+        } catch (Exception e) {
             image = tryToLoadCorruptedImage(convertImageInputDTO, e, sourceFile, totalReadPercentageDTO, convertImageInputDTO.onProgress());
         }
 
@@ -150,7 +145,7 @@ public class SingleImageConverter {
     /**
      * Corrupt Data Handling -> sometimes it succeeds
      */
-    private static BufferedImage tryToLoadCorruptedImage(ConvertImageInputDTO convertImageInputDTO, IOException e, Path sourceFile, TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> updateProgressFloatValue) {
+    private static BufferedImage tryToLoadCorruptedImage(ConvertImageInputDTO convertImageInputDTO, Exception e, Path sourceFile, TotalReadPercentageDTO totalReadPercentageDTO, Consumer<Float> updateProgressFloatValue) {
         try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(sourceFile.toFile())) {
             return loadCorruptedImage(sourceFile, totalReadPercentageDTO, updateProgressFloatValue, imageInputStream, convertImageInputDTO);
         } catch (Exception eee) {
@@ -248,23 +243,6 @@ public class SingleImageConverter {
             throw e;
         } catch (Throwable e) {
             throw new RuntimeException(getRootCauseMessage(e), e);
-        }
-    }
-
-    private void validateFileCompletionWithRetry(Path outputFile) throws Exception {
-        try {
-            getImageHeaders(outputFile);
-        } catch (Exception e) {
-            throw new RuntimeException(getRootCauseMessage(e), e);
-        }
-    }
-
-    private static void validationSleep() {
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            log.error(getRootCauseMessage(e), e);
-            throw new RuntimeException(e);
         }
     }
 
