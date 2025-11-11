@@ -4,7 +4,10 @@ import lombok.Builder;
 import org.andreidodu.nocconvert.enums.NotificationLevel;
 
 import java.nio.file.Path;
+import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Builder
 public record ConvertImageInputDTO(
@@ -17,6 +20,10 @@ public record ConvertImageInputDTO(
         Runnable pass,
         Consumer<Exception> fail,
         Consumer<Path> addToFileQueue,
-        NotificationLevel notificationLevel
+        NotificationLevel notificationLevel,
+        BiConsumer<Path, ConvertImageInputDTO> renameMe,
+        Consumer<ConvertImageInputDTO> copyMe,
+        Function<ConvertImageInputDTO, Path> calculateTemporaryFilenameForMe,
+        List<String> readerFormatNames
 ) {
 }

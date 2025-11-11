@@ -8,13 +8,19 @@ import java.util.List;
 import static org.andreidodu.nocconvert.helper.ImageUtil.getFormatExtensionDTOList;
 
 public class ImageConverterUtil {
+    private final static Object LOCK_WRITERS = new Object();
+    private final static Object LOCK_READERS = new Object();
 
     public List<FormatExtensionDTO> getAvailableWriteFormatList() {
-        return getFormatExtensionDTOList(ImageIO.getWriterFormatNames());
+        synchronized (LOCK_WRITERS) {
+            return getFormatExtensionDTOList(ImageIO.getWriterFormatNames());
+        }
     }
 
     public List<FormatExtensionDTO> getAvailableReadFormatList() {
-        return getFormatExtensionDTOList(ImageIO.getReaderFormatNames());
+        synchronized (LOCK_READERS) {
+            return getFormatExtensionDTOList(ImageIO.getReaderFormatNames());
+        }
     }
 
 }

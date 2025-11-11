@@ -51,7 +51,7 @@ public class ConversionWorker extends SwingWorker<List<ConversionItemDTO>, Conve
 
     private void cancelOrchestratorJob() {
         if (conversionOrchestrator != null) {
-            conversionOrchestrator.shutdown(true);
+            conversionOrchestrator.manualShutdown();
         }
     }
 

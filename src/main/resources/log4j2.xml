@@ -13,7 +13,7 @@
             <AppenderRef ref="Console"/>
         </Logger>
         <Root level="TRACE">
-            <AppenderRef ref="Console" level="TRACE"/>
+            <AppenderRef ref="Console" level="ERROR"/>
             <AppenderRef ref="FileAppender" level="info"/>
         </Root>
     </Loggers>

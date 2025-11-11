@@ -35,6 +35,7 @@ public class ConversionController {
     private static final Logger log = LogManager.getLogger(ConversionController.class);
     public static final int DELETE_SEMAPHORE_SIZE = 100;
     private static final int UI_UPDATE_INTERVAL = 200;
+    public static final String FINAL_OUTPUT_DIRECTORY_NAME = "noc-convert";
     private final AtomicLong counter = new AtomicLong(0);
     private final ConversionDTO conversionDTO;
     private final ImageConverterUtil imageConverterUtil;
@@ -228,9 +229,7 @@ public class ConversionController {
 
             if (conversionWorker != null && !conversionWorker.isDone()) {
                 log.info("Cancelling active conversion process.");
-                callableList.add(() -> {
-                    return conversionWorker.manualShutdownThreads();
-                });
+                callableList.add(() -> conversionWorker.manualShutdownThreads());
             }
 
             if (imageSearcherSwingWorker != null && !imageSearcherSwingWorker.isDone()) {
@@ -238,21 +237,27 @@ public class ConversionController {
                 callableList.add(() -> imageSearcherSwingWorker.shutdown());
             }
 
-            Optional.ofNullable(conversionWorker).ifPresent(conversionWorker -> {
-                ConcurrentLinkedQueue<Path> tmpDirectoryList = conversionWorker.getConversionOrchestrator().getFilesQueue();
-                Path tmpDirectory = conversionWorker.getConversionOrchestrator().getTmpParentDirPath();
-                callableList.add(() -> {
-                    return deleteTemporaryFiles(tmpDirectoryList, tmpDirectory);
-                });
-            });
 
-            callableList.add(() -> {
-                if (imageSearcherSwingWorker == null) {
-                    return null;
-                }
 
-                return imageSearcherSwingWorker.shutdown();
-            });
+            Optional.ofNullable(imageSearcherSwingWorker).ifPresent(ImageSearcherSwingWorker::shutdown);
+
+//            Optional.ofNullable(conversionWorker)
+//                    .ifPresent(conversionWorker -> {
+//                        ConcurrentLinkedQueue<Path> tmpDirectoryList = conversionWorker.getConversionOrchestrator().getFilesQueue();
+//                        Path tmpDirectory = conversionWorker.getConversionOrchestrator().getTmpParentDirPath();
+//                        callableList.add(() -> {
+//                            return deleteTemporaryFiles(tmpDirectoryList, tmpDirectory);
+//                        });
+//                    });
+
+
+//            callableList.add(() -> {
+//                if (imageSearcherSwingWorker == null) {
+//                    return null;
+//                }
+//
+//                return imageSearcherSwingWorker.shutdown();
+//            });
 
             executorService.invokeAll(callableList);
 

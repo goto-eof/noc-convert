@@ -6,7 +6,6 @@ import org.andreidodu.nocconvert.exception.ManualAbortedException;
 import org.andreidodu.nocconvert.helper.EDTLogger;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.task.PictureSearcherTask;
-import org.andreidodu.nocconvert.task.ValidationPictureTask;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,7 +34,6 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<Path>, Imag
     private List<Path> validSearchResult;
     private STATUS status = STATUS.SEARCHING;
     private final Consumer<List<Path>> onSearchComplete;
-    private ValidationPictureTask validationPictureTask;
 
     private final int UI_UPDATE_INTERVAL_FILE = 200;
     private final int uiUpdateIntervalFileCounter = 0;
@@ -95,7 +93,7 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<Path>, Imag
 
     public Void shutdown() {
         Optional.ofNullable(pictureSearcherTask).ifPresent(PictureSearcherTask::cancel);
-        Optional.ofNullable(validationPictureTask).ifPresent(ValidationPictureTask::cancel);
+        //Optional.ofNullable(validationPictureTask).ifPresent(ValidationPictureTask::cancel);
         this.cancel(true); // worker
         return null;
     }
@@ -107,6 +105,9 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<Path>, Imag
 
     @Override
     protected void process(List<ChunkDTO> chunks) {
+        if (isCancelled() || pictureSearcherTask == null || pictureSearcherTask.isCancelled()) {
+            return;
+        }
         EDTLogger.logEDTActivity("Why?", () -> {
             Path directory = chunks.getLast().directory;
             if (status == STATUS.SEARCHING) {

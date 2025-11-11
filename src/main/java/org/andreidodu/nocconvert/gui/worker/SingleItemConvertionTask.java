@@ -38,14 +38,14 @@ public class SingleItemConvertionTask implements Runnable {
 
     public void run() {
         if (canceled.get() || Thread.currentThread().isInterrupted() || convertSingleItemTaskInputDTO.isParentInterrupted().get()) {
-            cancelOperation();
+//            cancelOperation();
             log.debug("thread is cancelled");
             return;
         }
         try {
             convertSingleItemTaskInputDTO.semaphore().acquire();
         } catch (InterruptedException e) {
-            cancelOperation();
+//            cancelOperation();
             log.debug("operation aborted");
             return;
         }
@@ -53,18 +53,20 @@ public class SingleItemConvertionTask implements Runnable {
             ConvertImageInputDTO convertImageInputDTO = buildInput();
             this.singleImageConverter.convertImage(convertImageInputDTO);
         } catch (ConversionManualAbortedException e) {
-            cancelOperation();
+//            cancelOperation();
+            log.error(e.getMessage());
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+//            cancelOperation();
+            log.error(e.getMessage());
         } finally {
             convertSingleItemTaskInputDTO.semaphore().release();
         }
     }
 
-    private void cancelOperation() {
-        updateAsCancelled();
-        log.debug("CANCELED: {}", conversionItemDTO.getSourceFile());
-    }
+//    private void cancelOperation() {
+//        updateAsCancelled();
+//        log.debug("CANCELED: {}", conversionItemDTO.getSourceFile());
+//    }
 
     private ConvertImageInputDTO buildInput() {
         return ConvertImageInputDTO.builder()
@@ -76,14 +78,19 @@ public class SingleItemConvertionTask implements Runnable {
                 .onProgress(this::updateProgressFloatValue)
                 .fail(this::fail)
                 .pass(this::pass)
-                .addToFileQueue(convertSingleItemTaskInputDTO.addToFileQueue())
+                .renameMe(convertSingleItemTaskInputDTO.renameMe())
+                .copyMe(convertSingleItemTaskInputDTO.copyMe())
+                .calculateTemporaryFilenameForMe(convertSingleItemTaskInputDTO.calculateTemporaryFilenameForMe())
                 .notificationLevel(convertSingleItemTaskInputDTO.notificationLevel())
+                .readerFormatNames(convertSingleItemTaskInputDTO.readerFormatNames())
                 .build();
     }
 
     public void pass() {
         convertSingleItemTaskInputDTO.incrementPasses().run();
-        sendSuccessfulDTO();
+        conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
+        conversionItemDTO.setProgressPercentage(100f);
+        convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
     }
 
     public void fail(Exception e) {
@@ -98,18 +105,12 @@ public class SingleItemConvertionTask implements Runnable {
         convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
     }
 
-    private void sendSuccessfulDTO() {
-        conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
-        conversionItemDTO.setProgressPercentage(100f);
-        convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
-    }
-
-    private void updateAsCancelled() {
-        conversionItemDTO.setStatus(ConversionStatus.CANCELED);
-        conversionItemDTO.setProgressPercentage(100f);
-        conversionItemDTO.setErrorMessage("cancelled");
-        convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
-    }
+//    private void updateAsCancelled() {
+//        conversionItemDTO.setStatus(ConversionStatus.CANCELED);
+//        conversionItemDTO.setProgressPercentage(100f);
+//        conversionItemDTO.setErrorMessage("cancelled");
+//        convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
+//    }
 
     private void updateProgressFloatValue(float progress) {
         if ((progress == 1 || progress % 3 == 0) && Duration.between(lastCall, LocalDateTime.now()).toMillis() >= 1000) {

@@ -7,8 +7,8 @@ base: core24
 confinement: strict
 icon: snap/gui/icon.png
 title: NoCloud Bulk Image Converter
-website: https://andre-i.eu
-issues: https://github.com/goto-eof
+website: https://github.com/goto-eof/noc-convert
+issues: https://github.com/goto-eof/noc-convert/issues
 source-code: https://github.com/goto-eof/noc-convert
 donation: https://github.com/sponsors/goto-eof
 contact: https://andre-i.eu/#contactme
@@ -42,10 +42,9 @@ parts:
   application:
     plugin: maven
     source: .
-    maven-parameters: [ verify ]
     build-packages:
       - openjdk-21-jdk
       - maven
-  stage-packages:
-    - openjdk-21-jre
-    - xdg-utils
+    stage-packages:
+      - openjdk-21-jre
+      - xdg-utils

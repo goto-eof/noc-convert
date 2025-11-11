@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -19,6 +18,7 @@ public class FileUtil {
     private static final int MAX_FILENAME_LENGTH = 150;
     private static final AtomicLong fileID = new AtomicLong(0);
     private static final Object RENAME_LOCK = new Object();
+    public static final String DOT_TMP_EXTENSION = ".tmp";
 
     public static String getHumanableFileSize(File file) {
         if (file == null || !file.exists()) return "0 B";
@@ -44,7 +44,7 @@ public class FileUtil {
         }
     }
 
-    public static Path getCleanFileNameW(Path inputPath, String targetExtension) {
+    public static Path getCleanFileNameW(Path inputPath) {
         String fileNameWithExtension = inputPath.getFileName().toString();
         int firstDotIndex = fileNameWithExtension.indexOf('.');
 
@@ -56,8 +56,8 @@ public class FileUtil {
             log.debug("Removed UUID prefix: {} -> {}", fileNameWithExtension, extractedName);
         } else {
             extractedName = fileNameWithExtension;
+            log.debug("No dot found, keeping name: {}", extractedName);
         }
-        log.debug("No dot found, keeping name: {}", extractedName);
 
         String sanitizedName = extractedName
                 .replaceAll("[^a-zA-Z0-9\\s_.-]", "")
@@ -97,10 +97,6 @@ public class FileUtil {
         }
     }
 
-    private static long countCharInString(char c, String fileNameWithExtension) {
-        return fileNameWithExtension.chars().filter(ch -> ch == c).count();
-    }
-
     public static boolean deleteFileIfExists(File outputFile) {
         if (!outputFile.exists() || !outputFile.isFile()) {
             return true;
@@ -122,82 +118,41 @@ public class FileUtil {
         }
     }
 
-
-    public static boolean renameFile(Path file, String targetExtension) {
-        synchronized (RENAME_LOCK) {
-            // Path clean = getCleanFileNameWithoutExtension(file);
-            // Path nonExistingFile = file;
-            Path nonExistingFile = calculateANonExistingFileName(file, targetExtension);
-
-            if (nonExistingFile.toFile().exists()) {
-            }
-            try {
-                Files.move(file, nonExistingFile, StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                log.error(getRootCauseMessage(e), e);
-                return false;
-            }
-            return true;
-        }
+    public static Path calculateNonExistingTemporaryOutputFilename(Path potentiallyDuplicateOutputFilenameWithNewExtension, String newFileFormat) {
+        return FileUtil.calculateNonExistingOutputFilename(potentiallyDuplicateOutputFilenameWithNewExtension, newFileFormat, true);
     }
 
-    public static Path calculateANonExistingFileName(Path originalOutputFile, String targetExtension) {
+    public synchronized static Path calculateNonExistingOutputFilename(Path potentiallyDuplicateOutputFile, String newFileFormat, boolean isTmp) {
+        Path tmpPath = Path.of(potentiallyDuplicateOutputFile.toString() + DOT_TMP_EXTENSION);
 
-        Path file = originalOutputFile;
-        while (Files.exists(file)) {
-            String cleanFileName = FileUtil.getCleanFileNameW(originalOutputFile.getFileName(), targetExtension).toString();
-            file = calculateNewName(originalOutputFile, fileID.incrementAndGet(), cleanFileName, targetExtension);
+        if (isTmp && !tmpPath.toFile().exists()) {
+            return tmpPath;
         }
 
+        if (!potentiallyDuplicateOutputFile.toFile().exists()) {
+            return potentiallyDuplicateOutputFile;
+        }
+
+        String cleanFileNameWithOldExtension = FileUtil.getCleanFileNameW(potentiallyDuplicateOutputFile.getFileName()).toString();
+        String cleanFilenameWithoutExtension = removeFileExtension(cleanFileNameWithOldExtension);
+        long i = 1;
+        Path file;
+        do {
+            file = Path.of(potentiallyDuplicateOutputFile.getParent().toString(), cleanFilenameWithoutExtension + "-" + (i++) + "." + newFileFormat + (isTmp ? DOT_TMP_EXTENSION : ""));
+        } while (Files.exists(file));
         return file;
     }
 
-    private static Path calculateNewName(Path originlPath, long fileID, String cleanFilename, String targetExtension) {
-        Path newPath = Path.of(originlPath.getParent().toString(), cleanFilename);
-        if (!newPath.toFile().exists()) {
-            return newPath;
+    public static String removeFileExtension(String cleanFileNameWithOldExtension) {
+        if (cleanFileNameWithOldExtension == null || cleanFileNameWithOldExtension.isEmpty()) {
+            return "no-name";
         }
 
-        String calculatedFilename = insertIdAndGet(cleanFilename, fileID, targetExtension);
-        return Path.of(originlPath.getParent().toString(), calculatedFilename);
-    }
-
-    private static String insertIdAndGet(String filename, long fileID, String targetExtensionWithouthDot) {
-        String targetExtension = targetExtensionWithouthDot;
-        if (targetExtension.indexOf('.') == -1) {
-            targetExtension = "." + targetExtension;
+        if (cleanFileNameWithOldExtension.lastIndexOf('.') == -1) {
+            return cleanFileNameWithOldExtension;
         }
 
-        int lastDotIndex = filename.lastIndexOf('.');
-
-        if (lastDotIndex != -1) {
-            String onlyName = filename.substring(0, lastDotIndex);
-            String dotWithOldExtension = filename.substring(lastDotIndex);
-
-            if (onlyName.trim().isEmpty() && !dotWithOldExtension.trim().isEmpty()) {
-                return "file-id-" + fileID + targetExtension;
-            }
-            if (onlyName.trim().isEmpty() && dotWithOldExtension.trim().isEmpty()) {
-                return "file-id-" + fileID + targetExtension;
-            }
-            if (!onlyName.trim().isEmpty() && dotWithOldExtension.trim().isEmpty()) {
-                return onlyName + ".duplicate-id-" + fileID + targetExtension;
-            }
-
-            if (!onlyName.trim().isEmpty() && !dotWithOldExtension.trim().isEmpty()) {
-                return onlyName + ".duplicate-id-" + fileID + dotWithOldExtension;
-            }
-        }
-        return filename + ".duplicate-id-" + fileID + targetExtension;
-
-
-//        if (!filename.contains(".")) {
-//            return "duplicate-id-" + fileID + "-" + filename + "." + targetExtension;
-//        }
-//        if (countCharInString('.', filename) == 1) {
-//            return filename.substring(0, lastDotIndex) + 1 + "duplicate-id-" + fileID + filename.substring(lastDotIndex);
-//        }
-//        return filename.substring(0, lastDotIndex + 1) + "duplicate-id-" + fileID + filename.substring(lastDotIndex);
+        return cleanFileNameWithOldExtension.substring(0, cleanFileNameWithOldExtension.lastIndexOf('.'));
     }
 
     public static String getExtension(String filename) {
@@ -206,4 +161,5 @@ public class FileUtil {
         }
         return filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
     }
+
 }

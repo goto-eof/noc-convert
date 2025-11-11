@@ -2,7 +2,6 @@ package org.andreidodu.nocconvert.helper;
 
 import com.twelvemonkeys.image.ResampleOp;
 import org.andreidodu.nocconvert.dto.ImageHeaderDTO;
-import org.andreidodu.nocconvert.exception.ManualAbortedException;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.mapper.FormatExtensionMapper;
 import org.andreidodu.nocconvert.task.SingleImageConverter;
@@ -34,6 +33,7 @@ public class ImageUtil {
     public static final String ICNS_FORMAT = "icns";
     public static final int ICO_MAX_SIZE = 256;
     public static final int ICNS_MAX_SIZE = 1024;
+    private static final Object READER_LOCK = new Object();
 
     public static BufferedImage normalizeAsIco(BufferedImage bufferedImage) {
         Objects.requireNonNull(bufferedImage);
@@ -65,50 +65,55 @@ public class ImageUtil {
         Objects.requireNonNull(file);
 
         try (ImageInputStream iis = ImageIO.createImageInputStream(file.toFile())) {
-            Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
-            if (!readers.hasNext()) {
-                throw new IllegalArgumentException("No reader found for " + file);
+            Iterator<ImageReader> readers;
+            synchronized (READER_LOCK) {
+                readers = ImageIO.getImageReaders(iis);
             }
+            while (readers.hasNext()) {
+                try {
+                    ImageReader reader = readers.next();
+                    SingleImageConverter.ExtendedIIOReadProgressListener readerListener = getReaderListener();
+                    reader.addIIOReadProgressListener(readerListener);
 
-            ImageReader reader = readers.next();
-            SingleImageConverter.ExtendedIIOReadProgressListener readerListener = getReaderListener();
-            reader.addIIOReadProgressListener(readerListener);
+                    reader.setInput(iis, true, true);
 
-            reader.setInput(iis, true, true);
+                    if (readerListener.getException() != null) {
+                        // throw readerListener.getException();
+                        continue;
+                    }
 
-            if (readerListener.getException() != null) {
-                throw readerListener.getException();
+                    int width = reader.getWidth(0);
+                    int height = reader.getHeight(0);
+
+                    if (width <= 0 || height <= 0) {
+                        //throw new IllegalArgumentException("Invalid image size: " + width + "x" + height);
+                        continue;
+                    }
+
+                    String format = reader.getFormatName();
+
+                    if (format == null || new ImageConverterUtil().getAvailableReadFormatList()
+                            .stream()
+                            .map(dtoFormat -> dtoFormat.getFormat().toLowerCase())
+                            .noneMatch(formatFromList -> formatFromList.equalsIgnoreCase(format))) {
+                        // throw new IllegalArgumentException("Invalid image format: " + format);
+                        continue;
+                    }
+                    reader.dispose();
+                    return ImageHeaderDTO.builder()
+                            .isHeaderFound(true)
+                            .width(width)
+                            .height(height)
+                            .format(format)
+                            .build();
+                } catch (Exception e) {
+                    log.error(e.getMessage());
+                }
             }
-
-            int width = reader.getWidth(0);
-            int height = reader.getHeight(0);
-
-            if (width <= 0 || height <= 0) {
-                throw new IllegalArgumentException("Invalid image size: " + width + "x" + height);
-            }
-
-            String format = reader.getFormatName();
-
-            if (format == null || new ImageConverterUtil().getAvailableReadFormatList()
-                    .stream()
-                    .map(dtoFormat -> dtoFormat.getFormat().toLowerCase())
-                    .noneMatch(formatFromList -> formatFromList.equalsIgnoreCase(format))) {
-                throw new IllegalArgumentException("Invalid image format: " + format);
-            }
-
-            reader.dispose();
-
-            return ImageHeaderDTO.builder()
-                    .isHeaderFound(true)
-                    .width(width)
-                    .height(height)
-                    .format(format)
-                    .build();
-        } catch (InterruptedException e) {
-            throw new ManualAbortedException(getRootCauseMessage(e), e);
         } catch (Exception e) {
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
+        throw new RuntimeException("No reader found for " + file);
     }
 
     public static boolean getImageHeadersNoException(Path file) {
@@ -312,8 +317,8 @@ public class ImageUtil {
     }
 
     private static void swapRBGChannels(BufferedImage image) {
-        if (image.getType() != BufferedImage.TYPE_INT_ARGB &&
-                image.getType() != BufferedImage.TYPE_INT_RGB &&
+        if (image.getType() != java.awt.image.BufferedImage.TYPE_INT_ARGB &&
+                image.getType() != java.awt.image.BufferedImage.TYPE_INT_RGB &&
                 image.getType() != TYPE_4BYTE_ABGR) {
             log.warn("Unsupported image type for R/B swap.");
             return;
