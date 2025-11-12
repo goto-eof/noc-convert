@@ -24,15 +24,17 @@ public record ConvertSingleItemTaskInputDTO(
         ExecutorService platformExecutorService,
         Runnable incrementPasses,
         Runnable incrementFailures,
-        Consumer<Path> addToFileRenameQueue,
-        Consumer<Path> addToFileQueue,
+        //Consumer<Path> addToFileRenameQueue,
+        //Consumer<ConversionItemDTO> addToFileQueue,
         Supplier<Boolean> isParentInterrupted,
         NotificationLevel notificationLevel,
         BiConsumer<Path, ConvertImageInputDTO> renameMe,
-        Consumer<ConvertImageInputDTO> copyMe,
-        Function<ConvertImageInputDTO, Path> calculateTemporaryFilenameForMe,
+        Consumer<ConversionItemDTO> copyMe,
+        Function<ConversionItemDTO, Path> calculateTemporaryFilenameForMe,
         List<String> readerFormatNames,
         Semaphore semaphore,
-        CountDownLatch countFinish
+        CountDownLatch countFinish,
+        Consumer<ConversionItemDTO> processedFilesQueue
+
 ) {
 }

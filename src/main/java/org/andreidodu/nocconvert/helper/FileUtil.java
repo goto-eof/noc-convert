@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
@@ -142,6 +143,20 @@ public class FileUtil {
         return file;
     }
 
+    public static Path tmpFilenameToFinal(Path potentiallyDuplicateOutputFile) {
+        String cleanFileNameWithNewExtension = FileUtil.getCleanFilenameOrFullPath(potentiallyDuplicateOutputFile.getFileName()).toString();
+
+        String originalFilenameWithNewExtension = removeFileExtension(cleanFileNameWithNewExtension);
+        String cleanFilenameWithoutExtension = removeFileExtension(originalFilenameWithNewExtension);
+        String extension = getExtension(originalFilenameWithNewExtension);
+        long i = 1;
+        Path file = Path.of(potentiallyDuplicateOutputFile.getParent().toString(), cleanFilenameWithoutExtension + "." + extension);
+        while (Files.exists(file)) {
+            file = Path.of(potentiallyDuplicateOutputFile.getParent().toString(), cleanFilenameWithoutExtension + "(" + (i++) + ")." + extension);
+        }
+        return file;
+    }
+
     public static String removeFileExtension(String cleanFileNameWithOldExtension) {
         if (cleanFileNameWithOldExtension == null || cleanFileNameWithOldExtension.isEmpty()) {
             return "no-name";
@@ -159,6 +174,12 @@ public class FileUtil {
             return "";
         }
         return filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
+    }
+
+    public static ThreadFactory buildVirtualThreadFactory(String name) {
+        return Thread.ofVirtual()
+                .name(name)
+                .factory();
     }
 
 }

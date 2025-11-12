@@ -13,13 +13,15 @@ public class ConversionItemDTO {
 
     private String fileName;
     private String fileSize;
-    private Float progressPercentage;
+    private volatile Float progressPercentage;
     private String targetFormat;
     private String targetExtension;
-    private String errorMessage;
-    private ConversionStatus status;
+    private volatile String errorMessage;
+    private volatile ConversionStatus status;
     private Path sourceFile;
+    private Path tmpFile;
     private Path destinationDirectory;
     private Integer index;
+    private Path tmpDirectory;
 
 }

@@ -37,6 +37,7 @@ public class ConversionWorker extends SwingWorker<List<ConversionItemDTO>, Conve
                 .incrementFailures(conversionWorkerInputDTO.incrementFailures())
                 .incrementPasses(conversionWorkerInputDTO.incrementPasses())
                 .onConversionAborted(conversionWorkerInputDTO.onConversionAborted())
+                .decrementSuccesses(conversionWorkerInputDTO.decrementPasses())
                 .build();
     }
 

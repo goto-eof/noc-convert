@@ -1,6 +1,7 @@
 package org.andreidodu.nocconvert.dto.conversion.input;
 
 import lombok.Builder;
+import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.enums.NotificationLevel;
 
 import java.nio.file.Path;
@@ -19,13 +20,13 @@ public record ConvertImageInputDTO(
         String targetExtension,
         Runnable onStart,
         Consumer<Float> onProgress,
-        Runnable pass,
-        Consumer<Exception> fail,
-        Consumer<Path> addToFileQueue,
+        Consumer<ConversionItemDTO> pass,
+        BiConsumer<ConversionItemDTO, Exception> fail,
+        Consumer<ConversionItemDTO> addToFileQueue,
         NotificationLevel notificationLevel,
         BiConsumer<Path, ConvertImageInputDTO> renameMe,
-        Consumer<ConvertImageInputDTO> copyMe,
-        Function<ConvertImageInputDTO, Path> calculateTemporaryFilenameForMe,
+        Consumer<ConversionItemDTO> copyMe,
+        Function<ConversionItemDTO, Path> calculateTemporaryFilenameForMe,
         List<String> readerFormatNames
 ) {
 }

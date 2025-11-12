@@ -310,6 +310,7 @@ public class ConversionController {
                 .onConversionAborted(this::onConvertionAborted)
                 .incrementPasses(this::incrementPasses)
                 .incrementFailures(this::incrementFailures)
+                .decrementPasses(this::decrementPasses)
                 .build();
     }
 
@@ -320,6 +321,10 @@ public class ConversionController {
 
     private void incrementPasses() {
         this.passes.incrementAndGet();
+    }
+
+    private void decrementPasses() {
+        this.passes.decrementAndGet();
     }
 
     public boolean isWorking() {

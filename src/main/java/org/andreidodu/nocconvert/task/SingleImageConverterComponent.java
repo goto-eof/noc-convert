@@ -3,6 +3,7 @@ package org.andreidodu.nocconvert.task;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ImageHeaderDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 import org.andreidodu.nocconvert.enums.NotificationLevel;
@@ -52,7 +53,7 @@ public class SingleImageConverterComponent implements CancellableConverterCompon
         this.platformExecutorService = platformExecutorService;
     }
 
-    public void convertImage(ConvertImageInputDTO convertImageInputDTO) {
+    public void convertImage(ConvertImageInputDTO convertImageInputDTO, ConversionItemDTO conversionItemDTO) {
         if (canceled.get() || Thread.currentThread().isInterrupted()) {
             throw new ConversionManualAbortedException("conversion aborted a1");
         }
@@ -62,7 +63,6 @@ public class SingleImageConverterComponent implements CancellableConverterCompon
 
         if (Thread.currentThread().isInterrupted() || canceled.get()) {
             throw new ConversionManualAbortedException("operation aborted");
-
         }
 
         convertImageInputDTO.onStart().run();
@@ -70,7 +70,8 @@ public class SingleImageConverterComponent implements CancellableConverterCompon
 
         Path sourceFile = convertImageInputDTO.sourceFile();
 
-        Path tmpOutputFile = convertImageInputDTO.calculateTemporaryFilenameForMe().apply(convertImageInputDTO);
+        Path tmpOutputFile = convertImageInputDTO.calculateTemporaryFilenameForMe().apply(conversionItemDTO);
+        conversionItemDTO.setTmpFile(tmpOutputFile);
 
         try {
             ImageHeaderDTO sourceFileHeaders;
@@ -88,14 +89,15 @@ public class SingleImageConverterComponent implements CancellableConverterCompon
                 if (tmpOutputFile == null) {
                     throw new RuntimeException("unable to copy the file");
                 }
-                convertImageInputDTO.copyMe().accept(convertImageInputDTO);
-                convertImageInputDTO.pass().run();
+                convertImageInputDTO.copyMe().accept(conversionItemDTO);
+                //convertImageInputDTO.addToFileQueue().accept(tmpOutputFile); -> NOTE: commented because: copy operation calls automatically addToFileQueue
+                convertImageInputDTO.pass().accept(conversionItemDTO);
                 return;
             }
         } catch (ConversionManualAbortedException e) {
             throw e;
         } catch (Exception e) {
-            convertImageInputDTO.fail().accept(e);
+            convertImageInputDTO.fail().accept(conversionItemDTO, e);
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
 
@@ -133,19 +135,20 @@ public class SingleImageConverterComponent implements CancellableConverterCompon
                 throw new ConversionManualAbortedException("operation aborted");
             }
 
-            writeImageOuter(convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image, convertImageInputDTO.addToFileQueue());
+            writeImageOuter(convertImageInputDTO, tmpOutputFile, totalReadPercentageDTO, image);
 
             if (Thread.currentThread().isInterrupted() || canceled.get()) {
                 throw new ConversionManualAbortedException("operation aborted");
             }
 
-            convertImageInputDTO.renameMe().accept(tmpOutputFile, convertImageInputDTO);
+            //convertImageInputDTO.renameMe().accept(tmpOutputFile, convertImageInputDTO);
+            // convertImageInputDTO.addToFileQueue().accept(tmpOutputFile);
 
-            if (Thread.currentThread().isInterrupted() || canceled.get()) {
-                throw new ConversionManualAbortedException("operation aborted");
-            }
+//            if (Thread.currentThread().isInterrupted() || canceled.get()) {
+//                throw new ConversionManualAbortedException("operation aborted");
+//            }
 
-            convertImageInputDTO.pass().run();
+            convertImageInputDTO.pass().accept(conversionItemDTO);
         } catch (ConversionManualAbortedException e) {
             if (Thread.currentThread().isInterrupted() || canceled.get()) {
                 throw e;
@@ -157,7 +160,7 @@ public class SingleImageConverterComponent implements CancellableConverterCompon
                 throw new ConversionManualAbortedException("operation aborted");
             }
             deleteCorruptedFile(tmpOutputFile);
-            convertImageInputDTO.fail().accept(new RuntimeException(getRootCauseMessage(e), e));
+            convertImageInputDTO.fail().accept(conversionItemDTO, new RuntimeException(getRootCauseMessage(e), e));
             if (e instanceof RejectedExecutionException || e instanceof InterruptedException) {
                 throw new ConversionManualAbortedException("operation aborted");
             }
@@ -184,7 +187,7 @@ public class SingleImageConverterComponent implements CancellableConverterCompon
             return loadCorruptedImage(sourceFile, totalReadPercentageDTO, updateProgressFloatValue, imageInputStream, convertImageInputDTO);
         } catch (Exception eee) {
             log.error("Failed to restore the corrupted image: {}", getRootCauseMessage(eee), eee);
-            convertImageInputDTO.fail().accept(new RuntimeException(getRootCauseMessage(e), e));
+            // convertImageInputDTO.fail().accept(tmpOutputFile, new RuntimeException(getRootCauseMessage(e), e));
             throw new RuntimeException(getRootCauseMessage(e), e);
         }
     }
@@ -270,7 +273,7 @@ public class SingleImageConverterComponent implements CancellableConverterCompon
         }
     }
 
-    private void writeImageOuter(ConvertImageInputDTO convertImageInputDTO, Path tmpOutputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image, Consumer<Path> addToFileDeleteQueue) throws Exception {
+    private void writeImageOuter(ConvertImageInputDTO convertImageInputDTO, Path tmpOutputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image) throws Exception {
         try {
             writeImageInner(convertImageInputDTO.targetExtension(), convertImageInputDTO.onProgress(), tmpOutputFile, totalReadPercentageDTO, image);
         } catch (ConversionManualAbortedException e) {

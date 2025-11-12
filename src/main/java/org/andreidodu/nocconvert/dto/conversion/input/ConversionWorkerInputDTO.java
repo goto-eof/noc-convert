@@ -13,6 +13,7 @@ public record ConversionWorkerInputDTO(
         Runnable onAllTasksComplete,
         Consumer<ConversionItemDTO> completeItem,
         Runnable incrementPasses,
+        Runnable decrementPasses,
         Runnable incrementFailures,
         Runnable onConversionAborted
 ) {

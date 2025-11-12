@@ -5,7 +5,6 @@ import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
-import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
 import org.andreidodu.nocconvert.task.SingleImageConverterComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,7 +26,7 @@ public class SingleItemConvertionTask implements Runnable {
 
     public SingleItemConvertionTask(ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO) {
         this.convertSingleItemTaskInputDTO = convertSingleItemTaskInputDTO;
-        this.conversionItemDTO = new ConversionItemDTOMapper().clone(convertSingleItemTaskInputDTO.conversionItemDTO());
+        this.conversionItemDTO = convertSingleItemTaskInputDTO.conversionItemDTO();
         this.singleImageConverter = new SingleImageConverterComponent(convertSingleItemTaskInputDTO.platformExecutorService());
     }
 
@@ -47,7 +46,7 @@ public class SingleItemConvertionTask implements Runnable {
         }
         try {
             ConvertImageInputDTO convertImageInputDTO = buildInput();
-            this.singleImageConverter.convertImage(convertImageInputDTO);
+            this.singleImageConverter.convertImage(convertImageInputDTO, conversionItemDTO);
         } catch (ConversionManualAbortedException e) {
             log.error("operation aborted b1: {}", e.getMessage());
             cancel();
@@ -77,22 +76,26 @@ public class SingleItemConvertionTask implements Runnable {
                 .calculateTemporaryFilenameForMe(convertSingleItemTaskInputDTO.calculateTemporaryFilenameForMe())
                 .notificationLevel(convertSingleItemTaskInputDTO.notificationLevel())
                 .readerFormatNames(convertSingleItemTaskInputDTO.readerFormatNames())
+                .addToFileQueue(convertSingleItemTaskInputDTO.processedFilesQueue())
                 .build();
     }
 
-    public void pass() {
+    public void pass(ConversionItemDTO conversionItemDTO) {
         convertSingleItemTaskInputDTO.incrementPasses().run();
         conversionItemDTO.setStatus(ConversionStatus.COMPLETED);
         conversionItemDTO.setProgressPercentage(100f);
         convertSingleItemTaskInputDTO.setItemAsCompleted().accept(conversionItemDTO);
+        convertSingleItemTaskInputDTO.processedFilesQueue().accept(conversionItemDTO);
+
     }
 
-    public void fail(Exception e) {
+    public void fail(ConversionItemDTO conversionItemDTO, Exception e) {
         convertSingleItemTaskInputDTO.incrementFailures().run();
-        sendFailedDTO(e);
+        sendFailedDTO(conversionItemDTO, e);
+        convertSingleItemTaskInputDTO.processedFilesQueue().accept(conversionItemDTO);
     }
 
-    private void sendFailedDTO(Exception e) {
+    private void sendFailedDTO(ConversionItemDTO conversionItemDTO, Exception e) {
         conversionItemDTO.setStatus(ConversionStatus.FAILED);
         conversionItemDTO.setProgressPercentage(100f);
         conversionItemDTO.setErrorMessage(getRootCauseMessage(e));
