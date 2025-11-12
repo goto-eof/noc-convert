@@ -7,6 +7,7 @@ import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInpu
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertImageInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
 import org.andreidodu.nocconvert.enums.NotificationLevel;
+import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.helper.FileUtil;
 import org.andreidodu.nocconvert.helper.OSUtils;
 import org.andreidodu.nocconvert.helper.performance.AdaptiveSimpleGovernorRunnable;
@@ -28,10 +29,8 @@ import static org.andreidodu.nocconvert.helper.performance.AdaptiveSimpleGoverno
 
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
-    public static final int RENAME_SEMAPHORE_SIZE = 100;
     public static final int MAX_NUM_ITEMS_FOR_NOTIFICATION_LEVEL_LOW = 10_000;
     private final ExecutorService virtualThreadExecutor;
-    // private List<SingleItemConvertionTask> virtualTaskList;
     private final Semaphore semaphore;
     private final ExecutorService platformExecutorService;
     @Getter
@@ -46,7 +45,6 @@ public class ConversionOrchestrator {
     private Path finalDir;
     @Getter
     private final ConcurrentLinkedQueue<Path> filesQueue = new ConcurrentLinkedQueue<>();
-    private final String targetExtension;
     private final AtomicBoolean manualShutdown = new AtomicBoolean(false);
     public static final String FINAL_OUTPUT_DIRECTORY_NAME = "noc-convert";
     public static final String TMP_OUTPUT_DIRECTORY_NAME = "noc-convert-tmp";
@@ -55,7 +53,6 @@ public class ConversionOrchestrator {
 
     public ConversionOrchestrator(ConversionOrchestratorInputDTO conversionOrchestratorInputDTO) {
         this.conversionOrchestratorInputDTO = conversionOrchestratorInputDTO;
-        targetExtension = conversionOrchestratorInputDTO.conversionItemDTOList().stream().findFirst().orElseThrow().getTargetExtension();
 
         virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
         platformThreadsPermits = permits;
@@ -67,7 +64,6 @@ public class ConversionOrchestrator {
 
 
     public void startConversion() {
-        // virtualTaskList = new ArrayList<>();
         try {
             Path conversionDestinationDirectory = conversionOrchestratorInputDTO.conversionItemDTOList()
                     .stream()
@@ -90,18 +86,21 @@ public class ConversionOrchestrator {
         finishLatch = new CountDownLatch(conversionOrchestratorInputDTO.conversionItemDTOList().size());
         int index = 0;
 
+        throwExceptionIfManuallyAborted();
+
         try {
             for (ConversionItemDTO conversionItemDTO : conversionOrchestratorInputDTO.conversionItemDTOList()) {
                 SingleItemConvertionTask task = null;
+                throwExceptionIfManuallyAborted();
                 semaphore.acquire();
+                throwExceptionIfManuallyAborted();
                 conversionItemDTO.setStatus(ConversionStatus.QUEUED);
                 conversionItemDTO.setIndex(index++);
                 ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO = buildInput(conversionItemDTO, tmpDirPath);
                 task = new SingleItemConvertionTask(convertSingleItemTaskInputDTO);
-                // virtualTaskList.add(task);
                 virtualThreadExecutor.submit(task);
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | ConversionManualAbortedException e) {
             semaphore.drainPermits();
             while (finishLatch.getCount() > 0) {
                 finishLatch.countDown();
@@ -112,17 +111,17 @@ public class ConversionOrchestrator {
         }
     }
 
+    private void throwExceptionIfManuallyAborted() {
+        if (isThreadInterrupted() || manualShutdown.get()) {
+            throw new ConversionManualAbortedException("manual abortion");
+        }
+    }
+
     private static Path buildTmpPathAndReturn(Path tmpOutputDirectory) throws IOException {
         Path tmpDirPath = Path.of(tmpOutputDirectory.toString(), TMP_OUTPUT_DIRECTORY_NAME);
         Files.createDirectories(tmpDirPath);
         return tmpDirPath;
     }
-
-//    private static Path buildParentTmpPathAndReturn(Path tmpOutputDirectory) throws IOException {
-//        Path tmpDirPath = Path.of(tmpOutputDirectory.toString(), "noc-convert");
-//        Files.createDirectories(tmpDirPath);
-//        return tmpDirPath;
-//    }
 
     private ConvertSingleItemTaskInputDTO buildInput(ConversionItemDTO conversionItemDTO, Path tmpDir) {
         return ConvertSingleItemTaskInputDTO.builder()
@@ -134,7 +133,7 @@ public class ConversionOrchestrator {
                 .incrementFailures(conversionOrchestratorInputDTO.incrementFailures())
                 .incrementPasses(conversionOrchestratorInputDTO.incrementPasses())
                 .addToFileQueue(this::addToFileQueue)
-                .isParentInterrupted(this::isInterrupted)
+                .isParentInterrupted(this::isThreadInterrupted)
                 .notificationLevel(calculateNotificationLevel())
                 .renameMe(this::renameMe)
                 .copyMe(this::copyMe)
@@ -153,7 +152,7 @@ public class ConversionOrchestrator {
         return NotificationLevel.HIGH;
     }
 
-    private Boolean isInterrupted() {
+    private Boolean isThreadInterrupted() {
         return Thread.currentThread().isInterrupted();
     }
 
@@ -294,7 +293,6 @@ public class ConversionOrchestrator {
         while (finishLatch.getCount() > 0) {
             finishLatch.countDown();
         }
-        // virtualTaskList.forEach(SingleItemConvertionTask::cancel);
 
         if (platformExecutorService != null && !platformExecutorService.isTerminated()) {
             platformExecutorService.shutdownNow();
