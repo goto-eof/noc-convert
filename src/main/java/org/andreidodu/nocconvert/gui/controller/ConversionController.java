@@ -36,7 +36,6 @@ public class ConversionController {
     private static final Logger log = LogManager.getLogger(ConversionController.class);
     public static final int DELETE_SEMAPHORE_SIZE = 100;
     private static final int UI_UPDATE_INTERVAL = 200;
-    public static final String FINAL_OUTPUT_DIRECTORY_NAME = "noc-convert";
     private final AtomicLong counter = new AtomicLong(0);
     private final ConversionDTO conversionDTO;
     private final ImageConverterUtil imageConverterUtil;

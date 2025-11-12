@@ -24,6 +24,8 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.andreidodu.nocconvert.constants.ApplicationConfig.FINAL_OUTPUT_DIRECTORY_NAME;
+import static org.andreidodu.nocconvert.constants.ApplicationConfig.TMP_OUTPUT_DIRECTORY_NAME;
 import static org.andreidodu.nocconvert.helper.FileUtil.buildVirtualThreadFactory;
 import static org.andreidodu.nocconvert.helper.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
 
@@ -45,8 +47,7 @@ public class ConversionOrchestrator {
     private Path finalDir;
     @Getter
     private final AtomicBoolean manualShutdown = new AtomicBoolean(false);
-    public static final String FINAL_OUTPUT_DIRECTORY_NAME = "noc-convert";
-    public static final String TMP_OUTPUT_DIRECTORY_NAME = "noc-convert-tmp";
+
     private CountDownLatch finishLatch;
     private final ConcurrentLinkedQueue<ConversionItemDTO> processedFilesQueue = new ConcurrentLinkedQueue<>();
 

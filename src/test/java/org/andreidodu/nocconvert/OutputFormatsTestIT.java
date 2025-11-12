@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
-import static org.andreidodu.nocconvert.gui.worker.ConversionOrchestrator.FINAL_OUTPUT_DIRECTORY_NAME;
+import static org.andreidodu.nocconvert.constants.ApplicationConfig.FINAL_OUTPUT_DIRECTORY_NAME;
 import static org.andreidodu.nocconvert.helper.TestHelper.prepareInputFiles;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doNothing;

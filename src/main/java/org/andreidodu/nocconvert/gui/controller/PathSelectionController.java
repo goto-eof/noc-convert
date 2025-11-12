@@ -5,11 +5,11 @@ import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
 import org.andreidodu.nocconvert.gui.components.TextfieldDoubleButtonComponent;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionRawDTO;
+import org.andreidodu.nocconvert.helper.FileSystemSupportGuiUtil;
 import org.andreidodu.nocconvert.service.FileSystemService;
 import org.andreidodu.nocconvert.service.ValidationService;
 import org.andreidodu.nocconvert.service.impl.FileSystemServiceImpl;
 import org.andreidodu.nocconvert.service.impl.ValidationServiceImpl;
-import org.andreidodu.nocconvert.helper.FileSystemSupportGuiUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+
+import static org.andreidodu.nocconvert.constants.ApplicationConfig.FINAL_OUTPUT_DIRECTORY_NAME;
 
 public class PathSelectionController {
     private static final Logger log = LogManager.getLogger(PathSelectionController.class);
@@ -83,7 +85,7 @@ public class PathSelectionController {
         TextfieldDoubleButtonComponent sourceComponent = pathSelectionDTO.sourceComponent();
         addBrowseDirectoryEventListener(sourceComponent, pathSelectionRawDTO::setSourceDirectory, this::isValidPath, () -> {
             sourceComponent.getSecondaryButton().setEnabled(true);
-        });
+        }, false);
     }
 
     private boolean isValidPath(Path path) {
@@ -98,7 +100,7 @@ public class PathSelectionController {
         TextfieldDoubleButtonComponent destinationComponent = pathSelectionDTO.destinationComponent();
         addBrowseDirectoryEventListener(destinationComponent, pathSelectionRawDTO::setDestinationDirectory, this::isAllowOverrideIfNecessary, () -> {
             destinationComponent.getSecondaryButton().setEnabled(true);
-        });
+        }, true);
     }
 
     private boolean isAllowOverrideIfNecessary(Path path) {
@@ -117,7 +119,7 @@ public class PathSelectionController {
         return response == JOptionPane.YES_OPTION;
     }
 
-    private void addBrowseDirectoryEventListener(TextfieldButtonComponent component, Consumer<Path> pathConsumer, Predicate<Path> isAllowOverrideIfNecessary, Runnable callback) {
+    private void addBrowseDirectoryEventListener(TextfieldButtonComponent component, Consumer<Path> pathConsumer, Predicate<Path> isAllowOverrideIfNecessary, Runnable callback, boolean isDestinationDirectory) {
         component.getButton()
                 .addActionListener(e -> fileSystemSupportGuiUtil.selectDirectory()
                         .ifPresent(text -> {
@@ -126,10 +128,22 @@ public class PathSelectionController {
                                 return;
                             }
                             pathConsumer.accept(path);
-                            component.getTextField().setText(path.getFileName().toString());
+                            String pathString = normalizePath(path, isDestinationDirectory);
+                            component.getTextField().setText(pathString);
                             callback.run();
                         })
                 );
+    }
+
+    private static String normalizePath(Path path, boolean isDestinationDirectory) {
+        return ".../" + stringTruncate(path.getFileName().toString()) + (isDestinationDirectory ? "/" + FINAL_OUTPUT_DIRECTORY_NAME : "");
+    }
+
+    private static String stringTruncate(String string) {
+        if (string.length() >= 30) {
+            return string.substring(0, 30) + "...";
+        }
+        return string;
     }
 
     public List<String> retrieveValidationErrorsIfExists() {
