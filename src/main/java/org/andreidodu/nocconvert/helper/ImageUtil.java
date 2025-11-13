@@ -69,10 +69,8 @@ public class ImageUtil {
         try (ImageInputStream iis = ImageIO.createImageInputStream(file.toFile())) {
             Iterator<ImageReader> readers;
             abortGetImageHeadersIfNecessary(cancellableConverterComponent);
-            synchronized (READER_LOCK) {
-                abortGetImageHeadersIfNecessary(cancellableConverterComponent);
-                readers = ImageIO.getImageReaders(iis);
-            }
+            abortGetImageHeadersIfNecessary(cancellableConverterComponent);
+            readers = ImageIO.getImageReaders(iis);
             while (readers.hasNext()) {
                 abortGetImageHeadersIfNecessary(cancellableConverterComponent);
                 try {

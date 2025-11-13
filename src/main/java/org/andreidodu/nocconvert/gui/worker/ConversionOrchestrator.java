@@ -346,45 +346,45 @@ public class ConversionOrchestrator {
 
     }
 
-    private void deleteTemporaryDirectoryIfExists() {
-        try {
-            if (OSUtils.isLinux() || OSUtils.isMacOS()) {
-                deleteTemporaryDirectoryOnUnixLikeIfExists();
-                return;
-            }
-
-            FileUtils.deleteDirectory(tmpDirPath.toFile());
-        } catch (IOException e) {
-            log.error("unable to delete temporary directory {}", tmpDirPath, e);
-        }
-    }
-
-    private void deleteTemporaryDirectoryOnUnixLikeIfExists() {
-        try {
-            log.warn("Starting deletion (rm -rf) for: {}", tmpDirPath);
-
-            ProcessBuilder pb = new ProcessBuilder("rm", "-rf", tmpDirPath.toString());
-            pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
-            Process p = pb.start();
-            int exitCode = p.waitFor();
-
-            if (exitCode == 0) {
-                log.warn("Deletion completed with success: {}", tmpDirPath);
-            } else {
-                log.error("rm -rf failed with exit code {}. Fallback to FileUtils.deleteDirectory().", exitCode);
-                FileUtils.deleteDirectory(tmpDirPath.toFile());
-                log.warn("Fallback to FileUtils.deleteDirectory() completed.");
-            }
-        } catch (IOException | InterruptedException e) {
-            log.error("Unable to delete tmp directory with rm -rf {}. Error: {}", tmpDirPath, e.getMessage());
-            try {
-                log.error("Fallback to FileUtils.deleteDirectory().");
-                FileUtils.deleteDirectory(tmpDirPath.toFile());
-                log.warn("Fallback to FileUtils.deleteDirectory() completed.");
-            } catch (IOException fallbackE) {
-                log.error("Also classic faillback  failed for {}. Error message: {}", tmpDirPath, fallbackE.getMessage());
-            }
-        }
-    }
+//    private void deleteTemporaryDirectoryIfExists() {
+//        try {
+//            if (OSUtils.isLinux() || OSUtils.isMacOS()) {
+//                deleteTemporaryDirectoryOnUnixLikeIfExists();
+//                return;
+//            }
+//
+//            FileUtils.deleteDirectory(tmpDirPath.toFile());
+//        } catch (IOException e) {
+//            log.error("unable to delete temporary directory {}", tmpDirPath, e);
+//        }
+//    }
+//
+//    private void deleteTemporaryDirectoryOnUnixLikeIfExists() {
+//        try {
+//            log.warn("Starting deletion (rm -rf) for: {}", tmpDirPath);
+//
+//            ProcessBuilder pb = new ProcessBuilder("rm", "-rf", tmpDirPath.toString());
+//            pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+//            Process p = pb.start();
+//            int exitCode = p.waitFor();
+//
+//            if (exitCode == 0) {
+//                log.warn("Deletion completed with success: {}", tmpDirPath);
+//            } else {
+//                log.error("rm -rf failed with exit code {}. Fallback to FileUtils.deleteDirectory().", exitCode);
+//                FileUtils.deleteDirectory(tmpDirPath.toFile());
+//                log.warn("Fallback to FileUtils.deleteDirectory() completed.");
+//            }
+//        } catch (IOException | InterruptedException e) {
+//            log.error("Unable to delete tmp directory with rm -rf {}. Error: {}", tmpDirPath, e.getMessage());
+//            try {
+//                log.error("Fallback to FileUtils.deleteDirectory().");
+//                FileUtils.deleteDirectory(tmpDirPath.toFile());
+//                log.warn("Fallback to FileUtils.deleteDirectory() completed.");
+//            } catch (IOException fallbackE) {
+//                log.error("Also classic faillback  failed for {}. Error message: {}", tmpDirPath, fallbackE.getMessage());
+//            }
+//        }
+//    }
 
 }

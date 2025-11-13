@@ -76,10 +76,8 @@ public class SingleImageConverterComponent implements CancellableConverterCompon
         try {
             ImageHeaderDTO sourceFileHeaders;
             interruptIfNecessary();
-            synchronized (IMAGE_IO_LOCK) {
-                interruptIfNecessary();
-                sourceFileHeaders = getImageHeaders(sourceFile, this);
-            }
+            interruptIfNecessary();
+            sourceFileHeaders = getImageHeaders(sourceFile, this);
             String sourceFileFormat = sourceFileHeaders.format();
             validateInputImage(convertImageInputDTO.sourceFile(), sourceFileFormat, convertImageInputDTO.readerFormatNames());
 
@@ -286,10 +284,8 @@ public class SingleImageConverterComponent implements CancellableConverterCompon
     private void writeImageInner(String newFileFormat, Consumer<Float> updateProgressFloatValue, Path tmpOutputFile, TotalReadPercentageDTO totalReadPercentageDTO, BufferedImage image) throws Exception {
         Iterator<ImageWriter> writers;
         interruptIfNecessary();
-        synchronized (IMAGE_IO_LOCK) {
-            interruptIfNecessary();
-            writers = ImageIO.getImageWritersByFormatName(newFileFormat);
-        }
+        interruptIfNecessary();
+        writers = ImageIO.getImageWritersByFormatName(newFileFormat);
         if (!writers.hasNext()) {
             log.debug("No writers found for format: {}", newFileFormat);
             throw new IllegalStateException("No writer found for format: " + newFileFormat);
