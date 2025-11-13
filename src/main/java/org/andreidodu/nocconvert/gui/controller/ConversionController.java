@@ -12,17 +12,17 @@ import org.andreidodu.nocconvert.helper.ImageConverterUtil;
 import org.andreidodu.nocconvert.helper.check.FormatCheckUtil;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.mapper.ConversionItemDTOMapper;
+import org.andreidodu.nocconvert.task.AlwaysCleanTask;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -54,6 +54,7 @@ public class ConversionController {
     private final AtomicInteger totalFound = new AtomicInteger(0);
 
     private final AtomicReference<String> timeElapsed = new AtomicReference<>("0s");
+    private static final BlockingQueue<Path> globalDeletionQueue = new LinkedBlockingQueue<>();
 
     public ConversionController(ConversionDTO conversionDTO) {
         this.conversionDTO = conversionDTO;
@@ -108,14 +109,6 @@ public class ConversionController {
 
     public int getInternalSuccessCount() {
         return this.passes.get();
-    }
-
-    public int getInternalFailuresCount() {
-        return this.failures.get();
-    }
-
-    public int getInternalTotalCount() {
-        return this.totalFound.get();
     }
 
 
@@ -243,8 +236,7 @@ public class ConversionController {
             executorService.invokeAll(callableList);
 
             if (exit) {
-                log.info("Exiting....");
-                exit(0);
+                exitFromJVM();
             }
 
         } catch (InterruptedException e) {
@@ -252,6 +244,14 @@ public class ConversionController {
             throw new RuntimeException(e);
         }
 
+    }
+
+    private static void exitFromJVM() {
+        log.info("Exit Procedure initialized....");
+        log.info("OS instructions to delete temporary files");
+        Thread.ofVirtual().start(new AlwaysCleanTask(globalDeletionQueue));
+        log.info("bye bye from noc-convert :)");
+        exit(0);
     }
 
     public void startSearchForImagesStep() {
@@ -310,6 +310,7 @@ public class ConversionController {
                 .incrementPasses(this::incrementPasses)
                 .incrementFailures(this::incrementFailures)
                 .decrementPasses(this::decrementPasses)
+                .addToDeletionQueue(this::addToDeletionQueue)
                 .build();
     }
 
@@ -347,23 +348,29 @@ public class ConversionController {
                 conversionDTO.conversionFileJList().repaint();
             }
 
+            DecimalFormat df = buildNumberFormatter();
+
+            String processedItemsFormatted = df.format(processedItems.get());
+            String totalFormatted = df.format(paths.size());
+            String failureformatted = df.format(failures.get());
+            String totalformatted = df.format(paths.size());
 
             Optional.ofNullable(paths).ifPresent(paths -> {
                 if (paths.size() > 10_000 && counter.get() % UI_UPDATE_INTERVAL != 0) {
                     return;
                 }
 
-                applicationStatusLabel.setText("Converted " + processedItems + " of " + paths.size() + " Images (" + failures.get() + " failures). Please wait.");
+                applicationStatusLabel.setText("Converted " + processedItemsFormatted + " of " + totalFormatted + " Images (" + failureformatted + " failures). Please wait.");
                 long now = System.currentTimeMillis();
                 if (now - lastTime >= 1000) {
                     lastTime = now;
                     this.cpuLoadPercentage.set(cpuPercentage);
                     this.timeElapsed.set(calculateTimeElapsed());
                     if (ApplicationConfig.DEV_MODE) {
-                        conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | " + cpuLoadPercentage + "% CPU load | " + (conversionWorker != null ? conversionWorker.getPlatformThreadsPermits() : -1) + " P-Threads | " + (conversionWorker != null ? conversionWorker.getVirtualThreadsPermits() : -1) + " V-Threads | Phase 2 - Processed " + processedItems + "/" + paths.size() + " Images");
+                        conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | " + cpuLoadPercentage + "% CPU load | " + (conversionWorker != null ? conversionWorker.getPlatformThreadsPermits() : -1) + " P-Threads | " + (conversionWorker != null ? conversionWorker.getVirtualThreadsPermits() : -1) + " V-Threads | Phase 2 - Processed " + processedItemsFormatted + "/" + totalformatted + " Images");
                         return;
                     }
-                    conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | Phase 3 - Processed " + processedItems + " / " + paths.size() + " Images");
+                    conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | Phase 3 - Processed " + processedItemsFormatted + " / " + paths.size() + " Images");
                 }
 
             });
@@ -407,9 +414,13 @@ public class ConversionController {
 
         String coloredMessage = buildColoredFinishMessage("<span style='font-size:18pt; color:green; fond-weight:bold;'>Conversion completed</span>");
 
+        DecimalFormat df = buildNumberFormatter();
+        String formattedNumberPassed = df.format(passes.get());
+        String formattedNumberFailed = df.format(failures.get());
+
         SwingUtilities.invokeLater(() -> {
             applicationStatusLabel.setText(coloredMessage);
-            secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", passes.get(), failures.get()));
+            secondaryApplicationStatusLabel.setText(String.format("Conversion done! %s successes / %s failures", formattedNumberPassed, formattedNumberFailed));
             conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.START);
         });
     }
@@ -425,6 +436,12 @@ public class ConversionController {
         String colorUnprocessed = totalFound.get() - passed - failed > 0 ? "#CCCC00" : "white";
         String colorFailed = failed > 0 ? "red" : "white";
 
+        DecimalFormat df = buildNumberFormatter();
+        String formattedNumberPassed = df.format(passed);
+        String formattedNumberFailed = df.format(failed);
+        String formattedNumberTotal = df.format(total);
+        String formattedNumberUnprocessed = df.format(unprocessed);
+
         return String.format("<html>" +
                 "<div style='text-align:center;'>" +
                 mainMessage +
@@ -436,7 +453,14 @@ public class ConversionController {
                 "<span style='color:" + colorUnprocessed + "; font-weight:bold; font-size:14pt;'>Unprocessed: %s / </span>" +
                 "<span style='color:" + colorFailed + "; font-weight:bold; font-size:14pt;'>Failed: %s</span>" +
                 "</div>" +
-                "</html>", total, passed, unprocessed, failed);
+                "</html>", formattedNumberTotal, formattedNumberPassed, formattedNumberUnprocessed, formattedNumberFailed);
+    }
+
+    private static DecimalFormat buildNumberFormatter() {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.GERMANY);
+        symbols.setGroupingSeparator('.');
+        DecimalFormat df = new DecimalFormat("#,###", symbols);
+        return df;
     }
 
 
@@ -465,5 +489,9 @@ public class ConversionController {
             conversionDTO.convertComponent().getMainActionButton().setEnabled(value);
         });
 
+    }
+
+    private void addToDeletionQueue(Path path) {
+        globalDeletionQueue.add(path);
     }
 }

@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -71,6 +72,7 @@ public class ConversionOrchestrator {
                     .orElseThrow()
                     .getDestinationDirectory();
             tmpDirPath = buildTmpPathAndReturn(conversionDestinationDirectory);
+
             finalDir = Path.of(conversionDestinationDirectory.toString(), FINAL_OUTPUT_DIRECTORY_NAME);
             conversionOrchestratorInputDTO.conversionItemDTOList()
                     .forEach(dto -> dto.setDestinationDirectory(finalDir));
@@ -119,7 +121,7 @@ public class ConversionOrchestrator {
     }
 
     private static Path buildTmpPathAndReturn(Path tmpOutputDirectory) throws IOException {
-        Path tmpDirPath = Path.of(tmpOutputDirectory.toString(), TMP_OUTPUT_DIRECTORY_NAME);
+        Path tmpDirPath = Path.of(tmpOutputDirectory.toString(), TMP_OUTPUT_DIRECTORY_NAME + "-" + UUID.randomUUID());
         Files.createDirectories(tmpDirPath);
         return tmpDirPath;
     }
@@ -194,7 +196,8 @@ public class ConversionOrchestrator {
                 }
                 conversionOrchestratorInputDTO.onAllTasksCompleteEnableComponents().run();
             } else {
-                Thread.ofVirtual().start(this::deleteTemporaryDirectoryIfExists);
+                // (Thread.ofVirtual().start(this::deleteTemporaryDirectoryIfExists);
+                conversionOrchestratorInputDTO.addToDeletionQueue().accept(tmpDirPath);
                 conversionOrchestratorInputDTO.onConversionAborted().run();
             }
 

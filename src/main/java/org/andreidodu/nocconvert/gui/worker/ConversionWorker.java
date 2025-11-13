@@ -38,6 +38,7 @@ public class ConversionWorker extends SwingWorker<List<ConversionItemDTO>, Conve
                 .incrementPasses(conversionWorkerInputDTO.incrementPasses())
                 .onConversionAborted(conversionWorkerInputDTO.onConversionAborted())
                 .decrementSuccesses(conversionWorkerInputDTO.decrementPasses())
+                .addToDeletionQueue(conversionWorkerInputDTO.addToDeletionQueue())
                 .build();
     }
 

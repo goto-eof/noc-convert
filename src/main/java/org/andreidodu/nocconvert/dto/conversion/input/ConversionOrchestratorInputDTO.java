@@ -3,6 +3,7 @@ package org.andreidodu.nocconvert.dto.conversion.input;
 import lombok.Builder;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -15,6 +16,7 @@ public record ConversionOrchestratorInputDTO(
         Runnable incrementPasses,
         Runnable decrementSuccesses,
         Runnable incrementFailures,
-        Runnable onConversionAborted
+        Runnable onConversionAborted,
+        Consumer<Path> addToDeletionQueue
 ) {
 }
