@@ -8,7 +8,6 @@ import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInput
 import org.andreidodu.nocconvert.enums.NotificationLevel;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.helper.FileUtil;
-import org.andreidodu.nocconvert.helper.OSUtils;
 import org.andreidodu.nocconvert.helper.performance.AdaptiveSimpleGovernorRunnable;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -196,7 +195,6 @@ public class ConversionOrchestrator {
                 }
                 conversionOrchestratorInputDTO.onAllTasksCompleteEnableComponents().run();
             } else {
-                // (Thread.ofVirtual().start(this::deleteTemporaryDirectoryIfExists);
                 conversionOrchestratorInputDTO.addToDeletionQueue().accept(tmpDirPath);
                 conversionOrchestratorInputDTO.onConversionAborted().run();
             }
@@ -232,39 +230,15 @@ public class ConversionOrchestrator {
     }
 
     private void copyMe(ConversionItemDTO conversionItemDTO) {
-        //synchronized (COPY_RENAME_LOCK) {
-//            Path sourceFile = conversionItemDTO.sourceFile();
-//            Path potentiallyDuplicateOutputFilenameWithNewExtension = getPotentiallyDuplicateOutputRawFilenameWithNewExtension(conversionItemDTO);
         try {
-//                if (potentiallyDuplicateOutputFilenameWithNewExtension.toFile().exists()) {
-//                    potentiallyDuplicateOutputFilenameWithNewExtension = FileUtil.calculateNonExistingOutputFilename(potentiallyDuplicateOutputFilenameWithNewExtension, conversionItemDTO.targetExtension());
-//                }
-//                doublecheckExistenceAndThrowExceptionIfNecessary(potentiallyDuplicateOutputFilenameWithNewExtension);
             Path sourceFile = conversionItemDTO.getSourceFile();
             Path uniqueTmpOutputFilenameWithNewExtension = conversionItemDTO.getTmpFile();
             Files.copy(sourceFile, uniqueTmpOutputFilenameWithNewExtension, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             log.error("Unable to copy image file: {}", conversionItemDTO.getSourceFile(), e);
         }
-        //}
     }
 
-//    private void renameMe(Path existingTemporaryFile, ConvertImageInputDTO convertImageInputDTO) {
-//        synchronized (COPY_RENAME_LOCK) {
-//            Path potentiallyDuplicateOutputFilenameWithNewExtension = getPotentiallyDuplicateOutputRawFilenameWithNewExtension(convertImageInputDTO);
-////            try {
-//            if (potentiallyDuplicateOutputFilenameWithNewExtension.toFile().exists()) {
-//                potentiallyDuplicateOutputFilenameWithNewExtension = FileUtil.calculateNonExistingOutputFilename(potentiallyDuplicateOutputFilenameWithNewExtension, convertImageInputDTO.targetExtension());
-//            }
-//            doublecheckExistenceAndThrowExceptionIfNecessary(potentiallyDuplicateOutputFilenameWithNewExtension);
-//            existingTemporaryFile.toFile().renameTo(potentiallyDuplicateOutputFilenameWithNewExtension.toFile());
-//            // FileUtils.moveFile(existingTemporaryFile.toFile(), potentiallyDuplicateOutputFilenameWithNewExtension.toFile(), StandardCopyOption.REPLACE_EXISTING);
-
-    ////            } catch (IOException e) {
-    ////                log.error("Unable to rename image file from {} to {}.\nError: {}", existingTemporaryFile.toFile(), potentiallyDuplicateOutputFilenameWithNewExtension, e.getMessage());
-    ////            }
-//        }
-//    }
     private Void renameAllProcessedFiles() {
         processedFilesQueue.forEach(conversionItemDTO -> {
             if (ConversionStatus.COMPLETED.equals(conversionItemDTO.getStatus())) {
@@ -288,19 +262,7 @@ public class ConversionOrchestrator {
     }
 
     private Path getPotentiallyDuplicateOutputRawFilenameWithNewExtension(ConversionItemDTO conversionItemDTO) {
-        // ex. filename.ico
         return Path.of(conversionItemDTO.getTmpDirectory().toString(), FileUtil.removeFileExtension(conversionItemDTO.getSourceFile().getFileName().toString()) + "." + FileUtil.getExtension(conversionItemDTO.getTargetExtension()));
-    }
-
-    private Path removeTmpExtensionAndUUIDPrefix(Path path) {
-        // ex. filename.ico.tmp ->  filename.ico
-        return Path.of(path.getParent().toString(), FileUtil.removeFileExtension(path.getFileName().toString()));
-    }
-
-    private static void doublecheckExistenceAndThrowExceptionIfNecessary(Path uniqueOutputFilename) {
-        if (uniqueOutputFilename.toFile().exists()) {
-            throw new RuntimeException("File already exists: " + uniqueOutputFilename.toFile().getAbsolutePath());
-        }
     }
 
     public void onAllTasksCompleteEnableComponents() {
@@ -340,51 +302,7 @@ public class ConversionOrchestrator {
         if (virtualThreadExecutor != null && !virtualThreadExecutor.isTerminated()) {
             this.virtualThreadExecutor.shutdownNow();
         }
-
         waitGentlyAndManageCompletion();
-
-
     }
-
-//    private void deleteTemporaryDirectoryIfExists() {
-//        try {
-//            if (OSUtils.isLinux() || OSUtils.isMacOS()) {
-//                deleteTemporaryDirectoryOnUnixLikeIfExists();
-//                return;
-//            }
-//
-//            FileUtils.deleteDirectory(tmpDirPath.toFile());
-//        } catch (IOException e) {
-//            log.error("unable to delete temporary directory {}", tmpDirPath, e);
-//        }
-//    }
-//
-//    private void deleteTemporaryDirectoryOnUnixLikeIfExists() {
-//        try {
-//            log.warn("Starting deletion (rm -rf) for: {}", tmpDirPath);
-//
-//            ProcessBuilder pb = new ProcessBuilder("rm", "-rf", tmpDirPath.toString());
-//            pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
-//            Process p = pb.start();
-//            int exitCode = p.waitFor();
-//
-//            if (exitCode == 0) {
-//                log.warn("Deletion completed with success: {}", tmpDirPath);
-//            } else {
-//                log.error("rm -rf failed with exit code {}. Fallback to FileUtils.deleteDirectory().", exitCode);
-//                FileUtils.deleteDirectory(tmpDirPath.toFile());
-//                log.warn("Fallback to FileUtils.deleteDirectory() completed.");
-//            }
-//        } catch (IOException | InterruptedException e) {
-//            log.error("Unable to delete tmp directory with rm -rf {}. Error: {}", tmpDirPath, e.getMessage());
-//            try {
-//                log.error("Fallback to FileUtils.deleteDirectory().");
-//                FileUtils.deleteDirectory(tmpDirPath.toFile());
-//                log.warn("Fallback to FileUtils.deleteDirectory() completed.");
-//            } catch (IOException fallbackE) {
-//                log.error("Also classic faillback  failed for {}. Error message: {}", tmpDirPath, fallbackE.getMessage());
-//            }
-//        }
-//    }
 
 }

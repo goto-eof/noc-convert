@@ -123,9 +123,11 @@ public class ConversionController {
         public void onDirectoryProcessed(long totalFiles, Path directory, long filesInDirectory) {
             SwingUtilities.invokeLater(() -> {
                 if (filesInDirectory > 0) {
-                    applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" + "<span style=\"color: #007bff;\">Found " + filesInDirectory + " file(s) in " + normalizePath(directory.getFileName().toString(), 30) + "</span></html>");
+                    applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" +
+                            "<span style=\"color: #007bff;\">Found " + filesInDirectory + " file(s) in " + normalizePath(directory.getFileName().toString(), 30) + "</span></html>");
                 } else {
-                    applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" + "<span style=\"color: #007bff;\">" + normalizePathAdvanced(directory.toString(), DELETE_SEMAPHORE_SIZE) + "</spa></html>");
+                    applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" +
+                            "<span style=\"color: #007bff;\">" + normalizePathAdvanced(directory.toString(), DELETE_SEMAPHORE_SIZE) + "</spa></html>");
                 }
             });
         }
@@ -134,7 +136,8 @@ public class ConversionController {
         @Override
         public void onFileFound(Path filename) {
             SwingUtilities.invokeLater(() -> {
-                applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" + "<span style=\"color: #007bff;\">" + normalizePathAdvanced(filename.getParent().toString(), 60) + " &#8658; " + normalizePath(filename.getFileName().toString(), 30) + "</span></html>");
+                applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images...</center>" +
+                        "<span style=\"color: #007bff;\">" + normalizePathAdvanced(filename.getParent().toString(), 60) + " &#8658; " + normalizePath(filename.getFileName().toString(), 30) + "</span></html>");
             });
         }
 
@@ -190,8 +193,10 @@ public class ConversionController {
 
         @Override
         public void onUpdateTotalFile(Long numberOfFiles) {
+            DecimalFormat df = buildNumberFormatter();
+            String numberOfFilesFormatted = df.format(numberOfFiles);
             SwingUtilities.invokeLater(() -> {
-                secondaryApplicationStatusLabel.setText("<html><span style=\"font-weight: bold;\">" + numberOfFiles + " Total Images</span></html>");
+                secondaryApplicationStatusLabel.setText("<html><span style=\"font-weight: bold;\">" + numberOfFilesFormatted + " Total Images</span></html>");
             });
         }
 
@@ -367,10 +372,14 @@ public class ConversionController {
                     this.cpuLoadPercentage.set(cpuPercentage);
                     this.timeElapsed.set(calculateTimeElapsed());
                     if (ApplicationConfig.DEV_MODE) {
-                        conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | " + cpuLoadPercentage + "% CPU load | " + (conversionWorker != null ? conversionWorker.getPlatformThreadsPermits() : -1) + " P-Threads | " + (conversionWorker != null ? conversionWorker.getVirtualThreadsPermits() : -1) + " V-Threads | Phase 2 - Processed " + processedItemsFormatted + "/" + totalformatted + " Images");
+                        conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | " +
+                                cpuLoadPercentage + "% CPU load | " +
+                                (conversionWorker != null ? conversionWorker.getPlatformThreadsPermits() : -1) +
+                                " P-Threads | " + (conversionWorker != null ? conversionWorker.getVirtualThreadsPermits() : -1) +
+                                " V-Threads | Phase 2 - Processed " + processedItemsFormatted + "/" + totalformatted + " Images");
                         return;
                     }
-                    conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | Phase 3 - Processed " + processedItemsFormatted + " / " + paths.size() + " Images");
+                    conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | Phase 2 - Processed " + processedItemsFormatted + " / " + totalFormatted + " Images");
                 }
 
             });
