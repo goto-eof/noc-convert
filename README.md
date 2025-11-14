@@ -1,4 +1,4 @@
-# NoCloud Bulk Image Converter v.2.1.29 (aka noc-convert)
+# NoCloud Bulk Image Converter v.2.1.30 (aka noc-convert)
 
 <div id="introduction"> </div>
 
@@ -20,8 +20,9 @@ for designers, photographers, and developers.
 **Unmatched Cross-Platform Performance**
 
 Built using the latest Java technology, noc-convert excels in intensive, multi-threading environments. It is rigorously
-tested to maintain maximum speed across Linux, Windows, and macOS, easily handling conversion jobs of millions of images
-without the crashes, freezes, or performance degradation typical of less optimized tools.
+tested to maintain maximum speed across Linux, Windows, and macOS, easily handling conversion jobs of millions of
+images (tested on a set of **5.000.000 images**) without the crashes, freezes, or performance degradation typical of less
+optimized tools.
 
 **Intuitive Graphical User Interface (GUI) with Real-Time Feedback:**
 
@@ -74,13 +75,13 @@ anywhere.
 
 ## Download
 
-<div id="download">v.2.1.29</div>
+<div id="download">v.2.1.30</div>
 
 | Platform    | AMD 64-bit                                                                                                                                    | ARM 64-bit                                                                                                                                  |
 |:------------|:----------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------|
-| **Linux**   | [zip (.deb)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.29/noc-convert-Linux-2.1.29-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                                           |
-| **Windows** | [zip (.msi)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.29/noc-convert-Windows-2.1.29-amd64-Installer.zip) | N/A                                                                                                                                         |
-| **macOS**   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.29/noc-convert-MacOS-2.1.29-amd64-Installer.zip)   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.29/noc-convert-MacOS-2.1.29-arm64-Installer.zip) |
+| **Linux**   | [zip (.deb)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.30/noc-convert-Linux-2.1.30-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                                           |
+| **Windows** | [zip (.msi)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.30/noc-convert-Windows-2.1.30-amd64-Installer.zip) | N/A                                                                                                                                         |
+| **macOS**   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.30/noc-convert-MacOS-2.1.30-amd64-Installer.zip)   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.30/noc-convert-MacOS-2.1.30-arm64-Installer.zip) |
 
 ## Installation and Usage
 

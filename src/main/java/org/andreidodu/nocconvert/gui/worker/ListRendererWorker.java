@@ -36,37 +36,7 @@ public class ListRendererWorker extends SwingWorker<List<ConversionItemDTO>, Voi
 
     private void populateListGradually() {
         PerformantListModel model = (PerformantListModel) list.getModel();
-//        SwingUtilities.invokeLater(() -> {
         model.addAll(formatExtensionList);
         onFinish.run();
-//        });
-
-//        IntStream.range(0, formatExtensionList.size())
-//                .forEach(i -> formatExtensionList.get(i).setIndex(i));
-//
-//        timer = new Timer(DELAY, e -> {
-//            long startTime = System.nanoTime();
-//            int chunkListLength = Integer.min(pos + BATCH_SIZE, formatExtensionList.size());
-//            List<ConversionItemDTO> chunkList = formatExtensionList.subList(pos, chunkListLength);
-//            PerformantListModel model = (PerformantListModel) list.getModel();
-//
-//            SwingUtilities.invokeLater(() -> {
-//                model.addAll(chunkList);
-//            });
-//
-//            long endTime = System.nanoTime();
-//            long durationNs = endTime - startTime;
-//            double durationMs = durationNs / 1_000_000.0;
-//
-//            log.debug("EDT blocking time for the rendering of {} records: {} ms", BATCH_SIZE, durationMs);
-//
-//            pos += BATCH_SIZE;
-//            if (timer != null && pos >= formatExtensionList.size()) {
-//                onFinish.run();
-//                timer.stop();
-//            }
-//        });
-//
-//        timer.start();
     }
 }

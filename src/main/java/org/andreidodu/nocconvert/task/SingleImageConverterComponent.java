@@ -38,7 +38,6 @@ public class SingleImageConverterComponent implements CancellableConverterCompon
     private final AtomicBoolean canceled = new AtomicBoolean(false);
     private final ExecutorService platformExecutorService;
 
-    private final static Object IMAGE_IO_LOCK = new Object();
     @Setter
     @Getter
     private NotificationLevel notificationLevel = NotificationLevel.MEDIUM;

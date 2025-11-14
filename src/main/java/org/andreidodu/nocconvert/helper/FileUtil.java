@@ -17,8 +17,6 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMess
 public class FileUtil {
     private static final Logger log = LogManager.getLogger(FileUtil.class);
     private static final int MAX_FILENAME_LENGTH = 150;
-    private static final AtomicLong fileID = new AtomicLong(0);
-    private static final Object RENAME_LOCK = new Object();
     public static final String DOT_TMP_EXTENSION = ".tmp";
     private final static AtomicLong renameCounter = new AtomicLong(0);
 

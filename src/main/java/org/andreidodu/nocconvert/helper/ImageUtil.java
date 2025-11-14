@@ -35,7 +35,6 @@ public class ImageUtil {
     public static final String ICNS_FORMAT = "icns";
     public static final int ICO_MAX_SIZE = 256;
     public static final int ICNS_MAX_SIZE = 1024;
-    private static final Object READER_LOCK = new Object();
 
     public static BufferedImage normalizeAsIco(BufferedImage bufferedImage) {
         Objects.requireNonNull(bufferedImage);
