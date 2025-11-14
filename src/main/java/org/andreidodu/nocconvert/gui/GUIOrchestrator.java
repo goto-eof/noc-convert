@@ -17,8 +17,8 @@ import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
 import org.andreidodu.nocconvert.gui.util.FPSDisplay;
-import org.andreidodu.nocconvert.listener.AdaptiveTestListener;
 import org.andreidodu.nocconvert.helper.performance.PerformanceUtil;
+import org.andreidodu.nocconvert.listener.AdaptiveTestListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,10 +29,12 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Locale;
 
 import static org.andreidodu.nocconvert.constants.ApplicationConfig.DEV_MODE;
+import static org.andreidodu.nocconvert.helper.NumberUtil.buildNumberFormatter;
 
 public class GUIOrchestrator extends JFrame {
     private static final Logger log = LogManager.getLogger(GUIOrchestrator.class);
@@ -80,7 +82,7 @@ public class GUIOrchestrator extends JFrame {
         JPopupMenu menu = new JPopupMenu("Main Menu");
         JMenuItem about = new JMenuItem("About");
         about.addActionListener((e) -> JOptionPane.showMessageDialog(null,
-                "NoCloud Bulk Image Converter\nv. 2.1.27\nby Andrei Dodu",
+                "NoCloud Bulk Image Converter\nv. 2.1.28\nby Andrei Dodu",
                 "About",
                 JOptionPane.INFORMATION_MESSAGE));
 
@@ -320,7 +322,7 @@ public class GUIOrchestrator extends JFrame {
         Font label1Font = this.$$$getFont$$$(null, Font.BOLD, 14, label1.getFont());
         if (label1Font != null) label1.setFont(label1Font);
         label1.setForeground(new Color(-8289660));
-        label1.setText("noc-convert v.2.1.27");
+        label1.setText("noc-convert v.2.1.28");
         panel5.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         Font label2Font = this.$$$getFont$$$(null, -1, 12, label2.getFont());
@@ -492,10 +494,13 @@ public class GUIOrchestrator extends JFrame {
     }
 
     public void onSearchStepFinish(String targetFormat, List<Path> paths) {
-        String messageFullSearchStop = String.format("Search step done! %s processable images found.", paths.size());
-        String messageShortFullSearchStop = "Search done: " + paths.size() + " image(s) found";
-        String messageStartImageConversion = String.format("<html>Converting %s images. Please wait.</html>", paths.size());
-        String messageShortProcessing = "Phase 3 - Processing...";
+        DecimalFormat df = buildNumberFormatter();
+        String totalFormatted = df.format(paths.size());
+
+        String messageFullSearchStop = String.format("Search step done! %s processable images found.", totalFormatted);
+        String messageShortFullSearchStop = "Search done: " + totalFormatted + " image(s) found";
+        String messageStartImageConversion = String.format("<html>Converting %s images. Please wait.</html>", totalFormatted);
+        String messageShortProcessing = "Phase 2 - Processing...";
 
         SwingUtilities.invokeLater(() -> {
             secondaryApplicationStatusLabel.setText(messageShortFullSearchStop);

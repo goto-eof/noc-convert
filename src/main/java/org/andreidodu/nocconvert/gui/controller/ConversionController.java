@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.lang.System.exit;
 import static org.andreidodu.nocconvert.helper.CpuUtil.calculateCpuLoadPercentage;
+import static org.andreidodu.nocconvert.helper.NumberUtil.buildNumberFormatter;
 import static org.andreidodu.nocconvert.helper.PathNameUtil.normalizePath;
 import static org.andreidodu.nocconvert.helper.PathNameUtil.normalizePathAdvanced;
 
@@ -463,13 +464,6 @@ public class ConversionController {
                 "<span style='color:" + colorFailed + "; font-weight:bold; font-size:14pt;'>Failed: %s</span>" +
                 "</div>" +
                 "</html>", formattedNumberTotal, formattedNumberPassed, formattedNumberUnprocessed, formattedNumberFailed);
-    }
-
-    private static DecimalFormat buildNumberFormatter() {
-        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.GERMANY);
-        symbols.setGroupingSeparator('.');
-        DecimalFormat df = new DecimalFormat("#,###", symbols);
-        return df;
     }
 
 
