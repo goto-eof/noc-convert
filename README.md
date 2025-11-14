@@ -1,4 +1,4 @@
-# NoCloud Bulk Image Converter v.2.1.28 (aka noc-convert)
+# NoCloud Bulk Image Converter v.2.1.29 (aka noc-convert)
 
 <div id="introduction"> </div>
 
@@ -16,6 +16,12 @@ security and privacy.
 Process hundreds or even thousands of images quickly and efficiently. Optimized for speed and utilizing **parallel
 processing** (multithreading) to leverage multi-core CPUs, the application is ideal for automating heavy image workflows
 for designers, photographers, and developers.
+
+**Unmatched Cross-Platform Performance**
+
+Built using the latest Java technology, noc-convert excels in intensive, multi-threading environments. It is rigorously
+tested to maintain maximum speed across Linux, Windows, and macOS, easily handling conversion jobs of millions of images
+without the crashes, freezes, or performance degradation typical of less optimized tools.
 
 **Intuitive Graphical User Interface (GUI) with Real-Time Feedback:**
 
@@ -68,13 +74,13 @@ anywhere.
 
 ## Download
 
-<div id="download">v.2.1.28</div>
+<div id="download">v.2.1.29</div>
 
-| Platform    | AMD 64-bit                                                                                                                                  | ARM 64-bit                                                                                                                                |
-|:------------|:--------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------|
-| **Linux**   | [zip (.deb)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.28/noc-convert-Linux-2.1.28-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                                         |
-| **Windows** | [zip (.msi)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.28/noc-convert-Windows-2.1.28-amd64-Installer.zip) | N/A                                                                                                                                       |
-| **macOS**   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.28/noc-convert-MacOS-2.1.28-amd64-Installer.zip)   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.28/noc-convert-MacOS-2.1.28-arm64-Installer.zip) |
+| Platform    | AMD 64-bit                                                                                                                                    | ARM 64-bit                                                                                                                                  |
+|:------------|:----------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------|
+| **Linux**   | [zip (.deb)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.29/noc-convert-Linux-2.1.29-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                                           |
+| **Windows** | [zip (.msi)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.29/noc-convert-Windows-2.1.29-amd64-Installer.zip) | N/A                                                                                                                                         |
+| **macOS**   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.29/noc-convert-MacOS-2.1.29-amd64-Installer.zip)   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.29/noc-convert-MacOS-2.1.29-arm64-Installer.zip) |
 
 ## Installation and Usage
 

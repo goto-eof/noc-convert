@@ -20,6 +20,7 @@ public class FileUtil {
     private static final AtomicLong fileID = new AtomicLong(0);
     private static final Object RENAME_LOCK = new Object();
     public static final String DOT_TMP_EXTENSION = ".tmp";
+    private final static AtomicLong renameCounter = new AtomicLong(0);
 
     public static String getHumanableFileSize(File file) {
         if (file == null || !file.exists()) return "0 B";
@@ -149,10 +150,9 @@ public class FileUtil {
         String originalFilenameWithNewExtension = removeFileExtension(cleanFileNameWithNewExtension);
         String cleanFilenameWithoutExtension = removeFileExtension(originalFilenameWithNewExtension);
         String extension = getExtension(originalFilenameWithNewExtension);
-        long i = 1;
         Path file = Path.of(potentiallyDuplicateOutputFile.getParent().toString(), cleanFilenameWithoutExtension + "." + extension);
         while (Files.exists(file)) {
-            file = Path.of(potentiallyDuplicateOutputFile.getParent().toString(), cleanFilenameWithoutExtension + "(" + (i++) + ")." + extension);
+            file = Path.of(potentiallyDuplicateOutputFile.getParent().toString(), cleanFilenameWithoutExtension + "(" + (renameCounter.incrementAndGet()) + ")." + extension);
         }
         return file;
     }
