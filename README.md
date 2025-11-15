@@ -1,4 +1,4 @@
-# NoCloud Bulk Image Converter v.2.1.32 (aka noc-convert)
+# NoCloud Bulk Image Converter v.3.0.0 (aka noc-convert)
 
 <div id="introduction"> </div>
 
@@ -75,13 +75,13 @@ anywhere.
 
 ## Download
 
-<div id="download">v.2.1.32</div>
+<div id="download">v.3.0.0</div>
 
 | Platform    | AMD 64-bit                                                                                                                                    | ARM 64-bit                                                                                                                                  |
 |:------------|:----------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------|
-| **Linux**   | [zip (.deb)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.32/noc-convert-Linux-2.1.32-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                                           |
-| **Windows** | [zip (.msi)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.32/noc-convert-Windows-2.1.32-amd64-Installer.zip) | N/A                                                                                                                                         |
-| **macOS**   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.32/noc-convert-MacOS-2.1.32-amd64-Installer.zip)   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/2.1.32/noc-convert-MacOS-2.1.32-arm64-Installer.zip) |
+| **Linux**   | [zip (.deb)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/3.0.0/noc-convert-Linux-3.0.0-amd64-Installer.zip)   | [App Center (amd64/arm64 snap)](https://snapcraft.io/noc-convert)                                                                           |
+| **Windows** | [zip (.msi)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/3.0.0/noc-convert-Windows-3.0.0-amd64-Installer.zip) | N/A                                                                                                                                         |
+| **macOS**   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/3.0.0/noc-convert-MacOS-3.0.0-amd64-Installer.zip)   | [zip (.pkg)](https://andre-i.eu/api/v1/download?filePath=noc-convert/releases/download/3.0.0/noc-convert-MacOS-3.0.0-arm64-Installer.zip) |
 
 ## Installation and Usage
 
