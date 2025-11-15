@@ -19,7 +19,6 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;

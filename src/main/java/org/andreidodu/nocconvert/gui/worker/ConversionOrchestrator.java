@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.andreidodu.nocconvert.constants.ApplicationConfig.FINAL_OUTPUT_DIRECTORY_NAME;
 import static org.andreidodu.nocconvert.constants.ApplicationConfig.TMP_OUTPUT_DIRECTORY_NAME;
 import static org.andreidodu.nocconvert.helper.FileUtil.buildVirtualThreadFactory;
+import static org.andreidodu.nocconvert.helper.OperationUtil.retryable;
 import static org.andreidodu.nocconvert.helper.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
 
 public class ConversionOrchestrator {
@@ -240,24 +241,33 @@ public class ConversionOrchestrator {
     }
 
     private Void renameAllProcessedFiles() {
-        processedFilesQueue.forEach(conversionItemDTO -> {
+        while (!processedFilesQueue.isEmpty()) {
+            ConversionItemDTO conversionItemDTO = processedFilesQueue.poll();
+
             if (ConversionStatus.COMPLETED.equals(conversionItemDTO.getStatus())) {
                 Path uniqueTmpFilename = conversionItemDTO.getTmpFile();
                 Path uniqueFinalFilename = FileUtil.tmpFilenameToFinal(uniqueTmpFilename);
-                try {
-                    if (!uniqueTmpFilename.toFile().renameTo(uniqueFinalFilename.toFile())) {
-                        throw new IOException("Unable to rename image file: " + uniqueTmpFilename);
-                    }
-                } catch (IOException e) {
-                    log.error("Unable to rename image file: from {} to {}", uniqueTmpFilename, uniqueFinalFilename, e);
+
+                boolean result = retryable(() -> {
+                    Files.move(uniqueTmpFilename, uniqueFinalFilename, StandardCopyOption.REPLACE_EXISTING);
+                    return true;
+                });
+
+                if (!result) {
+                    log.error("Unable to rename image file: from {} to {}", uniqueTmpFilename, uniqueFinalFilename);
                 }
+
             } else if (ConversionStatus.FAILED.equals(conversionItemDTO.getStatus())) {
-                if (conversionItemDTO.getTmpFile().toFile().delete()) {
+
+                if (conversionItemDTO.getTmpFile().toFile().exists()) {
+                    boolean result = conversionItemDTO.getTmpFile().toFile().delete();
+                    log.debug("Delete image file: {} because it's status is FAILED, so I considered it as a corrupted file", result);
                 }
+
                 conversionOrchestratorInputDTO.incrementFailures();
                 conversionOrchestratorInputDTO.decrementSuccesses();
             }
-        });
+        }
         return null;
     }
 

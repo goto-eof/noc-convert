@@ -152,6 +152,7 @@ public class FileUtil {
         while (Files.exists(file)) {
             file = Path.of(potentiallyDuplicateOutputFile.getParent().toString(), cleanFilenameWithoutExtension + "(" + (renameCounter.incrementAndGet()) + ")." + extension);
         }
+        log.debug("new fileId: {}", renameCounter.get());
         return file;
     }
 
