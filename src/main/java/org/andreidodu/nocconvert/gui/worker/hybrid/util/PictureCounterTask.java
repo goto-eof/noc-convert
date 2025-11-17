@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.task;
+package org.andreidodu.nocconvert.gui.worker.hybrid.util;
 
 import lombok.Getter;
 import org.andreidodu.nocconvert.exception.SearchManuallyAbortedException;
@@ -20,14 +20,15 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
-public class PictureSearcherTask {
-    private static final Logger log = LogManager.getLogger(PictureSearcherTask.class);
+public class PictureCounterTask {
+    private static final Logger log = LogManager.getLogger(PictureCounterTask.class);
 
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
     private long limiterCounter = 0;
     private final static int LIMITER_INTERVAL = 200;
+    private long count = 0;
 
-    public Collection<File> search(Path directory, FilesInDirectoryListener parentListener) throws Exception {
+    public long count(Path directory, FilesInDirectoryListener parentListener) throws Exception {
 
         // NOTE: here we are checking if we have the access to the root directory
         // NOTE: if is negative, then it will throw an exception that will be caught by the caller
@@ -49,7 +50,7 @@ public class PictureSearcherTask {
             if (listener.getError() != null) {
                 throw new SearchManuallyAbortedException(listener.getError().getMessage());
             }
-            return result;
+            return count;
         } catch (Exception e) {
             throw new SearchManuallyAbortedException(e.getMessage(), e);
         }
@@ -68,7 +69,6 @@ public class PictureSearcherTask {
     }
 
     private class CustomIOFilter implements IOFileFilter {
-        private long count;
 
         @Getter
         private Exception error;
@@ -101,7 +101,7 @@ public class PictureSearcherTask {
                 listener.onFileFound(count, file.toPath());
             }
 
-            return isOk;
+            return false;
         }
 
         @Override
@@ -111,7 +111,6 @@ public class PictureSearcherTask {
                 throw new RuntimeException(error);
             }
             boolean isOk = availableExtensionList.contains(FileUtil.getExtension(file.getName()));
-
             if (isOk) {
                 count++;
             }
@@ -120,7 +119,7 @@ public class PictureSearcherTask {
                 listener.onFileFound(count, file.toPath());
             }
 
-            return isOk;
+            return false;
         }
 
     }

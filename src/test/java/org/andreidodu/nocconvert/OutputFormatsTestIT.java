@@ -87,9 +87,9 @@ public class OutputFormatsTestIT {
         Path tmpDirectory = temporaryOutputFolder;
         ConversionController conversionController = prepareConversionController();
 
-        List<ConversionItemDTO> conversionItemDTOList = ConcurrentItemDTOMapper.convertPathListToDTOList(tmpDirectory, targetFileFormat, sourceFileList);
+        // List<ConversionItemDTO> conversionItemDTOList = ConcurrentItemDTOMapper.convertPathListToDTOList(tmpDirectory, targetFileFormat, sourceFileList);
 
-        conversionController.startConversion(conversionItemDTOList);
+        conversionController.startConversion();
         conversionController.getWorker().get();
 
         long successFilesFomFileSystem = countFilesInTmpDirectory(tmpDirectory);

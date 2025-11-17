@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.gui.worker;
+package org.andreidodu.nocconvert.gui.worker.searcher;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -111,7 +111,7 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<Path>, Imag
         EDTLogger.logEDTActivity("Why?", () -> {
             Path directory = chunks.getLast().directory;
             if (status == STATUS.SEARCHING) {
-                filesInDirectoryListener.onFileFound(directory);
+                filesInDirectoryListener.onFileFound(0, directory);
             } else if (status == STATUS.ANALYZING) {
                 filesInDirectoryListener.onFileAnalyzationComplete(directory);
             }
@@ -137,7 +137,7 @@ public class ImageSearcherSwingWorker extends SwingWorker<Collection<Path>, Imag
         }
 
         @Override
-        public void onFileFound(Path filename) {
+        public void onFileFound(long totalFiles, Path filename) {
             if (Duration.between(lastFileInfoPrintTS, LocalDateTime.now()).toMillis() < GUI_UPDATE_INTERVAL || isCancelled() || pictureSearcherTask == null || pictureSearcherTask.isCancelled()) {
                 return;
             }

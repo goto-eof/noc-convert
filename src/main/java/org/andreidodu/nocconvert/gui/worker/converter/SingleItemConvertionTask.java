@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.gui.worker;
+package org.andreidodu.nocconvert.gui.worker.converter;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;

@@ -16,7 +16,7 @@ import static org.andreidodu.nocconvert.helper.CpuUtil.calculateCpuLoadPercentag
 public class AdaptiveSimpleGovernorRunnable {
     private static final Logger log = LogManager.getLogger(AdaptiveSimpleGovernorRunnable.class);
 
-    public static final int NUM_PROCESSORS = Runtime.getRuntime().availableProcessors();
+    public static final int NUM_PROCESSORS = Runtime.getRuntime().availableProcessors() / 2;
     public static final int INITIAL_DELAY = 2;
     private static final int MIN_NUM_CPUS_ALLOWED = 2;
     private static final int NUM_WARMUP_TESTS = 2;
@@ -24,8 +24,7 @@ public class AdaptiveSimpleGovernorRunnable {
     private final AdaptiveTestListener adaptiveTestListener;
     @Getter
     private final AtomicInteger currentPTID = new AtomicInteger(NUM_PROCESSORS);
-    public static final int DEFAULT_INITIAL_NUM_OF_THREADS = NUM_PROCESSORS;
-    public final static AtomicInteger IDEAL_NUM_OF_THREADS = new AtomicInteger(DEFAULT_INITIAL_NUM_OF_THREADS);
+    public final static AtomicInteger IDEAL_NUM_OF_THREADS = new AtomicInteger(NUM_PROCESSORS);
     private final AtomicBoolean isRunning = new AtomicBoolean(true);
     private final Supplier<Boolean> isStopCommandFromParent;
 

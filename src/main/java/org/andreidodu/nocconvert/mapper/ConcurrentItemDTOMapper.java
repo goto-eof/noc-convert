@@ -9,12 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ConcurrentItemDTOMapper {
-    public static List<ConversionItemDTO> convertPathListToDTOList(Path destPath, String targetFormat, List<Path> paths) {
-        int index = 0;
+
+    public static List<ConversionItemDTO> convertPathListToDTOList(Path destPath, String targetFormat, List<Path> paths, int counter) {
         List<ConversionItemDTO> list = new ArrayList<>();
         for (Path path : paths) {
             ConversionItemDTO item = ConversionItemDTO.builder()
-                    .index(index++)
+                    .index(counter)
                     .targetFormat(targetFormat)
                     .targetExtension(targetFormat)
                     .sourceFile(path)
@@ -29,6 +29,7 @@ public class ConcurrentItemDTOMapper {
         }
         return list;
     }
+
     private static String prepareFileName(Path path) {
         String filename = path.getFileName().toString();
         int maxLength = 50;

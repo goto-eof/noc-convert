@@ -1,22 +1,23 @@
-package org.andreidodu.nocconvert.gui.worker;
+package org.andreidodu.nocconvert.gui.worker.hybrid;
 
 import lombok.Getter;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.ConversionWorkerInputDTO;
+import org.andreidodu.nocconvert.gui.worker.converter.ConversionOrchestrator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.util.List;
 
-public class ConversionWorker extends SwingWorker<List<ConversionItemDTO>, ConversionItemDTO> {
-    private static final Logger log = LogManager.getLogger(ConversionWorker.class);
+public class ConvertWorker extends SwingWorker<List<ConversionItemDTO>, ConversionItemDTO> {
+    private static final Logger log = LogManager.getLogger(ConvertWorker.class);
     @Getter
     private ConversionOrchestrator conversionOrchestrator;
     private final ConversionWorkerInputDTO conversionWorkerInputDTO;
 
-    public ConversionWorker(ConversionWorkerInputDTO conversionWorkerInputDTO) {
+    public ConvertWorker(ConversionWorkerInputDTO conversionWorkerInputDTO) {
         this.conversionWorkerInputDTO = conversionWorkerInputDTO;
     }
 
@@ -25,6 +26,7 @@ public class ConversionWorker extends SwingWorker<List<ConversionItemDTO>, Conve
         ConversionOrchestratorInputDTO conversionOrchestratorInputDTO = buildInput();
         conversionOrchestrator = new ConversionOrchestrator(conversionOrchestratorInputDTO);
         conversionOrchestrator.startConversion();
+
         return null;
     }
 
@@ -39,16 +41,12 @@ public class ConversionWorker extends SwingWorker<List<ConversionItemDTO>, Conve
                 .onConversionAborted(conversionWorkerInputDTO.onConversionAborted())
                 .decrementSuccesses(conversionWorkerInputDTO.decrementPasses())
                 .addToDeletionQueue(conversionWorkerInputDTO.addToDeletionQueue())
+                .mainSemaphore(conversionWorkerInputDTO.semaphore())
+                .countDownLatchWorkFinished(conversionWorkerInputDTO.countDownLatchWorkFinished())
+                .virtualThreadsExecutor(conversionWorkerInputDTO.virtualThreadsExecutor())
+                .virtualThreadsPermits(conversionWorkerInputDTO.virtualThreadsPermits())
+                .platformThreadsExecutor(conversionWorkerInputDTO.platformThreadsExecutor())
                 .build();
-    }
-
-    public int getVirtualThreadsPermits() {
-        return conversionOrchestrator.getVirtualThreadsPermits();
-    }
-
-
-    public int getPlatformThreadsPermits() {
-        return conversionOrchestrator.getPlatformThreadsPermits();
     }
 
     private void cancelOrchestratorJob() {
@@ -86,4 +84,11 @@ public class ConversionWorker extends SwingWorker<List<ConversionItemDTO>, Conve
         return null;
     }
 
+    public int getPlatformThreadsPermits() {
+        return conversionWorkerInputDTO.platformThreadsPermits();
+    }
+
+    public int getVirtualThreadsPermits() {
+        return conversionWorkerInputDTO.virtualThreadsPermits();
+    }
 }

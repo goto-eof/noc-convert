@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static org.andreidodu.nocconvert.constants.ApplicationConfig.FINAL_OUTPUT_DIRECTORY_NAME;
@@ -101,7 +102,7 @@ public class ConversionIntegrityIT {
         Files.createFile(tmpInvalidFile);
         conversionFileList.add(tmpInvalidFile);
 
-        conversionItemDTOList = ConcurrentItemDTOMapper.convertPathListToDTOList(tempOutputFolder, "png", conversionFileList);
+        conversionItemDTOList = ConcurrentItemDTOMapper.convertPathListToDTOList(tempOutputFolder, "png", conversionFileList, new AtomicInteger(0));
         when(mockedSplitButtonComponent.getDropdownToggleButton()).thenReturn(mockedButton);
         when(mockedSplitButtonComponent.getMainActionButton()).thenReturn(mockedButton);
 
@@ -139,8 +140,8 @@ public class ConversionIntegrityIT {
     @Test
     void shouldMatchInternalAndFileSystemSuccessCounts() throws InterruptedException, ExecutionException, IOException {
 
-        controller.startConversion(conversionItemDTOList);
-        List<ConversionItemDTO> result = controller.getWorker().get();
+        controller.startConversion();
+        //List<ConversionItemDTO> result = controller.getWorker().get();
 
         long actualFilesOnFS;        Path tmpDirectory = Path.of(tempOutputFolder.toString(), FINAL_OUTPUT_DIRECTORY_NAME);
 

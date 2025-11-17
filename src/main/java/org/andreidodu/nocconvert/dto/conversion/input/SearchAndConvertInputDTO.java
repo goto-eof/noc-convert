@@ -5,13 +5,11 @@ import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Semaphore;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @Builder
-public record ConversionWorkerInputDTO(
+public record SearchAndConvertInputDTO(
         List<ConversionItemDTO> list,
         Consumer<List<ConversionItemDTO>> updateGui,
         Runnable onAllTasksComplete,
@@ -21,12 +19,16 @@ public record ConversionWorkerInputDTO(
         Runnable incrementFailures,
         Runnable onConversionAborted,
         Consumer<Path> addToDeletionQueue,
-        Semaphore semaphore,
-        Consumer<List<Path>> endSearchChunkForImagesStep,
-        CountDownLatch countDownLatchWorkFinished,
-        ExecutorService virtualThreadsExecutor,
-        int virtualThreadsPermits,
-        int platformThreadsPermits,
-        ExecutorService platformThreadsExecutor
+        Path sourceDirectory,
+        Path destinationDirectory,
+        String targetFormat,
+        Consumer<List<ConversionItemDTO>> endSearchChunkForImagesStep,
+        Consumer<Integer> incrementMainProgressBarProgress,
+        Consumer<Integer> updateSecondaryProgressBarMaxValue,
+        Runnable onBucketItemsCompleted,
+        Runnable resetSecondaryProgressBar,
+        Runnable updateSecondaryProgressBarColorColorToBlue,
+        BiConsumer<Integer, Path> onFileFound,
+        Consumer<Boolean> showJListPane
 ) {
 }

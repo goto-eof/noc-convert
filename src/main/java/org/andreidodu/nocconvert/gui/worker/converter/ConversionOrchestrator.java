@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.gui.worker;
+package org.andreidodu.nocconvert.gui.worker.converter;
 
 import lombok.Getter;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
@@ -8,7 +8,6 @@ import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInput
 import org.andreidodu.nocconvert.enums.NotificationLevel;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
 import org.andreidodu.nocconvert.helper.FileUtil;
-import org.andreidodu.nocconvert.helper.performance.AdaptiveSimpleGovernorRunnable;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,20 +27,12 @@ import static org.andreidodu.nocconvert.constants.ApplicationConfig.FINAL_OUTPUT
 import static org.andreidodu.nocconvert.constants.ApplicationConfig.TMP_OUTPUT_DIRECTORY_NAME;
 import static org.andreidodu.nocconvert.helper.FileUtil.buildVirtualThreadFactory;
 import static org.andreidodu.nocconvert.helper.OperationUtil.retryable;
-import static org.andreidodu.nocconvert.helper.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
 
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
     public static final int MAX_NUM_ITEMS_FOR_NOTIFICATION_LEVEL_LOW = 10_000;
-    private final ExecutorService virtualThreadExecutor;
     private final Semaphore semaphore;
-    private final ExecutorService platformExecutorService;
     @Getter
-    private final int platformThreadsPermits;
-    @Getter
-    private final int virtualThreadsPermits;
-    @Getter
-    private final int permits = AdaptiveSimpleGovernorRunnable.IDEAL_NUM_OF_THREADS.get();
     private final ConversionOrchestratorInputDTO conversionOrchestratorInputDTO;
     @Getter
     private Path tmpDirPath;
@@ -54,13 +45,7 @@ public class ConversionOrchestrator {
 
     public ConversionOrchestrator(ConversionOrchestratorInputDTO conversionOrchestratorInputDTO) {
         this.conversionOrchestratorInputDTO = conversionOrchestratorInputDTO;
-
-        virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
-        platformThreadsPermits = permits;
-        platformExecutorService = Executors.newFixedThreadPool(platformThreadsPermits);
-
-        virtualThreadsPermits = calculateSafeValueWithoutXPercent(permits, 50);
-        semaphore = new Semaphore(virtualThreadsPermits);
+        semaphore = new Semaphore(conversionOrchestratorInputDTO.virtualThreadsPermits());
     }
 
 
@@ -92,16 +77,15 @@ public class ConversionOrchestrator {
 
         try {
             for (ConversionItemDTO conversionItemDTO : conversionOrchestratorInputDTO.conversionItemDTOList()) {
-                SingleItemConvertionTask task = null;
                 throwExceptionIfManuallyAborted();
                 semaphore.acquire();
                 throwExceptionIfManuallyAborted();
                 conversionItemDTO.setStatus(ConversionStatus.QUEUED);
-                conversionItemDTO.setIndex(index++);
+                // conversionItemDTO.setIndex(index++);
                 conversionItemDTO.setTmpDirectory(tmpDirPath);
                 ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO = buildInput(conversionItemDTO, tmpDirPath);
-                task = new SingleItemConvertionTask(convertSingleItemTaskInputDTO);
-                virtualThreadExecutor.submit(task);
+                SingleItemConvertionTask task =  new SingleItemConvertionTask(convertSingleItemTaskInputDTO);
+                conversionOrchestratorInputDTO.virtualThreadsExecutor().submit(task);
             }
         } catch (InterruptedException | ConversionManualAbortedException e) {
             semaphore.drainPermits();
@@ -110,6 +94,12 @@ public class ConversionOrchestrator {
             }
         }
         if (!manualShutdown.get()) {
+            try {
+                finishLatch.await();
+            }catch (InterruptedException e) {
+                conversionOrchestratorInputDTO.onConversionAborted().run();
+                log.error("Failed to complete conversion.", e);
+            }
             waitGentlyAndManageCompletion();
         }
     }
@@ -132,7 +122,7 @@ public class ConversionOrchestrator {
                 .tmpPath(tmpDir)
                 .publishItemUpdate(conversionOrchestratorInputDTO.publishItemUpdate())
                 .setItemAsCompleted(this::setItemAsCompletedOverride)
-                .platformExecutorService(platformExecutorService)
+                .platformExecutorService(conversionOrchestratorInputDTO.platformThreadsExecutor())
                 .incrementFailures(conversionOrchestratorInputDTO.incrementFailures())
                 .incrementPasses(conversionOrchestratorInputDTO.incrementPasses())
                 .isParentInterrupted(this::isThreadInterrupted)
@@ -168,24 +158,9 @@ public class ConversionOrchestrator {
 
     private void waitGentlyAndManageCompletion() {
         try {
-
-            finishLatch.await();
-
             boolean rename = true;
 
-            try {
-                waitForCompletionAndShutdownGentlyVirtualThreadExecutor();
-            } catch (InterruptedException e) {
-                log.debug("Interrupted while waiting for virtualThreadExecutor to terminate.");
-                rename = false;
-            }
 
-            try {
-                waitForCompletionAndShutdownGentlyPlatformThreadExecutor();
-            } catch (InterruptedException e) {
-                log.debug("Interrupted while waiting for platformExecutorService to terminate.");
-                rename = false;
-            }
 
             if (rename && !manualShutdown.get()) {
                 ThreadFactory virtualThreadFactory = buildVirtualThreadFactory("terminator");
@@ -199,7 +174,6 @@ public class ConversionOrchestrator {
                 conversionOrchestratorInputDTO.addToDeletionQueue().accept(tmpDirPath);
                 conversionOrchestratorInputDTO.onConversionAborted().run();
             }
-
         } catch (Exception e) {
             conversionOrchestratorInputDTO.onConversionAborted().run();
             log.error("Failed to complete conversion.", e);
@@ -207,23 +181,7 @@ public class ConversionOrchestrator {
     }
 
 
-    private void waitForCompletionAndShutdownGentlyVirtualThreadExecutor() throws InterruptedException {
-        virtualThreadExecutor.shutdown();
-        boolean terminated = virtualThreadExecutor.awaitTermination(31, TimeUnit.DAYS);
-        if (!terminated) {
-            log.error("virtualThreadExecutor did not terminate in time. Forcing emergency shutdown.");
-            virtualThreadExecutor.shutdownNow();
-        }
-    }
 
-    private void waitForCompletionAndShutdownGentlyPlatformThreadExecutor() throws InterruptedException {
-        platformExecutorService.shutdown();
-        boolean platformExecutorShutdown = platformExecutorService.awaitTermination(31, TimeUnit.DAYS);
-        if (!platformExecutorShutdown) {
-            log.error("platformExecutorService did not terminate in time. Forcing emergencyConversionWorker shutdown.");
-            platformExecutorService.shutdownNow();
-        }
-    }
 
     private synchronized Path calculateTemporaryFilenameForMe(ConversionItemDTO convertImageInputDTO) {
         Path prototypeNewPathAndFilenameWithNewExtension = getPotentiallyDuplicateOutputRawFilenameWithNewExtension(convertImageInputDTO);
@@ -277,6 +235,8 @@ public class ConversionOrchestrator {
 
     public void onAllTasksCompleteEnableComponents() {
         conversionOrchestratorInputDTO.onAllTasksCompleteEnableComponents().run();
+        conversionOrchestratorInputDTO.mainSemaphore().release();
+        conversionOrchestratorInputDTO.countDownLatchWorkFinished().countDown();
     }
 
     private Void retryableDirectoryRename(Path sourcePath, Path destinationPath) {
@@ -305,12 +265,12 @@ public class ConversionOrchestrator {
             finishLatch.countDown();
         }
 
-        if (platformExecutorService != null && !platformExecutorService.isTerminated()) {
-            platformExecutorService.shutdownNow();
+        if (conversionOrchestratorInputDTO.platformThreadsExecutor() != null && !conversionOrchestratorInputDTO.platformThreadsExecutor().isTerminated()) {
+            conversionOrchestratorInputDTO.platformThreadsExecutor().shutdownNow();
         }
 
-        if (virtualThreadExecutor != null && !virtualThreadExecutor.isTerminated()) {
-            this.virtualThreadExecutor.shutdownNow();
+        if (conversionOrchestratorInputDTO.virtualThreadsExecutor() != null && !conversionOrchestratorInputDTO.virtualThreadsExecutor().isTerminated()) {
+            this.conversionOrchestratorInputDTO.virtualThreadsExecutor().shutdownNow();
         }
         waitGentlyAndManageCompletion();
     }

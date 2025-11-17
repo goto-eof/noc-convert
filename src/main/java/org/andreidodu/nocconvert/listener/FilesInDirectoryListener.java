@@ -5,7 +5,7 @@ import java.nio.file.Path;
 public interface FilesInDirectoryListener {
     void onDirectoryProcessed(long totalFiles, Path directory, long filesInDirectory);
 
-    void onFileFound(Path filename);
+    void onFileFound(long totalFiles, Path filename);
 
     void onFileAnalyzationStart(int totalNumberFiles);
 
