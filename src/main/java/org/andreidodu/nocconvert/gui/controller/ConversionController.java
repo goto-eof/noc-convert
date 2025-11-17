@@ -342,10 +342,10 @@ public class ConversionController {
         }, newVirtualThreadPerTaskExecutor).thenRunAsync(() -> {
             conversionDTO.guiOrchestrator().resetProgressBarPanelFromEDT();
             conversionDTO.guiOrchestrator().enableProgressBarPanelFromEDT();
-            conversionDTO.guiOrchestrator().enableJListAndProgressBar(true);
+            conversionDTO.guiOrchestrator().resetJList();
 
             SearchAndConvertInputDTO searchAndConvertInputDTO = buildInput();
-            SearchAndConvertWorker searchAndConvertWorker = new SearchAndConvertWorker(searchAndConvertInputDTO);
+            searchAndConvertWorker = new SearchAndConvertWorker(searchAndConvertInputDTO);
             searchAndConvertWorker.execute();
         }, newVirtualThreadPerTaskExecutor);
 

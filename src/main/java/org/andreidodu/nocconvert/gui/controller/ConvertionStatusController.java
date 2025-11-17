@@ -54,7 +54,7 @@ public class ConvertionStatusController {
         model.updateElements(list);
     }
 
-    public void newVisibleJListAndProgressBar(boolean bool) {
+    public void newVisibleJList() {
         SwingUtilities.invokeLater(() -> {
 
             PerformantListModel jListModel = new PerformantListModel();
@@ -132,8 +132,8 @@ public class ConvertionStatusController {
         convertionStatusDTO.progressBarAndStatusPanel().setVisible(false);
     }
 
-    public void disableProgressBar() {
-        newVisibleJListAndProgressBar(false);
+    public void resetJList() {
+        newVisibleJList();
     }
 
     public void incrementSecondaryProgressBarProgress(Integer totalNumberOfUpdates) {
@@ -168,7 +168,8 @@ public class ConvertionStatusController {
 
     public void showJListPane(boolean show) {
         SwingUtilities.invokeLater(() -> {
-          convertionStatusDTO.conversionFileListScrollPane().setVisible(show);
+            convertionStatusDTO.conversionFileListScrollPane().setVisible(show);
+            convertionStatusDTO.conversionFileList().setVisible(show);
         });
     }
 }

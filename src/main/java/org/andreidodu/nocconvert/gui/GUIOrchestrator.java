@@ -550,7 +550,7 @@ public class GUIOrchestrator extends JFrame {
     }
 
     public void resetConversionItemList() {
-        convertionStatusController.disableProgressBar();
+        convertionStatusController.newVisibleJList();
         convertionStatusController.updateMainProgressBarProgress(0);
     }
 
@@ -636,7 +636,7 @@ public class GUIOrchestrator extends JFrame {
         convertionStatusController.addPathsToTheJList(paths);
     }
 
-    public void enableJListAndProgressBar(boolean b) {
-        convertionStatusController.newVisibleJListAndProgressBar(b);
+    public void resetJList() {
+        convertionStatusController.newVisibleJList();
     }
 }
