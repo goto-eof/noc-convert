@@ -2,6 +2,7 @@ package org.andreidodu.nocconvert.gui.worker.hybrid;
 
 import lombok.Getter;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.dto.IntWrapper;
 import org.andreidodu.nocconvert.dto.conversion.input.ConversionWorkerInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.SearchAndConvertInputDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
@@ -39,7 +40,8 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
 
     private long lastTime = System.currentTimeMillis();
 
-    private int index;
+    private final IntWrapper indexIntWrapper = new IntWrapper(0);
+
 
     public SearchAndConvertWorker(SearchAndConvertInputDTO searchAndConvertInputDTO) {
         this.searchAndConvertInputDTO = searchAndConvertInputDTO;
@@ -83,7 +85,7 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
                     walkSemaphore.acquire();
                     searchAndConvertInputDTO.updateSecondaryProgressBarMaxValue().accept(bucketList.size());
 
-                    List<ConversionItemDTO> conversionItemDTOList = convertPathListToDTOList(searchAndConvertInputDTO.destinationDirectory(), searchAndConvertInputDTO.targetFormat(), bucketList, index++);
+                    List<ConversionItemDTO> conversionItemDTOList = convertPathListToDTOList(searchAndConvertInputDTO.destinationDirectory(), searchAndConvertInputDTO.targetFormat(), bucketList, indexIntWrapper);
                     ConversionWorkerInputDTO conversionWorkerInputDTO = buildInput(
                             conversionItemDTOList,
                             countDownLatchWorkFinished,
@@ -99,7 +101,7 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
             if (!bucketList.isEmpty()) {
                 walkSemaphore.acquire();
                 searchAndConvertInputDTO.updateSecondaryProgressBarMaxValue().accept(bucketList.size());
-                List<ConversionItemDTO> conversionItemDTOList = convertPathListToDTOList(searchAndConvertInputDTO.destinationDirectory(), searchAndConvertInputDTO.targetFormat(), bucketList, index++);
+                List<ConversionItemDTO> conversionItemDTOList = convertPathListToDTOList(searchAndConvertInputDTO.destinationDirectory(), searchAndConvertInputDTO.targetFormat(), bucketList, indexIntWrapper);
                 ConversionWorkerInputDTO conversionWorkerInputDTO = buildInput(
                         conversionItemDTOList,
                         countDownLatchWorkFinished,

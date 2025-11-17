@@ -2,6 +2,7 @@ package org.andreidodu.nocconvert.mapper;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
+import org.andreidodu.nocconvert.dto.IntWrapper;
 import org.andreidodu.nocconvert.helper.FileUtil;
 
 import java.nio.file.Path;
@@ -10,11 +11,11 @@ import java.util.List;
 
 public class ConcurrentItemDTOMapper {
 
-    public static List<ConversionItemDTO> convertPathListToDTOList(Path destPath, String targetFormat, List<Path> paths, int counter) {
+    public static List<ConversionItemDTO> convertPathListToDTOList(Path destPath, String targetFormat, List<Path> paths, IntWrapper intWrapper) {
         List<ConversionItemDTO> list = new ArrayList<>();
         for (Path path : paths) {
             ConversionItemDTO item = ConversionItemDTO.builder()
-                    .index(counter)
+                    .index(intWrapper.incrementAndGetValue())
                     .targetFormat(targetFormat)
                     .targetExtension(targetFormat)
                     .sourceFile(path)

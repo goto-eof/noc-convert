@@ -1,36 +1,23 @@
 package org.andreidodu.nocconvert.gui.components.performant;
 
+import lombok.Getter;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
-import org.andreidodu.nocconvert.dto.ConversionStatus;
 
 import javax.swing.*;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class PerformantListModel extends AbstractListModel<ConversionItemDTO> {
 
     public static final int MAX_NUM_ELEMENTS = 10;
-    private final Map<Integer, ConversionItemDTO> data;
+    @Getter
+    private final List<ConversionItemDTO> data;
     private JList<ConversionItemDTO> conversionFileList;
 
     public PerformantListModel() {
-        this.data = Collections.synchronizedMap(new HashMap<Integer, ConversionItemDTO>());
+        this.data = Collections.synchronizedList(new ArrayList<>());
     }
-
-//    public void updateElementAt(int index, ConversionItemDTO updatedItem) {
-//        if (index >= 0 && index < data.size()) {
-//            data.put(index, updatedItem);
-//            fireContentsChanged(this, index, index);
-//        }
-//    }
-//
-//    public void addElement(ConversionItemDTO item) {
-//        int index = data.size();
-//        data.add(item);
-//        fireIntervalAdded(this, index, index);
-//    }
 
     @Override
     public int getSize() {
@@ -45,33 +32,40 @@ public class PerformantListModel extends AbstractListModel<ConversionItemDTO> {
         return null;
     }
 
-    public void addAll(List<ConversionItemDTO> chunkList) {
-//        List<ConversionItemDTO> filtered = chunkList.stream().filter(item -> !ConversionStatus.COMPLETED.equals(item.getStatus())).toList();
-//        data.addAll(filtered);
-//
-//        if (filtered.stream().mapToInt(ConversionItemDTO::getIndex).min().orElse(data.size() + 1) > MAX_NUM_ELEMENTS) {
-//            return;
-//        }
-//
-//        fireIntervalAdded(this, 0, MAX_NUM_ELEMENTS);
+    public void addAll(List<ConversionItemDTO> failedChunkList) {
+
+        if (failedChunkList.isEmpty()) {
+            return;
+        }
+
+        data.addAll(failedChunkList);
+
+        if (failedChunkList.stream().mapToInt(ConversionItemDTO::getExternalIndex).min().orElse(data.size() + 1) > MAX_NUM_ELEMENTS) {
+            return;
+        }
+
+        fireIntervalAdded(this, 0, MAX_NUM_ELEMENTS);
     }
 
-    public void updateElements(List<ConversionItemDTO> list) {
+    public void updateElements(List<ConversionItemDTO> failedChunkList) {
+        if (failedChunkList.isEmpty()) {
+            return;
+        }
+
         int minIndex = Integer.MAX_VALUE;
         int maxIndex = Integer.MIN_VALUE;
 
-        List<ConversionItemDTO> filtered = list.stream()
-                .filter(item -> ConversionStatus.FAILED.equals(item.getStatus()) || ConversionStatus.QUEUED.equals(item.getStatus()))
-                .toList();
 
-        for (ConversionItemDTO item : filtered) {
-            if (item.getIndex() >= data.size()) {
-                continue;
+        for (ConversionItemDTO item : failedChunkList) {
+            if (data.isEmpty() || item.getExternalIndex() >= data.size()) {
+                data.add(item);
+            } else {
+                data.set(item.getExternalIndex(), item);
             }
-            data.put(item.getIndex(), item);
+
             if (conversionFileList != null) {
-                minIndex = Math.min(minIndex, item.getIndex());
-                maxIndex = Math.max(maxIndex, item.getIndex());
+                minIndex = Math.min(minIndex, item.getExternalIndex());
+                maxIndex = Math.max(maxIndex, item.getExternalIndex());
             }
         }
 

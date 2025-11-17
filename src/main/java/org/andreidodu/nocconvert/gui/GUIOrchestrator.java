@@ -115,7 +115,7 @@ public class GUIOrchestrator extends JFrame {
         SwingUtilities.invokeLater(() -> {
             applicationStatusLabel.setText(messageFull);
             secondaryApplicationStatusLabel.setText(messageShort);
-            scrollPanePanel.setVisible(false);
+            scrollPanePanel.setVisible(true);
         });
 
         mainProgressBar.setStringPainted(true);
@@ -473,7 +473,7 @@ public class GUIOrchestrator extends JFrame {
 
             footerPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, headerBorderColor));
 
-            conversionFileListScrollPane.setVisible(false);
+
             conversionFileListScrollPane.add(conversionFileList);
             conversionFileListScrollPane.setViewportView(conversionFileList);
             conversionFileListScrollPane.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
@@ -502,6 +502,9 @@ public class GUIOrchestrator extends JFrame {
             }
 
         };
+        conversionFileListScrollPane.setVisible(true);
+        conversionFileList.setVisible(true);
+        scrollPanePanel.setVisible(true);
     }
 
     public void setEnableSearchStepComponents(boolean bool) {

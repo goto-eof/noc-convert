@@ -93,7 +93,6 @@ public class ConversionController {
                 }
                 conversionDTO.guiOrchestrator().setEnableSearchStepComponents(false);
                 startCountForImagesStep();
-                conversionDTO.guiOrchestrator().showJListPane(true);
 //                FilesInDirectoryListenerImpl filesInDirectoryListener = new FilesInDirectoryListenerImpl(this);
 //                imageSearcherSwingWorker = new ImageSearcherSwingWorker(conversionDTO.guiOrchestrator().getSourceDirectory(), filesInDirectoryListener, this::endSearchForImagesStep);
 //                imageSearcherSwingWorker.execute();
@@ -273,7 +272,7 @@ public class ConversionController {
     }
 
     public void startCountForImagesStep() {
-        conversionDTO.guiOrchestrator().resetConversionItemList();
+        //conversionDTO.guiOrchestrator().resetConversionItemList();
         totalFound.set(0);
         SwingUtilities.invokeLater(() -> {
             conversionDTO.convertComponent().updateAction(SplitButtonComponent.Action.STOP);
@@ -502,7 +501,6 @@ public class ConversionController {
     }
 
     public void onAllItemsCompleted() {
-        conversionDTO.guiOrchestrator().onConversionDone();
         SwingUtilities.invokeLater(() -> {
             conversionDTO.guiOrchestrator().setEnableSearchStepComponents(true);
             conversionDTO.convertComponent().getDropdownToggleButton().setEnabled(true);

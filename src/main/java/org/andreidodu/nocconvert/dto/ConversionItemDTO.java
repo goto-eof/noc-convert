@@ -22,6 +22,7 @@ public class ConversionItemDTO {
     private Path tmpFile;
     private Path destinationDirectory;
     private Integer index;
+    private volatile Integer externalIndex;
     private Path tmpDirectory;
 
 }
