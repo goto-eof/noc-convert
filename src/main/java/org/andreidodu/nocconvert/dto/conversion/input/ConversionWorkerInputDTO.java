@@ -27,6 +27,9 @@ public record ConversionWorkerInputDTO(
         ExecutorService virtualThreadsExecutor,
         int virtualThreadsPermits,
         int platformThreadsPermits,
-        ExecutorService platformThreadsExecutor
+        ExecutorService platformThreadsExecutor,
+        Path finalDirectory,
+        Path temporaryDirectory,
+        Consumer<Path> updateTmpDestinationDirectory
 ) {
 }

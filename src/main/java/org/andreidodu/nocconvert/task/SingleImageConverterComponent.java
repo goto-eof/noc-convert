@@ -307,7 +307,7 @@ public class SingleImageConverterComponent implements CancellableConverterCompon
             try {
                 writer.write(null, new IIOImage(image, null, null), null);
             } catch (Exception e) {
-                log.debug("unable to write: {}", convertImageInputDTO.sourceFile());
+                log.debug("unable to write: {} to {}", convertImageInputDTO.sourceFile(), tmpOutputFile.toString());
                 throw new RuntimeException(getRootCauseMessage(e), e);
             }
 

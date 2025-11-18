@@ -16,7 +16,9 @@ import org.andreidodu.nocconvert.gui.controller.PathSelectionController;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
+import org.andreidodu.nocconvert.gui.util.CPUDisplay;
 import org.andreidodu.nocconvert.gui.util.FPSDisplay;
+import org.andreidodu.nocconvert.gui.util.RAMDisplay;
 import org.andreidodu.nocconvert.helper.performance.PerformanceUtil;
 import org.andreidodu.nocconvert.listener.AdaptiveTestListener;
 import org.apache.logging.log4j.LogManager;
@@ -59,6 +61,8 @@ public class GUIOrchestrator extends JFrame {
     private JPanel progressBarPanel;
     private FPSDisplay fpsDisplay;
     private JProgressBar secondaryProgressBar;
+    private JLabel ramUsage;
+    private JLabel cpuUsage;
 
     private final PathSelectionController pathSelectionController;
     private final ConvertionStatusController convertionStatusController;
@@ -403,7 +407,7 @@ public class GUIOrchestrator extends JFrame {
         secondaryProgressBar.setForeground(new Color(-16744236));
         secondaryProgressBar.setStringPainted(true);
         progressBarPanel.add(secondaryProgressBar, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        headerPanel.setLayout(new GridLayoutManager(1, 4, new Insets(0, 5, 0, 5), -1, -1));
+        headerPanel.setLayout(new GridLayoutManager(1, 6, new Insets(0, 5, 0, 5), -1, -1));
         headerPanel.setBackground(new Color(-13026240));
         mainPanel.add(headerPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         button1 = new JButton();
@@ -424,6 +428,10 @@ public class GUIOrchestrator extends JFrame {
         headerPanel.add(spacer3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         fpsDisplay.setText("");
         headerPanel.add(fpsDisplay, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        ramUsage.setText("");
+        headerPanel.add(ramUsage, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        cpuUsage.setText("");
+        headerPanel.add(cpuUsage, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /** @noinspection ALL */
@@ -505,6 +513,9 @@ public class GUIOrchestrator extends JFrame {
         conversionFileListScrollPane.setVisible(true);
         conversionFileList.setVisible(true);
         scrollPanePanel.setVisible(true);
+
+        ramUsage = new RAMDisplay();
+        cpuUsage = new CPUDisplay();
     }
 
     public void setEnableSearchStepComponents(boolean bool) {

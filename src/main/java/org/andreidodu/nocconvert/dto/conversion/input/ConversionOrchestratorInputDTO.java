@@ -25,6 +25,9 @@ public record ConversionOrchestratorInputDTO(
         CountDownLatch countDownLatchWorkFinished,
         int virtualThreadsPermits,
         ExecutorService virtualThreadsExecutor,
-        ExecutorService platformThreadsExecutor
+        ExecutorService platformThreadsExecutor,
+        Path finalDirectory,
+        Path temporaryDirectory,
+        Consumer<Path> updateTmpDestinationDirectory
 ) {
 }

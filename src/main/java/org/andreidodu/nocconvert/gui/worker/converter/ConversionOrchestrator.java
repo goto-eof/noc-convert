@@ -19,12 +19,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.andreidodu.nocconvert.constants.ApplicationConfig.FINAL_OUTPUT_DIRECTORY_NAME;
-import static org.andreidodu.nocconvert.constants.ApplicationConfig.TMP_OUTPUT_DIRECTORY_NAME;
 import static org.andreidodu.nocconvert.helper.FileUtil.buildVirtualThreadFactory;
 import static org.andreidodu.nocconvert.helper.OperationUtil.retryable;
 
@@ -34,9 +31,9 @@ public class ConversionOrchestrator {
     private final Semaphore semaphore;
     @Getter
     private final ConversionOrchestratorInputDTO conversionOrchestratorInputDTO;
-    @Getter
-    private Path tmpDirPath;
-    private Path finalDir;
+    //    @Getter
+//    private Path tmpDirPath;
+//    private Path finalDir;
     @Getter
     private final AtomicBoolean manualShutdown = new AtomicBoolean(false);
 
@@ -51,17 +48,12 @@ public class ConversionOrchestrator {
 
     public void startConversion() {
         try {
-            Path conversionDestinationDirectory = conversionOrchestratorInputDTO.conversionItemDTOList()
-                    .stream()
-                    .findFirst()
-                    .orElseThrow()
-                    .getDestinationDirectory();
-            tmpDirPath = buildTmpPathAndReturn(conversionDestinationDirectory);
-
-            finalDir = Path.of(conversionDestinationDirectory.toString(), FINAL_OUTPUT_DIRECTORY_NAME);
+            if (!conversionOrchestratorInputDTO.temporaryDirectory().toFile().exists()) {
+                log.debug("Creating temporary directory: {}", conversionOrchestratorInputDTO.temporaryDirectory());
+                FileUtils.forceMkdirParent(conversionOrchestratorInputDTO.temporaryDirectory().toFile());
+            }
             conversionOrchestratorInputDTO.conversionItemDTOList()
-                    .forEach(dto -> dto.setDestinationDirectory(finalDir));
-            log.debug("Creating temporary directory: {}", tmpDirPath);
+                    .forEach(dto -> dto.setDestinationDirectory(conversionOrchestratorInputDTO.finalDirectory()));
         } catch (NoSuchElementException e) {
             log.error("Conversion list is empty. Cannot start conversion.", e);
             throw new RuntimeException("Conversion list is empty. Cannot determine destination path.", e);
@@ -71,7 +63,6 @@ public class ConversionOrchestrator {
         }
 
         finishLatch = new CountDownLatch(conversionOrchestratorInputDTO.conversionItemDTOList().size());
-        int index = 0;
 
         throwExceptionIfManuallyAborted();
 
@@ -82,9 +73,9 @@ public class ConversionOrchestrator {
                 throwExceptionIfManuallyAborted();
                 conversionItemDTO.setStatus(ConversionStatus.QUEUED);
                 // conversionItemDTO.setIndex(index++);
-                conversionItemDTO.setTmpDirectory(tmpDirPath);
-                ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO = buildInput(conversionItemDTO, tmpDirPath);
-                SingleItemConvertionTask task =  new SingleItemConvertionTask(convertSingleItemTaskInputDTO);
+                conversionItemDTO.setTmpDirectory(conversionOrchestratorInputDTO.temporaryDirectory());
+                ConvertSingleItemTaskInputDTO convertSingleItemTaskInputDTO = buildInput(conversionItemDTO, conversionOrchestratorInputDTO.temporaryDirectory());
+                SingleItemConvertionTask task = new SingleItemConvertionTask(convertSingleItemTaskInputDTO);
                 conversionOrchestratorInputDTO.virtualThreadsExecutor().submit(task);
             }
         } catch (InterruptedException | ConversionManualAbortedException e) {
@@ -93,14 +84,16 @@ public class ConversionOrchestrator {
                 finishLatch.countDown();
             }
         }
+
+
         if (!manualShutdown.get()) {
             try {
                 finishLatch.await();
-            }catch (InterruptedException e) {
+                waitGentlyAndManageCompletion();
+            } catch (InterruptedException e) {
                 conversionOrchestratorInputDTO.onConversionAborted().run();
                 log.error("Failed to complete conversion.", e);
             }
-            waitGentlyAndManageCompletion();
         }
     }
 
@@ -110,11 +103,6 @@ public class ConversionOrchestrator {
         }
     }
 
-    private static Path buildTmpPathAndReturn(Path tmpOutputDirectory) throws IOException {
-        Path tmpDirPath = Path.of(tmpOutputDirectory.toString(), TMP_OUTPUT_DIRECTORY_NAME + "-" + UUID.randomUUID());
-        Files.createDirectories(tmpDirPath);
-        return tmpDirPath;
-    }
 
     private ConvertSingleItemTaskInputDTO buildInput(ConversionItemDTO conversionItemDTO, Path tmpDir) {
         return ConvertSingleItemTaskInputDTO.builder()
@@ -160,27 +148,27 @@ public class ConversionOrchestrator {
         try {
             boolean rename = true;
 
-
-
             if (rename && !manualShutdown.get()) {
                 ThreadFactory virtualThreadFactory = buildVirtualThreadFactory("terminator");
                 try (ExecutorService temporaryVirtualThreadExecutorService = Executors.newThreadPerTaskExecutor(virtualThreadFactory)) {
-                    CompletableFuture<Void> futureResult = CompletableFuture.supplyAsync(this::renameAllProcessedFiles, temporaryVirtualThreadExecutorService)
-                            .thenRunAsync(() -> this.retryableDirectoryRename(tmpDirPath, finalDir), temporaryVirtualThreadExecutorService);
+                    CompletableFuture<Void> futureResult =
+                            CompletableFuture.supplyAsync(this::renameAllProcessedFiles, temporaryVirtualThreadExecutorService)
+                                    .thenRunAsync(() -> conversionOrchestratorInputDTO.updateTmpDestinationDirectory().accept(this.retryableDirectoryRename(conversionOrchestratorInputDTO.temporaryDirectory(), conversionOrchestratorInputDTO.finalDirectory())), temporaryVirtualThreadExecutorService)
+                                    .thenRunAsync(() -> conversionOrchestratorInputDTO.countDownLatchWorkFinished().countDown(), temporaryVirtualThreadExecutorService);
                     futureResult.join();
                 }
                 conversionOrchestratorInputDTO.onAllTasksCompleteEnableComponents().run();
+                conversionOrchestratorInputDTO.countDownLatchWorkFinished().countDown();
             } else {
-                conversionOrchestratorInputDTO.addToDeletionQueue().accept(tmpDirPath);
+                conversionOrchestratorInputDTO.addToDeletionQueue().accept(conversionOrchestratorInputDTO.temporaryDirectory());
                 conversionOrchestratorInputDTO.onConversionAborted().run();
             }
         } catch (Exception e) {
             conversionOrchestratorInputDTO.onConversionAborted().run();
             log.error("Failed to complete conversion.", e);
+            conversionOrchestratorInputDTO.countDownLatchWorkFinished().countDown();
         }
     }
-
-
 
 
     private synchronized Path calculateTemporaryFilenameForMe(ConversionItemDTO convertImageInputDTO) {
@@ -236,10 +224,13 @@ public class ConversionOrchestrator {
     public void onAllTasksCompleteEnableComponents() {
         conversionOrchestratorInputDTO.onAllTasksCompleteEnableComponents().run();
         conversionOrchestratorInputDTO.mainSemaphore().release();
-        conversionOrchestratorInputDTO.countDownLatchWorkFinished().countDown();
+        //conversionOrchestratorInputDTO.countDownLatchWorkFinished().countDown();
     }
 
-    private Void retryableDirectoryRename(Path sourcePath, Path destinationPath) {
+    private Path retryableDirectoryRename(Path sourcePath, Path destinationPath) {
+        if (!sourcePath.getFileName().toString().contains("-tmp-")) {
+            return sourcePath;
+        }
         int i = 1;
         boolean retry;
         Path copyOfDestinationPath = destinationPath;
@@ -247,12 +238,13 @@ public class ConversionOrchestrator {
             try {
                 FileUtils.moveDirectory(sourcePath.toFile(), copyOfDestinationPath.toFile());
                 retry = false;
+                return copyOfDestinationPath;
             } catch (IOException e) {
                 copyOfDestinationPath = Path.of(destinationPath + "-" + (i++));
                 retry = true;
             }
         } while (retry);
-        return null;
+        return copyOfDestinationPath;
     }
 
     public void manualShutdown() {

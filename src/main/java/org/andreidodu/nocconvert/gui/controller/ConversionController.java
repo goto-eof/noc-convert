@@ -432,13 +432,15 @@ public class ConversionController {
                         conversionDTO.conversionFileJList().repaint();
                     }
 
-                    applicationStatusLabel.setText("Converted " + processedItemsFormatted + " of " + totalFormatted + " Images (" + failureformatted + " failures). Please wait.");
+                    applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Summary</center>" +
+                            "<span style=\"font-weight: bold;color: #0078D4;\">Converted " + processedItemsFormatted + " of " + totalFormatted + " Images (" + failureformatted + " failures). Please wait.</Span></html>");
                     conversionDTO.guiOrchestrator().incrementSecondaryProgressBarProgress(1);
                     lastTime = now;
                     this.cpuLoadPercentage.set(cpuPercentage);
                     this.timeElapsed.set(calculateTimeElapsed());
                     if (ApplicationConfig.DEV_MODE) {
                         conversionDTO.secondaryApplicationStatusLabel().setText(timeElapsed + " | " +
+                                (searchAndConvertWorker != null ? searchAndConvertWorker.getAdaptiveBucketSize() + " bucket size | " : "") +
                                 cpuLoadPercentage + "% CPU load | " +
                                 (searchAndConvertWorker != null ? searchAndConvertWorker.getPlatformThreadsPermits() : "default") +
                                 " P-Threads | " + (searchAndConvertWorker != null ? searchAndConvertWorker.getVirtualThreadsPermits() : "default") +

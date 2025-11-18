@@ -28,6 +28,7 @@ public class ConcurrentItemDTOMapper {
                     .build();
             list.add(item);
         }
+        paths.clear();
         return list;
     }
 

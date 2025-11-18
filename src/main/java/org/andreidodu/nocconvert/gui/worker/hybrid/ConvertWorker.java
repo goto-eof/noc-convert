@@ -26,6 +26,12 @@ public class ConvertWorker extends SwingWorker<List<ConversionItemDTO>, Conversi
         ConversionOrchestratorInputDTO conversionOrchestratorInputDTO = buildInput();
         conversionOrchestrator = new ConversionOrchestrator(conversionOrchestratorInputDTO);
         conversionOrchestrator.startConversion();
+        try {
+            conversionWorkerInputDTO.countDownLatchWorkFinished().await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        this.conversionOrchestrator.onAllTasksCompleteEnableComponents();
 
         return null;
     }
@@ -46,6 +52,9 @@ public class ConvertWorker extends SwingWorker<List<ConversionItemDTO>, Conversi
                 .virtualThreadsExecutor(conversionWorkerInputDTO.virtualThreadsExecutor())
                 .virtualThreadsPermits(conversionWorkerInputDTO.virtualThreadsPermits())
                 .platformThreadsExecutor(conversionWorkerInputDTO.platformThreadsExecutor())
+                .finalDirectory(conversionWorkerInputDTO.finalDirectory())
+                .temporaryDirectory(conversionWorkerInputDTO.temporaryDirectory())
+                .updateTmpDestinationDirectory(conversionWorkerInputDTO.updateTmpDestinationDirectory())
                 .build();
     }
 
@@ -72,9 +81,7 @@ public class ConvertWorker extends SwingWorker<List<ConversionItemDTO>, Conversi
         if (isCancelled()) {
             log.debug("Conversion Worker cancelled.");
             conversionWorkerInputDTO.onConversionAborted().run();
-            return;
         }
-        this.conversionOrchestrator.onAllTasksCompleteEnableComponents();
     }
 
     public Void manualShutdownThreads() {
