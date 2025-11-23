@@ -23,6 +23,7 @@ logs/
 .springBeans
 .sts4-cache
 noc-convert_*_*.snap
+${project.build.directory}
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
