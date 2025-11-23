@@ -5,13 +5,19 @@ import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.IntWrapper;
 import org.andreidodu.nocconvert.dto.conversion.input.ConversionWorkerInputDTO;
 import org.andreidodu.nocconvert.dto.conversion.input.SearchAndConvertInputDTO;
+import org.andreidodu.nocconvert.enums.DEFCON;
+import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
+import org.andreidodu.nocconvert.exception.ManualAbortedException;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
-import org.andreidodu.nocconvert.helper.ImageConverterUtil;
-import org.andreidodu.nocconvert.helper.performance.AdaptiveSimpleGovernorRunnable;
+import org.andreidodu.nocconvert.gui.worker.hybrid.defcon.DefconLevel1Task;
+import org.andreidodu.nocconvert.gui.worker.hybrid.defcon.DefconLevel2Task;
+import org.andreidodu.nocconvert.gui.worker.hybrid.defcon.DefconLevel3Task;
+import org.andreidodu.nocconvert.util.ImageConverterUtil;
+import org.andreidodu.nocconvert.util.RamUtil;
+import org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import oshi.SystemInfo;
-import oshi.hardware.GlobalMemory;
 import oshi.hardware.HardwareAbstractionLayer;
 
 import javax.swing.*;
@@ -23,19 +29,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static org.andreidodu.nocconvert.constants.ApplicationConfig.FINAL_OUTPUT_DIRECTORY_NAME;
 import static org.andreidodu.nocconvert.constants.ApplicationConfig.TMP_OUTPUT_DIRECTORY_NAME;
-import static org.andreidodu.nocconvert.helper.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
 import static org.andreidodu.nocconvert.mapper.ConcurrentItemDTOMapper.convertPathListToDTOList;
+import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
 import static org.apache.commons.io.file.PathUtils.getExtension;
 
 public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
     private static final Logger log = LogManager.getLogger(SearchAndConvertWorker.class);
     public static final int NUMBER_OF_FILES_PER_DIRECTORY = 10_000;
     public static final int MINIMUM_BUCKET_SIZE = 10;
+    public static final int DEFCON_3_MAX_SECONDS_TO_WAIT = 10;
+
     public static AtomicInteger adaptiveBucketSize = new AtomicInteger(MINIMUM_BUCKET_SIZE);
     private final SearchAndConvertInputDTO searchAndConvertInputDTO;
     @Getter
@@ -55,6 +65,13 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
     private long fileCounter = 0;
     private Path temporaryDirectory;
     private Path destinationDirectory;
+    private final AtomicReference<DEFCON> DEFCONLevel = new AtomicReference<>(DEFCON.LEVEL_3);
+    private final AtomicInteger defcon3SecondsToWait = new AtomicInteger(0);
+    private final RamUtil ramUtil;
+    @Getter
+    private final AtomicBoolean manualShutdown = new AtomicBoolean(false);
+    private ConvertWorker convertWorker;
+    private final ConcurrentLinkedQueue<Path> toDeletePathList = new ConcurrentLinkedQueue<>();
 
     public int getAdaptiveBucketSize() {
         return adaptiveBucketSize.get();
@@ -70,6 +87,7 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
         platformExecutorService = Executors.newFixedThreadPool(platformThreadsPermits);
         SystemInfo si = new SystemInfo();
         hal = si.getHardware();
+        this.ramUtil = new RamUtil();
     }
 
     @Override
@@ -90,9 +108,18 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
             List<Path> bucketList = new ArrayList<>();
 
             Iterator<Path> walkIterator = walkStream.iterator();
-
+            int ramUsagePercentage = ramUtil.getCurrentOccupiedRAMPercentage();
+            int adaptiveBucketSize = recalculateAdaptiveBucketSize(ramUsagePercentage);
 
             while (walkIterator.hasNext()) {
+
+                checkAndAbortIfNecessary();
+
+                applyDefcon2IfNecessary();
+
+                checkAndAbortIfNecessary();
+
+                applyDefcon1IfNecessary();
 
                 Path path = walkIterator.next();
                 if (!Files.isRegularFile(path) || !availableExtensionList.contains(getExtension(path.getFileName()).toLowerCase())) {
@@ -102,19 +129,30 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
                 bucketList.add(path);
                 fileCounter++;
 
-
                 long now = System.currentTimeMillis();
                 if (now - lastTime >= 1000) {
                     searchAndConvertInputDTO.onFileFound().accept(bucketList.size(), path);
                     lastTime = now;
                 }
 
-                int adaptiveBucketSize = recalculateAdaptiveBucketSize();
+                checkAndAbortIfNecessary();
+
                 if (bucketList.size() >= adaptiveBucketSize) {
-                    // TODO: insert a sleep with a variable duration somewhere here
-                    // NOTE: because the supplier (noc-convert) produces so many files that the consumer (gvfsd-metadata) is not able to process without increasing the RAM usage (minimum 15Gb for 5 million files).
-                    // NOTE: we need to monitor indirectly the activity of nautilus and especially of gvfsd-metadata
-                    // NOTE; the calculated duration shall be chose dynamically in base of the current RAM consumption level (we could have also other processes that eat RAM at some point)
+                    ramUsagePercentage = ramUtil.getCurrentOccupiedRAMPercentage();
+                    adaptiveBucketSize = recalculateAdaptiveBucketSize(ramUsagePercentage);
+
+                    if (DEFCON.LEVEL_3.equals(DEFCONLevel.get())) {
+                        increaseDefcon3SecondsToWaitIfNecessary(ramUsagePercentage, adaptiveBucketSize);
+                        if (DEFCON.LEVEL_3.equals(DEFCONLevel.get())) {
+                            applyDEFCONLevel3();
+                        } else {
+                            applyDefcon2IfNecessary();
+                        }
+                    }
+
+                    checkAndAbortIfNecessary();
+
+
                     Path tmpDir = temporaryDirectory;
                     walkSemaphore.acquire();
                     countDownLatchWorkFinished = new CountDownLatch(1);
@@ -154,6 +192,9 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
             }
         } catch (Exception e) {
             log.error("error: {}", e.getMessage(), e);
+            if (e instanceof ManualAbortedException) {
+                searchAndConvertInputDTO.onConversionAborted().run();
+            }
         } finally {
             try {
                 waitForCompletionAndShutdownGentlyVirtualThreadExecutor();
@@ -171,25 +212,92 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
         return null;
     }
 
-    private int recalculateAdaptiveBucketSize() {
+    private void checkAndAbortIfNecessary() {
+        if (manualShutdown.get()) {
+            throw new ConversionManualAbortedException("manual shutdown");
+        }
+    }
+
+    private void applyDefcon1IfNecessary() throws InterruptedException {
+        if (DEFCON.LEVEL_1.equals(DEFCONLevel.get())) {
+            applyDEFCONLevel1();
+            int newRaUsagePercentage = ramUtil.getCurrentOccupiedRAMPercentage();
+
+            if (newRaUsagePercentage < DEFCON.LEVEL_3.getCriticalPoint()) {
+                DEFCONLevel.set(DEFCON.LEVEL_3);
+            } else if (newRaUsagePercentage < DEFCON.LEVEL_2.getCriticalPoint()) {
+                DEFCONLevel.set(DEFCON.LEVEL_3);
+            } else if (newRaUsagePercentage < DEFCON.LEVEL_1.getCriticalPoint()) {
+                DEFCONLevel.set(DEFCON.LEVEL_2);
+            }
+        }
+    }
+
+    private void applyDefcon2IfNecessary() throws InterruptedException {
+        if (DEFCON.LEVEL_2.equals(DEFCONLevel.get())) {
+            applyDEFCONLevel2();
+            int newRaUsagePercentage = ramUtil.getCurrentOccupiedRAMPercentage();
+            if (newRaUsagePercentage >= DEFCON.LEVEL_1.getCriticalPoint()) {
+                DEFCONLevel.set(DEFCON.LEVEL_1);
+            } else if (newRaUsagePercentage >= DEFCON.LEVEL_2.getCriticalPoint()) {
+                DEFCONLevel.set(DEFCON.LEVEL_2);
+            } else {
+                DEFCONLevel.set(DEFCON.LEVEL_3);
+            }
+        }
+    }
+
+    private void applyDEFCONLevel1() throws InterruptedException {
+        CountDownLatch defconLevel1Latch = new CountDownLatch(1);
+        Thread.ofVirtual().name("defcon-level-1-strategy").start(new DefconLevel1Task(defconLevel1Latch, getManualShutdown()::get));
+        defconLevel1Latch.await();
+    }
+
+    private void applyDEFCONLevel2() throws InterruptedException {
+        CountDownLatch defconLevel2Latch = new CountDownLatch(1);
+        Thread.ofVirtual().name("defcon-level-2-strategy").start(new DefconLevel2Task(defconLevel2Latch, getManualShutdown()::get));
+        defconLevel2Latch.await();
+    }
+
+    private void applyDEFCONLevel3() throws InterruptedException {
+        if (defcon3SecondsToWait.get() <= 0) {
+            return;
+        }
+        CountDownLatch defconLevel3Latch = new CountDownLatch(1);
+        Thread.ofVirtual().name("defcon-level-3-strategy").start(new DefconLevel3Task(defconLevel3Latch, defcon3SecondsToWait.get(), getManualShutdown()::get));
+        defconLevel3Latch.await();
+    }
+
+    private int recalculateAdaptiveBucketSize(int currentRamUsagePercentage) {
         int adaptiveBucketSize = this.getAdaptiveBucketSize();
-        GlobalMemory memory = hal.getMemory();
-        long total = memory.getTotal();
-        long onePerc = total / 100;
-        long available = memory.getAvailable();
-        int currentPerc = (int) ((total - available) / onePerc);
-        if (currentPerc < 50 && adaptiveBucketSize < NUMBER_OF_FILES_PER_DIRECTORY) {
+        if (currentRamUsagePercentage < DEFCON.LEVEL_3.getCriticalPoint() && adaptiveBucketSize < NUMBER_OF_FILES_PER_DIRECTORY) {
             adaptiveBucketSize = adaptiveBucketSize * MINIMUM_BUCKET_SIZE;
             log.warn("\n\nbucketSize increased to {}\n\n", adaptiveBucketSize);
-        } else if (currentPerc > 50 && adaptiveBucketSize > MINIMUM_BUCKET_SIZE) {
+            if (defcon3SecondsToWait.get() - 5 >= 0) {
+                defcon3SecondsToWait.set(defcon3SecondsToWait.get() - 5);
+            }
+        } else if (currentRamUsagePercentage > DEFCON.LEVEL_3.getCriticalPoint() && adaptiveBucketSize > MINIMUM_BUCKET_SIZE) {
             int newValue = adaptiveBucketSize / MINIMUM_BUCKET_SIZE;
             adaptiveBucketSize = Math.max(newValue, MINIMUM_BUCKET_SIZE);
-            log.warn("\n\nbucketSize decreased" +
-                    " to {}\n\n", adaptiveBucketSize);
+            log.warn("\n\nbucketSize decreased to {}\n\n", adaptiveBucketSize);
         }
+
         setAdaptiveBucketSize(adaptiveBucketSize);
         return adaptiveBucketSize;
     }
+
+    private void increaseDefcon3SecondsToWaitIfNecessary(int currentPerc, int adaptiveBucketSize) {
+        if (currentPerc > DEFCON.LEVEL_3.getCriticalPoint()) {
+            if (defcon3SecondsToWait.get() + 5 <= DEFCON_3_MAX_SECONDS_TO_WAIT) {
+                defcon3SecondsToWait.set(defcon3SecondsToWait.get() + 5);
+            }
+            if (adaptiveBucketSize == MINIMUM_BUCKET_SIZE && defcon3SecondsToWait.get() >= DEFCON_3_MAX_SECONDS_TO_WAIT && currentPerc >= DEFCON.LEVEL_2.getCriticalPoint()) {
+                defcon3SecondsToWait.set(DEFCON_3_MAX_SECONDS_TO_WAIT);
+                DEFCONLevel.set(DEFCON.LEVEL_2);
+            }
+        }
+    }
+
 
     private Path calculateFinalDir(Path destinationDirectory) {
         return Path.of(destinationDirectory.toString(), FINAL_OUTPUT_DIRECTORY_NAME);
@@ -206,8 +314,10 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
     }
 
     private void awaitConvertion(ConversionWorkerInputDTO conversionWorkerInputDTO) throws InterruptedException {
+        checkAndAbortIfNecessary();
+
         searchAndConvertInputDTO.endSearchChunkForImagesStep().accept(conversionWorkerInputDTO.list());
-        ConvertWorker convertWorker = new ConvertWorker(conversionWorkerInputDTO);
+        convertWorker = new ConvertWorker(conversionWorkerInputDTO);
         convertWorker.execute();
 
         conversionWorkerInputDTO.countDownLatchWorkFinished().await();
@@ -224,8 +334,6 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
             } catch (IOException e) {
                 throw new RuntimeException("Oooooooops!");
             }
-        } else {
-
         }
     }
 
@@ -248,7 +356,7 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
                 .incrementPasses(searchAndConvertInputDTO.incrementPasses())
                 .incrementFailures(searchAndConvertInputDTO.incrementFailures())
                 .decrementPasses(searchAndConvertInputDTO.decrementPasses())
-                .addToDeletionQueue(searchAndConvertInputDTO.addToDeletionQueue())
+                .addToDeletionQueue(this::addToDeletionQueue)
                 .countDownLatchWorkFinished(countDownLatchWorkFinished)
                 .semaphore(semaphore)
                 .virtualThreadsExecutor(virtualThreadsExecutor)
@@ -260,8 +368,13 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
                 .build();
     }
 
+    private void addToDeletionQueue(Path path) {
+        this.toDeletePathList.add(path);
+    }
+
     private void updateTmpDestinationDirectory(Path path) {
         this.temporaryDirectory = path;
+        addToDeletionQueue(path);
     }
 
     @Override
@@ -276,6 +389,12 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
     }
 
     public Void manualShutdownThreads() {
+        this.manualShutdown.set(true);
+        searchAndConvertInputDTO.addAllToDeletionQueue().accept(this.toDeletePathList);
+        if (this.convertWorker != null) {
+            convertWorker.manualShutdownThreads();
+            convertWorker = null;
+        }
         return null;
     }
 
@@ -297,4 +416,11 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
         }
     }
 
+    public DEFCON getDefconLevel() {
+        return this.DEFCONLevel.get();
+    }
+
+    public int getDefcon3SecondsToWait() {
+        return defcon3SecondsToWait.get();
+    }
 }

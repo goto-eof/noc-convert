@@ -4,6 +4,7 @@ import lombok.Builder;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -19,6 +20,7 @@ public record SearchAndConvertInputDTO(
         Runnable incrementFailures,
         Runnable onConversionAborted,
         Consumer<Path> addToDeletionQueue,
+        Consumer<Collection<Path>> addAllToDeletionQueue,
         Path sourceDirectory,
         Path destinationDirectory,
         String targetFormat,

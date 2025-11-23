@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.helper;
+package org.andreidodu.nocconvert.util;
 
 public class OSUtils {
     public static boolean isMacOS() {

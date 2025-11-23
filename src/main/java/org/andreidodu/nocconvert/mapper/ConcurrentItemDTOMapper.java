@@ -3,7 +3,7 @@ package org.andreidodu.nocconvert.mapper;
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.dto.IntWrapper;
-import org.andreidodu.nocconvert.helper.FileUtil;
+import org.andreidodu.nocconvert.util.FileUtil;
 
 import java.nio.file.Path;
 import java.util.ArrayList;

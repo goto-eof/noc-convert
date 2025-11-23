@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.helper;
+package org.andreidodu.nocconvert.util;
 
 import org.andreidodu.nocconvert.funcinterface.ThrowingBiConsumer;
 import org.apache.logging.log4j.LogManager;

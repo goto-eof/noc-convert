@@ -1,33 +1,28 @@
-package org.andreidodu.nocconvert.gui.util;
+package org.andreidodu.nocconvert.gui.widget;
 
 import org.andreidodu.nocconvert.constants.ApplicationConfig;
+import org.andreidodu.nocconvert.enums.DEFCON;
 import org.andreidodu.nocconvert.gui.constants.Colors;
-import org.andreidodu.nocconvert.helper.NumberUtil;
-import oshi.SystemInfo;
-import oshi.hardware.HardwareAbstractionLayer;
+import org.andreidodu.nocconvert.util.NumberUtil;
+import org.andreidodu.nocconvert.util.RamUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.management.ManagementFactory;
-import java.lang.management.OperatingSystemMXBean;
 import java.text.DecimalFormat;
 
-public class RAMDisplay extends JLabel implements ActionListener {
+public class RAMWidget extends JLabel implements ActionListener {
 
     private final Timer textUpdateTimer;
     private final Timer autoRepaintTimer;
-    private final HardwareAbstractionLayer hal;
-    private final OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
     private final DecimalFormat numberFormatter;
+    private final RamUtil ramUtil;
 
-    public RAMDisplay() {
+    public RAMWidget() {
         super("RAM: --");
-
-        SystemInfo si = new SystemInfo();
-        hal = si.getHardware();
+        ramUtil = new RamUtil();
 
         numberFormatter = NumberUtil.buildNumberFormatter();
 
@@ -69,35 +64,36 @@ public class RAMDisplay extends JLabel implements ActionListener {
             return;
         }
 
-        double currentRamValueMb = Math.floor(getRamValue());
-        double maxRamValueMb = Math.floor(maxMemory());
+        double currentRamValueMb = Math.floor(ramUtil.getConsumedRam());
+        double maxRamValueMb = Math.floor(ramUtil.getMaxRam());
 
         double onePerc = maxRamValueMb / 100;
 
         int availableRamValuePercentage = (int) (currentRamValueMb / onePerc);
 
-        if (availableRamValuePercentage < 20) {
-            setForeground(Color.GREEN);
-        } else if (availableRamValuePercentage < 30) {
-            setForeground(Colors.LIME);
-        } else if (availableRamValuePercentage < 50) {
-            setForeground(Color.ORANGE);
-        } else if (availableRamValuePercentage < 70) {
+        if (availableRamValuePercentage >= DEFCON.LEVEL_1.getCriticalPoint()) {
             setForeground(Color.RED);
+        } else if (availableRamValuePercentage >= DEFCON.LEVEL_2.getCriticalPoint()) {
+            setForeground(Color.ORANGE);
+        } else if (availableRamValuePercentage >= DEFCON.LEVEL_3.getCriticalPoint()) {
+            setForeground(Color.GREEN);
+        } else {
+            setForeground(Colors.LIME);
         }
+
+//        if (availableRamValuePercentage < 20) {
+//            setForeground(Color.GREEN);
+//        } else if (availableRamValuePercentage < 30) {
+//            setForeground(Colors.LIME);
+//        } else if (availableRamValuePercentage < 50) {
+//            setForeground(Color.ORANGE);
+//        } else if (availableRamValuePercentage < 70) {
+//            setForeground(Color.RED);
+//        }
 
         setText(String.format("RAM: %s%% | %sMb | %sMb", availableRamValuePercentage, numberFormatter.format(currentRamValueMb), numberFormatter.format(maxRamValueMb)));
     }
 
-    private double getRamValue() {
-        return (hal.getMemory().getTotal() - hal.getMemory().getAvailable()) / 1024 / 1024;
-    }
-
-    private double maxMemory() {
-        SystemInfo si = new SystemInfo();
-        HardwareAbstractionLayer hal = si.getHardware();
-        return hal.getMemory().getTotal() / 1024 / 1024;
-    }
 
     public void stopAutoRepaint() {
         if (autoRepaintTimer.isRunning()) {

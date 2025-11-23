@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.gui.util;
+package org.andreidodu.nocconvert.gui.widget;
 
 import org.andreidodu.nocconvert.constants.ApplicationConfig;
 import org.andreidodu.nocconvert.gui.constants.Colors;
@@ -9,21 +9,20 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class FPSDisplay extends JLabel implements ActionListener {
+import static org.andreidodu.nocconvert.util.CpuUtil.calculateCpuLoadPercentage;
 
-    private long lastTime = System.nanoTime();
-    private int frames = 0;
+public class CPUWidget extends JLabel implements ActionListener {
 
     private final Timer textUpdateTimer;
 
     private final Timer autoRepaintTimer;
 
-    public FPSDisplay() {
-        super("FPS: --");
+    public CPUWidget() {
+        super("CPU: --");
         setVisible(ApplicationConfig.DEV_MODE);
-        setForeground(Color.RED);
+        setForeground(Color.YELLOW);
         setFont(getFont().deriveFont(Font.BOLD, 14f));
-        setToolTipText("FPS");
+        setToolTipText("CPU");
         setBackground(Color.BLACK);
         setOpaque(true);
         setBorder(BorderFactory.createCompoundBorder(
@@ -48,7 +47,6 @@ public class FPSDisplay extends JLabel implements ActionListener {
             return;
         }
         super.paintComponent(g);
-        frames++;
     }
 
     @Override
@@ -57,26 +55,20 @@ public class FPSDisplay extends JLabel implements ActionListener {
         if (!ApplicationConfig.DEV_MODE) {
             return;
         }
-        long currentTime = System.nanoTime();
-        double intervalSeconds = (currentTime - lastTime) / 1_000_000_000.0;
-        double fps = frames / intervalSeconds;
 
-        int displayFps = (int) Math.round(fps);
+        int percentage = calculateCpuLoadPercentage();
 
-        if (displayFps < 20) {
-            setForeground(Color.RED);
-        } else if (displayFps < 30) {
-            setForeground(Color.ORANGE);
-        } else if (displayFps < 50) {
-            setForeground(Colors.LIME);
-        } else if (displayFps < 70) {
+        if (percentage < 20) {
             setForeground(Color.GREEN);
+        } else if (percentage < 30) {
+            setForeground(Colors.LIME);
+        } else if (percentage < 50) {
+            setForeground(Color.ORANGE);
+        } else if (percentage < 70) {
+            setForeground(Color.RED);
         }
 
-        setText(String.format("FPS: %d", displayFps));
-
-        frames = 0;
-        lastTime = currentTime;
+        setText(String.format("CPU: %s%%", percentage));
     }
 
     public void stopAutoRepaint() {

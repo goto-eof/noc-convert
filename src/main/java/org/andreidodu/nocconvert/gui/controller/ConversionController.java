@@ -9,10 +9,10 @@ import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.gui.worker.hybrid.SearchAndConvertWorker;
 import org.andreidodu.nocconvert.gui.worker.hybrid.util.PictureCounterTask;
-import org.andreidodu.nocconvert.helper.ImageConverterUtil;
-import org.andreidodu.nocconvert.helper.check.FormatCheckUtil;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.andreidodu.nocconvert.task.AlwaysCleanTask;
+import org.andreidodu.nocconvert.util.ImageConverterUtil;
+import org.andreidodu.nocconvert.util.check.FormatCheckUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,15 +22,16 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.lang.System.exit;
-import static org.andreidodu.nocconvert.helper.CpuUtil.calculateCpuLoadPercentage;
-import static org.andreidodu.nocconvert.helper.NumberUtil.buildNumberFormatter;
-import static org.andreidodu.nocconvert.helper.PathNameUtil.normalizePath;
-import static org.andreidodu.nocconvert.helper.PathNameUtil.normalizePathAdvanced;
+import static org.andreidodu.nocconvert.util.CpuUtil.calculateCpuLoadPercentage;
+import static org.andreidodu.nocconvert.util.NumberUtil.buildNumberFormatter;
+import static org.andreidodu.nocconvert.util.PathNameUtil.normalizePath;
+import static org.andreidodu.nocconvert.util.PathNameUtil.normalizePathAdvanced;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class ConversionController {
@@ -54,7 +55,8 @@ public class ConversionController {
     private final AtomicInteger totalFound = new AtomicInteger(0);
 
     private final AtomicReference<String> timeElapsed = new AtomicReference<>("0s");
-    private static final BlockingQueue<Path> globalDeletionQueue = new LinkedBlockingQueue<>();
+    private static final ConcurrentLinkedQueue<Path> globalDeletionQueue = new ConcurrentLinkedQueue<>();
+    private final AtomicBoolean manualShutdown = new AtomicBoolean(false);
 
     public ConversionController(ConversionDTO conversionDTO) {
         this.conversionDTO = conversionDTO;
@@ -86,6 +88,7 @@ public class ConversionController {
         conversionDTO.convertComponent().getMainActionButton().addActionListener(e -> {
 
             if (SplitButtonComponent.Action.START.equals(conversionDTO.convertComponent().getAction())) {
+                manualShutdown.set(false);
                 List<String> validationMessageList = conversionDTO.guiOrchestrator().getValidationMessageList();
                 if (!validationMessageList.isEmpty()) {
                     JOptionPane.showMessageDialog(conversionDTO.guiOrchestrator(), "Huston, we have some validation errors:\n" + String.join("\n", validationMessageList), "Validation Errors", JOptionPane.ERROR_MESSAGE);
@@ -122,9 +125,13 @@ public class ConversionController {
 
         @Override
         public void onDirectoryProcessed(long totalFiles, Path directory, long filesInDirectory) {
+            if (manualShutdown.get()) {
+                throw new ManualAbortedException("manual abort");
+            }
+            var numberFormatter = buildNumberFormatter();
             SwingUtilities.invokeLater(() -> {
                 if (filesInDirectory > 0) {
-                    applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images (" + totalFiles + ")...</center>" +
+                    applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Searching for images (" + numberFormatter.format(totalFiles) + ")...</center>" +
                             "<span style=\"color: #007bff;\">Found " + filesInDirectory + " file(s) in " + normalizePath(directory.getFileName().toString(), 30) + "</span></html>");
                 } else {
                     applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Counting images...</center>" +
@@ -136,11 +143,17 @@ public class ConversionController {
 
         @Override
         public void onFileFound(long totalFiles, Path filename) {
+            if (manualShutdown.get()) {
+                throw new ManualAbortedException("manual abort");
+            }
             onFileCount(totalFiles, filename);
         }
 
         @Override
         public void onFileAnalyzationStart(int totalNumberFiles) {
+            if (manualShutdown.get()) {
+                throw new ManualAbortedException("manual abort");
+            }
 //            conversionDTO.guiOrchestrator().enableProgressBarPanelFromEDT();
 //            conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(totalNumberFiles);
 //            secondaryApplicationStatusLabel.setText("Validating search results...");
@@ -148,11 +161,17 @@ public class ConversionController {
 
         @Override
         public void onFileAnalyzationProgress(Integer totalNumberOfUpdates) {
+            if (manualShutdown.get()) {
+                throw new ManualAbortedException("manual abort");
+            }
 //            conversionDTO.guiOrchestrator().incrementMainProgressBarProgress(totalNumberOfUpdates);
         }
 
         @Override
         public void onFileAnalyzationComplete(Path filename) {
+            if (manualShutdown.get()) {
+                throw new ManualAbortedException("manual abort");
+            }
 //            long now = System.currentTimeMillis();
 //            if (now - lastTime >= 1000) {
 //
@@ -191,6 +210,9 @@ public class ConversionController {
 
         @Override
         public void onUpdateTotalFile(Long numberOfFiles) {
+            if (manualShutdown.get()) {
+                throw new ManualAbortedException("manual abort");
+            }
             DecimalFormat df = buildNumberFormatter();
             String numberOfFilesFormatted = df.format(numberOfFiles);
             SwingUtilities.invokeLater(() -> {
@@ -210,8 +232,9 @@ public class ConversionController {
     }
 
     private void onFileCount(long totalFiles, Path filename) {
+        var numberFormatter = buildNumberFormatter();
         SwingUtilities.invokeLater(() -> {
-            applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Counting images (" + totalFiles + ")...</center>" +
+            applicationStatusLabel.setText("<html><center style=\"font-weight: bold;color: #0078D4;\">Counting images (" + numberFormatter.format(totalFiles) + ")...</center>" +
                     "<span style=\"color: #007bff;\">" + normalizePathAdvanced(filename.getParent().toString(), 60) + " &#8658; " + normalizePath(filename.getFileName().toString(), 30) + "</span></html>");
         });
     }
@@ -235,11 +258,16 @@ public class ConversionController {
     public void manualShutdownWithExitAction(boolean exit) {
 
         try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
-            List<Callable<Void>> callableList = new ArrayList<>();
 
+            manualShutdown.set(true);
+            List<Callable<Void>> callableList = new ArrayList<>();
             if (searchAndConvertWorker != null && !searchAndConvertWorker.isDone()) {
                 log.info("Cancelling active conversion process.");
-                callableList.add(() -> searchAndConvertWorker.manualShutdownThreads());
+                callableList.add(() -> {
+                    searchAndConvertWorker.manualShutdownThreads();
+                    searchAndConvertWorker = null;
+                    return null;
+                });
             }
 
 //            if (imageSearcherSwingWorker != null && !imageSearcherSwingWorker.isDone()) {
@@ -256,6 +284,9 @@ public class ConversionController {
                 exitFromJVM();
             }
 
+            conversionDTO.guiOrchestrator().onOperationAborted();
+            conversionDTO.guiOrchestrator().resetDefconWidget();
+
         } catch (InterruptedException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -263,10 +294,12 @@ public class ConversionController {
 
     }
 
-    private static void exitFromJVM() {
+    private void exitFromJVM() {
         log.info("Exit Procedure initialized....");
         log.info("OS instructions to delete temporary files");
-        Thread.ofVirtual().start(new AlwaysCleanTask(globalDeletionQueue));
+        Thread.ofPlatform()
+                .daemon(true)
+                .start(new AlwaysCleanTask(globalDeletionQueue));
         log.info("bye bye from noc-convert :)");
         exit(0);
     }
@@ -339,6 +372,9 @@ public class ConversionController {
                 conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(0);
             }
         }, newVirtualThreadPerTaskExecutor).thenRunAsync(() -> {
+            if (manualShutdown.get()) {
+                return;
+            }
             conversionDTO.guiOrchestrator().resetProgressBarPanelFromEDT();
             conversionDTO.guiOrchestrator().enableProgressBarPanelFromEDT();
             conversionDTO.guiOrchestrator().resetJList();
@@ -346,6 +382,7 @@ public class ConversionController {
             SearchAndConvertInputDTO searchAndConvertInputDTO = buildInput();
             searchAndConvertWorker = new SearchAndConvertWorker(searchAndConvertInputDTO);
             searchAndConvertWorker.execute();
+            conversionDTO.guiOrchestrator().initializeDefconWidget(searchAndConvertWorker);
         }, newVirtualThreadPerTaskExecutor);
 
 //        ConversionWorkerInputDTO conversionWorkerInputDTO = buildInput(list);
@@ -365,7 +402,7 @@ public class ConversionController {
                 .incrementPasses(this::incrementPasses)
                 .incrementFailures(this::incrementFailures)
                 .decrementPasses(this::decrementPasses)
-                .addToDeletionQueue(this::addToDeletionQueue)
+                .addAllToDeletionQueue(this::addAllToDeletionQueue)
                 .sourceDirectory(conversionDTO.guiOrchestrator().getSourceDirectory())
                 .destinationDirectory(conversionDTO.guiOrchestrator().getDestinationDirectory())
                 .targetFormat(conversionDTO.convertComponent().getSelectedItem().getFormat())
@@ -583,7 +620,7 @@ public class ConversionController {
 
     }
 
-    private void addToDeletionQueue(Path path) {
-        globalDeletionQueue.add(path);
+    private void addAllToDeletionQueue(Collection<Path> paths) {
+        globalDeletionQueue.addAll(paths);
     }
 }

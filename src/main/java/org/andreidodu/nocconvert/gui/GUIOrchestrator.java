@@ -16,11 +16,13 @@ import org.andreidodu.nocconvert.gui.controller.PathSelectionController;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
 import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
-import org.andreidodu.nocconvert.gui.util.CPUDisplay;
-import org.andreidodu.nocconvert.gui.util.FPSDisplay;
-import org.andreidodu.nocconvert.gui.util.RAMDisplay;
-import org.andreidodu.nocconvert.helper.performance.PerformanceUtil;
+import org.andreidodu.nocconvert.gui.widget.CPUWidget;
+import org.andreidodu.nocconvert.gui.widget.DEFCONWidget;
+import org.andreidodu.nocconvert.gui.widget.FPSWidget;
+import org.andreidodu.nocconvert.gui.widget.RAMWidget;
+import org.andreidodu.nocconvert.gui.worker.hybrid.SearchAndConvertWorker;
 import org.andreidodu.nocconvert.listener.AdaptiveTestListener;
+import org.andreidodu.nocconvert.util.performance.PerformanceUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -59,10 +61,11 @@ public class GUIOrchestrator extends JFrame {
     private JPanel progressBarAndStatusPanel;
     private JLabel secondaryApplicationStatusLabel;
     private JPanel progressBarPanel;
-    private FPSDisplay fpsDisplay;
+    private FPSWidget fpsWidget;
     private JProgressBar secondaryProgressBar;
     private JLabel ramUsage;
     private JLabel cpuUsage;
+    private DEFCONWidget defconWidget;
 
     private final PathSelectionController pathSelectionController;
     private final ConvertionStatusController convertionStatusController;
@@ -71,7 +74,7 @@ public class GUIOrchestrator extends JFrame {
 
     public GUIOrchestrator() {
         super();
-        fpsDisplay = new FPSDisplay();
+        fpsWidget = new FPSWidget();
 
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> log.error("Uncaught exception on {}", thread.getName(), throwable));
 
@@ -313,15 +316,15 @@ public class GUIOrchestrator extends JFrame {
         fileFormatsJLabel.setVisible(false);
         fileFormatsJLabel.putClientProperty("html.disable", Boolean.FALSE);
         mainPanel.add(fileFormatsJLabel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        footerPanel.setLayout(new GridLayoutManager(2, 3, new Insets(10, 10, 10, 10), -1, -1));
+        footerPanel.setLayout(new GridLayoutManager(2, 4, new Insets(10, 10, 10, 10), -1, -1));
         footerPanel.setBackground(new Color(-13026240));
         footerPanel.setOpaque(true);
         mainPanel.add(footerPanel, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
-        footerPanel.add(spacer1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        footerPanel.add(spacer1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         convertComponent.setBackground(new Color(-13026240));
         convertComponent.setOpaque(false);
-        footerPanel.add(convertComponent, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        footerPanel.add(convertComponent, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel5.setBackground(new Color(-13026240));
@@ -338,6 +341,7 @@ public class GUIOrchestrator extends JFrame {
         label2.setForeground(new Color(-8421246));
         label2.setText("by Andrei Dodu");
         panel5.add(label2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        footerPanel.add(defconWidget, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new GridLayoutManager(2, 1, new Insets(0, 10, 10, 10), -1, -1));
         panel6.setBackground(new Color(-14079186));
@@ -426,8 +430,8 @@ public class GUIOrchestrator extends JFrame {
         headerPanel.add(label5, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer3 = new Spacer();
         headerPanel.add(spacer3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        fpsDisplay.setText("");
-        headerPanel.add(fpsDisplay, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        fpsWidget.setText("");
+        headerPanel.add(fpsWidget, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         ramUsage.setText("");
         headerPanel.add(ramUsage, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         cpuUsage.setText("");
@@ -514,8 +518,9 @@ public class GUIOrchestrator extends JFrame {
         conversionFileList.setVisible(true);
         scrollPanePanel.setVisible(true);
 
-        ramUsage = new RAMDisplay();
-        cpuUsage = new CPUDisplay();
+        ramUsage = new RAMWidget();
+        cpuUsage = new CPUWidget();
+        defconWidget = new DEFCONWidget();
     }
 
     public void setEnableSearchStepComponents(boolean bool) {
@@ -652,5 +657,13 @@ public class GUIOrchestrator extends JFrame {
 
     public void resetJList() {
         convertionStatusController.newVisibleJList();
+    }
+
+    public void initializeDefconWidget(SearchAndConvertWorker searchAndConvertWorker) {
+        defconWidget.setSource(searchAndConvertWorker);
+    }
+
+    public void resetDefconWidget() {
+        defconWidget.setSource(null);
     }
 }

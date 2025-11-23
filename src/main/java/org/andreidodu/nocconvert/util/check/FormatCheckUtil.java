@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.helper.check;
+package org.andreidodu.nocconvert.util.check;
 
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.apache.logging.log4j.LogManager;

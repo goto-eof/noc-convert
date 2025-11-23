@@ -1,22 +1,24 @@
 package org.andreidodu.nocconvert.task;
 
-import org.andreidodu.nocconvert.helper.OSUtils;
+import org.andreidodu.nocconvert.util.OSUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class AlwaysCleanTask implements Runnable {
     private static final Logger log = LogManager.getLogger(AlwaysCleanTask.class);
 
-    private final BlockingQueue<Path> deletionQueue;
+    private final Collection<Path> deletionCollection;
 
-    public AlwaysCleanTask(final BlockingQueue<Path> deletionQueue) {
-        this.deletionQueue = deletionQueue;
+    public AlwaysCleanTask(final ConcurrentLinkedQueue<Path> deletionCollection) {
+        this.deletionCollection = deletionCollection;
     }
 
     @Override
@@ -25,18 +27,16 @@ public class AlwaysCleanTask implements Runnable {
     }
 
     public void executeGlobalCleanup() {
-        if (deletionQueue.isEmpty()) {
+        Collection<Path> collection = deletionCollection.stream().filter(Files::exists).toList();
+        if (collection.isEmpty()) {
             log.info("deletion queue is empty. No cleanup required.");
             return;
         }
 
-        List<Path> pathsToCleanup = new ArrayList<>();
-        deletionQueue.drainTo(pathsToCleanup);
-
-        List<String> command = buildCleanupCommand(pathsToCleanup);
+        List<String> command = buildCleanupCommand(collection);
 
         try {
-            log.warn("Starting Always Clean Task (one-shot, fire-and-forget) for {} directories.", pathsToCleanup.size());
+            log.warn("Starting Always Clean Task (one-shot, fire-and-forget) for {} directories.", deletionCollection.size());
             log.debug("Cleanup command: {}", command);
 
             ProcessBuilder pb = new ProcessBuilder(command);
@@ -50,7 +50,7 @@ public class AlwaysCleanTask implements Runnable {
         }
     }
 
-    private static List<String> buildCleanupCommand(List<Path> pathsToDelete) {
+    private static List<String> buildCleanupCommand(Collection<Path> pathsToDelete) {
         List<String> command = new ArrayList<>();
 
         if (OSUtils.isWindows()) {

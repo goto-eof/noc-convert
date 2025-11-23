@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.helper.performance;
+package org.andreidodu.nocconvert.util.performance;
 
 import org.andreidodu.nocconvert.listener.AdaptiveTestListener;
 import org.apache.logging.log4j.LogManager;

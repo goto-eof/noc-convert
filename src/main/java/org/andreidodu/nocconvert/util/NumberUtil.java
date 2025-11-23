@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.helper;
+package org.andreidodu.nocconvert.util;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;

@@ -5,8 +5,7 @@ import org.andreidodu.nocconvert.gui.GUIOrchestrator;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.gui.controller.ConversionController;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
-import org.andreidodu.nocconvert.helper.TestHelper;
-import org.andreidodu.nocconvert.mapper.ConcurrentItemDTOMapper;
+import org.andreidodu.nocconvert.util.TestHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static org.andreidodu.nocconvert.constants.ApplicationConfig.FINAL_OUTPUT_DIRECTORY_NAME;
-import static org.andreidodu.nocconvert.helper.TestHelper.prepareInputFiles;
+import static org.andreidodu.nocconvert.util.TestHelper.prepareInputFiles;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;

@@ -1,4 +1,4 @@
-package org.andreidodu.nocconvert.helper;
+package org.andreidodu.nocconvert.util;
 
 public class ThreadUtil {
     private static final long COOPERATIVE_SLEEP_MS = 10;

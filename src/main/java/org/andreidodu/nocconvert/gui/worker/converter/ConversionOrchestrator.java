@@ -7,7 +7,7 @@ import org.andreidodu.nocconvert.dto.conversion.input.ConversionOrchestratorInpu
 import org.andreidodu.nocconvert.dto.conversion.input.ConvertSingleItemTaskInputDTO;
 import org.andreidodu.nocconvert.enums.NotificationLevel;
 import org.andreidodu.nocconvert.exception.ConversionManualAbortedException;
-import org.andreidodu.nocconvert.helper.FileUtil;
+import org.andreidodu.nocconvert.util.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,8 +22,8 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.andreidodu.nocconvert.helper.FileUtil.buildVirtualThreadFactory;
-import static org.andreidodu.nocconvert.helper.OperationUtil.retryable;
+import static org.andreidodu.nocconvert.util.FileUtil.buildVirtualThreadFactory;
+import static org.andreidodu.nocconvert.util.OperationUtil.retryable;
 
 public class ConversionOrchestrator {
     private static final Logger log = LogManager.getLogger(ConversionOrchestrator.class);
@@ -52,6 +52,7 @@ public class ConversionOrchestrator {
                 log.debug("Creating temporary directory: {}", conversionOrchestratorInputDTO.temporaryDirectory());
                 FileUtils.forceMkdirParent(conversionOrchestratorInputDTO.temporaryDirectory().toFile());
             }
+            conversionOrchestratorInputDTO.addToDeletionQueue().accept(conversionOrchestratorInputDTO.temporaryDirectory());
             conversionOrchestratorInputDTO.conversionItemDTOList()
                     .forEach(dto -> dto.setDestinationDirectory(conversionOrchestratorInputDTO.finalDirectory()));
         } catch (NoSuchElementException e) {
@@ -125,8 +126,7 @@ public class ConversionOrchestrator {
     }
 
     private NotificationLevel calculateNotificationLevel() {
-        if (conversionOrchestratorInputDTO.conversionItemDTOList().size() >
-                MAX_NUM_ITEMS_FOR_NOTIFICATION_LEVEL_LOW) {
+        if (conversionOrchestratorInputDTO.conversionItemDTOList().size() > MAX_NUM_ITEMS_FOR_NOTIFICATION_LEVEL_LOW) {
             return NotificationLevel.LOW;
         }
         return NotificationLevel.HIGH;
@@ -146,9 +146,7 @@ public class ConversionOrchestrator {
 
     private void waitGentlyAndManageCompletion() {
         try {
-            boolean rename = true;
-
-            if (rename && !manualShutdown.get()) {
+            if (!manualShutdown.get()) {
                 ThreadFactory virtualThreadFactory = buildVirtualThreadFactory("terminator");
                 try (ExecutorService temporaryVirtualThreadExecutorService = Executors.newThreadPerTaskExecutor(virtualThreadFactory)) {
                     CompletableFuture<Void> futureResult =

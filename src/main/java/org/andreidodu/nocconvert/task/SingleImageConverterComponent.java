@@ -30,7 +30,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import static org.andreidodu.nocconvert.helper.ImageUtil.*;
+import static org.andreidodu.nocconvert.util.ImageUtil.*;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class SingleImageConverterComponent implements CancellableConverterComponent {

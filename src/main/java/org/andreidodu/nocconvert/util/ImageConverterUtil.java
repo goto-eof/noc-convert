@@ -1,11 +1,11 @@
-package org.andreidodu.nocconvert.helper;
+package org.andreidodu.nocconvert.util;
 
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 
 import javax.imageio.ImageIO;
 import java.util.List;
 
-import static org.andreidodu.nocconvert.helper.ImageUtil.getFormatExtensionDTOList;
+import static org.andreidodu.nocconvert.util.ImageUtil.getFormatExtensionDTOList;
 
 public class ImageConverterUtil {
 
