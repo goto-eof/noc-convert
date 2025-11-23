@@ -24,7 +24,7 @@ public class RamUtil {
     }
 
     public int getCurrentOccupiedRAMPercentage() {
-        GlobalMemory memory = hal.getMemory();
+        GlobalMemory memory = getHal().getMemory();
         long total = memory.getTotal();
         long onePerc = total / 100;
         long available = memory.getAvailable();

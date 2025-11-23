@@ -6,6 +6,7 @@ import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -31,6 +32,7 @@ public record SearchAndConvertInputDTO(
         Runnable resetSecondaryProgressBar,
         Runnable updateSecondaryProgressBarColorColorToBlue,
         BiConsumer<Integer, Path> onFileFound,
-        Consumer<Boolean> showJListPane
+        Consumer<Boolean> showJListPane,
+        CountDownLatch jobDoneCountDownLatch
 ) {
 }

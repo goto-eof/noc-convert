@@ -346,6 +346,10 @@ public class ConversionController {
     }
 
     public void startConversion() {
+        startConversion(null);
+    }
+
+    public void startConversion(CountDownLatch countDownLatch) {
         // ConversionItemDTOMapper conversionItemDTOMapper = new ConversionItemDTOMapper();
         // list = list.stream().map(conversionItemDTOMapper::clone).toList();
         conversionDTO.guiOrchestrator().onConversionStart();
@@ -358,32 +362,33 @@ public class ConversionController {
 
         ExecutorService newVirtualThreadPerTaskExecutor = Executors.newVirtualThreadPerTaskExecutor();
         CompletableFuture.runAsync(() -> {
-            try {
-                FilesInDirectoryListenerImpl filesInDirectoryListener = new FilesInDirectoryListenerImpl(this);
-                int totalNumberOfFiles = Math.toIntExact(new PictureCounterTask()
-                        .count(conversionDTO.guiOrchestrator().getSourceDirectory(), filesInDirectoryListener));
-                conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(totalNumberOfFiles);
-            } catch (Exception e) {
-                if (e instanceof ManualAbortedException) {
-                    onOperationAborted();
-                    return;
-                }
-                log.error(getRootCauseMessage(e), e);
-                conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(0);
-            }
-        }, newVirtualThreadPerTaskExecutor).thenRunAsync(() -> {
-            if (manualShutdown.get()) {
-                return;
-            }
-            conversionDTO.guiOrchestrator().resetProgressBarPanelFromEDT();
-            conversionDTO.guiOrchestrator().enableProgressBarPanelFromEDT();
-            conversionDTO.guiOrchestrator().resetJList();
+                    try {
+                        FilesInDirectoryListenerImpl filesInDirectoryListener = new FilesInDirectoryListenerImpl(this);
+                        int totalNumberOfFiles = Math.toIntExact(new PictureCounterTask()
+                                .count(conversionDTO.guiOrchestrator().getSourceDirectory(), filesInDirectoryListener));
+                        conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(totalNumberOfFiles);
+                    } catch (Exception e) {
+                        if (e instanceof ManualAbortedException) {
+                            onOperationAborted();
+                            return;
+                        }
+                        log.error(getRootCauseMessage(e), e);
+                        conversionDTO.guiOrchestrator().updateMainProgressBarMaxValue(0);
+                    }
+                }, newVirtualThreadPerTaskExecutor)
+                .thenRunAsync(() -> {
+                    if (manualShutdown.get()) {
+                        return;
+                    }
+                    conversionDTO.guiOrchestrator().resetProgressBarPanelFromEDT();
+                    conversionDTO.guiOrchestrator().enableProgressBarPanelFromEDT();
+                    conversionDTO.guiOrchestrator().resetJList();
 
-            SearchAndConvertInputDTO searchAndConvertInputDTO = buildInput();
-            searchAndConvertWorker = new SearchAndConvertWorker(searchAndConvertInputDTO);
-            searchAndConvertWorker.execute();
-            conversionDTO.guiOrchestrator().initializeDefconWidget(searchAndConvertWorker);
-        }, newVirtualThreadPerTaskExecutor);
+                    SearchAndConvertInputDTO searchAndConvertInputDTO = buildInput(countDownLatch);
+                    searchAndConvertWorker = new SearchAndConvertWorker(searchAndConvertInputDTO);
+                    searchAndConvertWorker.execute();
+                    conversionDTO.guiOrchestrator().initializeDefconWidget(searchAndConvertWorker);
+                }, newVirtualThreadPerTaskExecutor);
 
 //        ConversionWorkerInputDTO conversionWorkerInputDTO = buildInput(list);
 //        conversionWorker = new ConversionWorker(conversionWorkerInputDTO);
@@ -393,7 +398,7 @@ public class ConversionController {
 
     }
 
-    private SearchAndConvertInputDTO buildInput() {
+    private SearchAndConvertInputDTO buildInput(CountDownLatch countDownLatch) {
         return SearchAndConvertInputDTO.builder()
                 .updateGui(this::updateList)
                 .onAllTasksComplete(this::onAllItemsCompleted)
@@ -414,6 +419,7 @@ public class ConversionController {
                 .updateSecondaryProgressBarColorColorToBlue(conversionDTO.guiOrchestrator()::updateSecondaryProgressBarColorColorToBlue)
                 .onFileFound(this::onFileFound)
                 .showJListPane(conversionDTO.guiOrchestrator()::showJListPane)
+                .jobDoneCountDownLatch(countDownLatch)
                 .build();
     }
 

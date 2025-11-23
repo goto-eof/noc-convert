@@ -387,6 +387,9 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
     @Override
     protected void done() {
         searchAndConvertInputDTO.onAllTasksComplete().run();
+        if (searchAndConvertInputDTO.jobDoneCountDownLatch() != null) {
+            searchAndConvertInputDTO.jobDoneCountDownLatch().countDown();
+        }
     }
 
     public Void manualShutdownThreads() {
