@@ -176,6 +176,7 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
 
             if (!bucketList.isEmpty()) {
                 walkSemaphore.acquire();
+                countDownLatchWorkFinished = new CountDownLatch(1);
                 searchAndConvertInputDTO.updateSecondaryProgressBarMaxValue().accept(bucketList.size());
                 List<ConversionItemDTO> conversionItemDTOList = convertPathListToDTOList(searchAndConvertInputDTO.destinationDirectory(), searchAndConvertInputDTO.targetFormat(), bucketList, indexIntWrapper);
                 ConversionWorkerInputDTO conversionWorkerInputDTO = buildInput(
