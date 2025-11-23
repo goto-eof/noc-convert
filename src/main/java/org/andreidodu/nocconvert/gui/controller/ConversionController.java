@@ -69,6 +69,9 @@ public class ConversionController {
     public void initializeConvertComponent() {
         populateConvertComponentDropdownMenu();
         addConvertComponentEventListener();
+        Runtime.getRuntime().addShutdownHook(
+                new Thread(new AlwaysCleanTask(globalDeletionQueue))
+        );
     }
 
     private void populateConvertComponentDropdownMenu() {
@@ -297,9 +300,6 @@ public class ConversionController {
     private void exitFromJVM() {
         log.info("Exit Procedure initialized....");
         log.info("OS instructions to delete temporary files");
-        Thread.ofPlatform()
-                .daemon(false)
-                .start(new AlwaysCleanTask(globalDeletionQueue));
         log.info("bye bye from noc-convert :)");
         exit(0);
     }
