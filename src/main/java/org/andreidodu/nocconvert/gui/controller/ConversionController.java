@@ -298,7 +298,7 @@ public class ConversionController {
         log.info("Exit Procedure initialized....");
         log.info("OS instructions to delete temporary files");
         Thread.ofPlatform()
-                .daemon(true)
+                .daemon(false)
                 .start(new AlwaysCleanTask(globalDeletionQueue));
         log.info("bye bye from noc-convert :)");
         exit(0);

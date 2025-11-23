@@ -34,17 +34,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-import static org.andreidodu.nocconvert.constants.ApplicationConfig.FINAL_OUTPUT_DIRECTORY_NAME;
-import static org.andreidodu.nocconvert.constants.ApplicationConfig.TMP_OUTPUT_DIRECTORY_NAME;
+import static org.andreidodu.nocconvert.constants.ApplicationConfig.*;
 import static org.andreidodu.nocconvert.mapper.ConcurrentItemDTOMapper.convertPathListToDTOList;
 import static org.andreidodu.nocconvert.util.performance.AdaptiveSimpleGovernorRunnable.calculateSafeValueWithoutXPercent;
 import static org.apache.commons.io.file.PathUtils.getExtension;
 
 public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
     private static final Logger log = LogManager.getLogger(SearchAndConvertWorker.class);
-    public static final int NUMBER_OF_FILES_PER_DIRECTORY = 10_000;
-    public static final int MINIMUM_BUCKET_SIZE = 10;
-    public static final int DEFCON_3_MAX_SECONDS_TO_WAIT = 10;
+
 
     public static AtomicInteger adaptiveBucketSize = new AtomicInteger(MINIMUM_BUCKET_SIZE);
     private final SearchAndConvertInputDTO searchAndConvertInputDTO;
@@ -271,7 +268,7 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
 
     private int recalculateAdaptiveBucketSize(int currentRamUsagePercentage) {
         int adaptiveBucketSize = this.getAdaptiveBucketSize();
-        if (currentRamUsagePercentage < DEFCON.LEVEL_3.getCriticalPoint() && adaptiveBucketSize < NUMBER_OF_FILES_PER_DIRECTORY) {
+        if (currentRamUsagePercentage < DEFCON.LEVEL_3.getCriticalPoint() && adaptiveBucketSize < MAX_BUCKET_SIZE) {
             adaptiveBucketSize = adaptiveBucketSize * MINIMUM_BUCKET_SIZE;
             log.warn("\n\nbucketSize increased to {}\n\n", adaptiveBucketSize);
             if (defcon3SecondsToWait.get() - 5 >= 0) {

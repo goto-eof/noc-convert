@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collectors;
 
 public class AlwaysCleanTask implements Runnable {
     private static final Logger log = LogManager.getLogger(AlwaysCleanTask.class);
@@ -27,7 +28,7 @@ public class AlwaysCleanTask implements Runnable {
     }
 
     public void executeGlobalCleanup() {
-        Collection<Path> collection = deletionCollection.stream().filter(Files::exists).toList();
+        Collection<Path> collection = deletionCollection.stream().filter(Files::exists).collect(Collectors.toSet());
         if (collection.isEmpty()) {
             log.info("deletion queue is empty. No cleanup required.");
             return;
