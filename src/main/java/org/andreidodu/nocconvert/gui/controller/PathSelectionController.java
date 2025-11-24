@@ -5,7 +5,7 @@ import org.andreidodu.nocconvert.gui.components.TextfieldButtonComponent;
 import org.andreidodu.nocconvert.gui.components.TextfieldDoubleButtonComponent;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionDTO;
 import org.andreidodu.nocconvert.gui.dto.PathSelectionRawDTO;
-import org.andreidodu.nocconvert.helper.FileSystemSupportGuiUtil;
+import org.andreidodu.nocconvert.util.FileSystemSupportGuiUtil;
 import org.andreidodu.nocconvert.service.FileSystemService;
 import org.andreidodu.nocconvert.service.ValidationService;
 import org.andreidodu.nocconvert.service.impl.FileSystemServiceImpl;

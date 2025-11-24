@@ -2,7 +2,7 @@ package org.andreidodu.nocconvert;
 
 import org.andreidodu.nocconvert.config.ApplictionConfigurator;
 import org.andreidodu.nocconvert.gui.GUIOrchestrator;
-import org.andreidodu.nocconvert.helper.ApplicationConfigLoggerUtil;
+import org.andreidodu.nocconvert.util.ApplicationConfigLoggerUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

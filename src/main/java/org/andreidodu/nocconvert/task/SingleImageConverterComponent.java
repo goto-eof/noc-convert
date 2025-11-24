@@ -30,7 +30,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import static org.andreidodu.nocconvert.helper.ImageUtil.*;
+import static org.andreidodu.nocconvert.util.ImageUtil.*;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class SingleImageConverterComponent implements CancellableConverterComponent {
@@ -307,7 +307,7 @@ public class SingleImageConverterComponent implements CancellableConverterCompon
             try {
                 writer.write(null, new IIOImage(image, null, null), null);
             } catch (Exception e) {
-                log.debug("unable to write: {}", convertImageInputDTO.sourceFile());
+                log.debug("unable to write: {} to {}", convertImageInputDTO.sourceFile(), tmpOutputFile.toString());
                 throw new RuntimeException(getRootCauseMessage(e), e);
             }
 

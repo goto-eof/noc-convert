@@ -3,8 +3,8 @@ package org.andreidodu.nocconvert.task;
 import lombok.Getter;
 import org.andreidodu.nocconvert.exception.SearchManuallyAbortedException;
 import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
-import org.andreidodu.nocconvert.helper.FileUtil;
-import org.andreidodu.nocconvert.helper.ImageConverterUtil;
+import org.andreidodu.nocconvert.util.FileUtil;
+import org.andreidodu.nocconvert.util.ImageConverterUtil;
 import org.andreidodu.nocconvert.listener.FilesInDirectoryListener;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
@@ -68,6 +68,7 @@ public class PictureSearcherTask {
     }
 
     private class CustomIOFilter implements IOFileFilter {
+        private long count;
 
         @Getter
         private Exception error;
@@ -91,11 +92,16 @@ public class PictureSearcherTask {
                 return false;
             }
 
-            if (limiterCounter++ % LIMITER_INTERVAL == 0 && !cancelled.get()) {
-                listener.onFileFound(file.toPath());
+            boolean isOk = availableExtensionList.contains(FileUtil.getExtension(file.getName()));
+            if (isOk) {
+                count++;
             }
 
-            return availableExtensionList.contains(FileUtil.getExtension(file.getName()));
+            if (isOk && limiterCounter++ % LIMITER_INTERVAL == 0 && !cancelled.get()) {
+                listener.onFileFound(count, file.toPath());
+            }
+
+            return isOk;
         }
 
         @Override
@@ -104,10 +110,17 @@ public class PictureSearcherTask {
                 error = new SearchManuallyAbortedException("manually aborted");
                 throw new RuntimeException(error);
             }
-            if (limiterCounter++ % LIMITER_INTERVAL == 0 && !cancelled.get()) {
-                listener.onFileFound(file.toPath());
+            boolean isOk = availableExtensionList.contains(FileUtil.getExtension(file.getName()));
+
+            if (isOk) {
+                count++;
             }
-            return availableExtensionList.contains(FileUtil.getExtension(file.getName()));
+
+            if (isOk && limiterCounter++ % LIMITER_INTERVAL == 0 && !cancelled.get()) {
+                listener.onFileFound(count, file.toPath());
+            }
+
+            return isOk;
         }
 
     }

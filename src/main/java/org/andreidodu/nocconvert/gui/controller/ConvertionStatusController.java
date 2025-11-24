@@ -1,10 +1,10 @@
 package org.andreidodu.nocconvert.gui.controller;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.dto.ConversionStatus;
 import org.andreidodu.nocconvert.gui.components.performant.PerformantListModel;
 import org.andreidodu.nocconvert.gui.constants.Colors;
 import org.andreidodu.nocconvert.gui.dto.ConvertionStatusDTO;
-import org.andreidodu.nocconvert.gui.worker.ListRendererWorker;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,8 +12,6 @@ import javax.swing.*;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-
-import static org.andreidodu.nocconvert.mapper.ConcurrentItemDTOMapper.convertPathListToDTOList;
 
 public class ConvertionStatusController {
     private static final Logger log = LogManager.getLogger(ConvertionStatusController.class);
@@ -24,52 +22,49 @@ public class ConvertionStatusController {
         this.convertionStatusDTO = convertionStatusDTO;
     }
 
-    public void onSearchStepFinish(Path destinationDirectory, String targetFormat, List<Path> paths) {
-        this.destinationDirectory = destinationDirectory;
+//    public void onSearchStepFinish(Path destinationDirectory, String targetFormat, List<Path> paths) {
+//        this.destinationDirectory = destinationDirectory;
+//
+//        SwingUtilities.invokeLater(() -> {
+//            convertionStatusDTO.conversionFileListScrollPane().setVisible(true);
+//            convertionStatusDTO.scrollPanePanel().setVisible(true);
+//
+//            long startTime = System.nanoTime();
+//
+//            PerformantListModel modelProgress = new PerformantListModel();
+//            convertionStatusDTO.conversionFileList().setModel(modelProgress);
+//            modelProgress.setJList(convertionStatusDTO.conversionFileList());
+////            PerformantListItemRenderer renderer = new PerformantListItemRenderer();
+////            convertionStatusDTO.conversionFileJList().setCellRenderer(renderer);
+//
+//            long endTime = System.nanoTime();
+//            long durationNs = endTime - startTime;
+//            double durationMs = durationNs / 1_000_000.0;
+//
+//            log.debug("rendering time for 0 records: {} ms", durationMs);
+//        });
+//
 
-        SwingUtilities.invokeLater(() -> {
-            convertionStatusDTO.conversionFileListScrollPane().setVisible(true);
-            convertionStatusDTO.scrollPanePanel().setVisible(true);
-
-            long startTime = System.nanoTime();
-
-            PerformantListModel modelProgress = new PerformantListModel();
-            convertionStatusDTO.conversionFileList().setModel(modelProgress);
-            modelProgress.setJList(convertionStatusDTO.conversionFileList());
-//            PerformantListItemRenderer renderer = new PerformantListItemRenderer();
-//            convertionStatusDTO.conversionFileJList().setCellRenderer(renderer);
-
-            long endTime = System.nanoTime();
-            long durationNs = endTime - startTime;
-            double durationMs = durationNs / 1_000_000.0;
-
-            log.debug("rendering time for 0 records: {} ms", durationMs);
-        });
-
-        List<ConversionItemDTO> list = convertPathListToDTOList(destinationDirectory, targetFormat, paths);
-        ListRendererWorker listRendererWorker = new ListRendererWorker(list, convertionStatusDTO.conversionFileList(), () -> convertionStatusDTO.guiOrchestrator().onRenderingDone(list));
-        listRendererWorker.execute();
-    }
-
-
+    ////        List<ConversionItemDTO> list = convertPathListToDTOList(destinationDirectory, targetFormat, paths);
+    ////        ListRendererWorker listRendererWorker = new ListRendererWorker(list, convertionStatusDTO.conversionFileList(), () -> convertionStatusDTO.guiOrchestrator().onRenderingDone());
+    ////        listRendererWorker.execute();
+//    }
     public void updateList(List<ConversionItemDTO> list) {
         PerformantListModel model = (PerformantListModel) convertionStatusDTO.conversionFileList().getModel();
+
+        list = optimizeConversionItemDTOListForGUI(list, model);
+        if (list == null) return;
+
         model.updateElements(list);
-//        SwingUtilities.invokeLater(() -> {
-//
-//        });
     }
 
-    public void enableJListAndProgressBar(boolean bool) {
+    public void newVisibleJList() {
         SwingUtilities.invokeLater(() -> {
-
             PerformantListModel jListModel = new PerformantListModel();
             convertionStatusDTO.conversionFileList().setModel(jListModel);
             jListModel.setJList(convertionStatusDTO.conversionFileList());
-
-
-            convertionStatusDTO.conversionFileListScrollPane().setVisible(bool);
-            enableProgressBarPanel(bool);
+            convertionStatusDTO.conversionFileList().setVisible(true);
+            convertionStatusDTO.conversionFileListScrollPane().setVisible(true);
         });
     }
 
@@ -109,9 +104,9 @@ public class ConvertionStatusController {
     }
 
     public void startSearch() {
-        SwingUtilities.invokeLater(() -> {
-            convertionStatusDTO.scrollPanePanel().setVisible(false);
-        });
+//        SwingUtilities.invokeLater(() -> {
+//            //convertionStatusDTO.scrollPanePanel().setVisible(false);
+//        });
     }
 
     public void disableProcessStatus() {
@@ -128,7 +123,7 @@ public class ConvertionStatusController {
         });
     }
 
-    public void onConversionStart() {
+    public void updateProgressBarColorColorToBlue() {
         SwingUtilities.invokeLater(() -> {
             convertionStatusDTO.progressBar().setForeground(Colors.ACCENT_BLUE);
         });
@@ -138,8 +133,65 @@ public class ConvertionStatusController {
         convertionStatusDTO.progressBarAndStatusPanel().setVisible(false);
     }
 
-    public void disableProgressBar() {
-        enableJListAndProgressBar(false);
+    public void incrementSecondaryProgressBarProgress(Integer totalNumberOfUpdates) {
+        SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.secondaryProgressBar().setForeground(Colors.LIME_DARK);
+            convertionStatusDTO.secondaryProgressBar().setValue(convertionStatusDTO.secondaryProgressBar().getValue() + Optional.ofNullable(totalNumberOfUpdates).orElseGet(() -> 1));
+        });
     }
 
+    public void updateSecondaryProgressBarMaxValue(int size) {
+        SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.secondaryProgressBar().setMaximum(size);
+        });
+    }
+
+    public void resetSecondaryProgressBar() {
+        SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.secondaryProgressBar().setValue(0);
+        });
+    }
+
+    public void updateSecondaryProgressBarColorColorToBlue() {
+        SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.secondaryProgressBar().setForeground(Colors.ACCENT_BLUE);
+        });
+    }
+
+    public void addPathsToTheJList(List<ConversionItemDTO> list) {
+        PerformantListModel model = getPerformantListModel();
+
+        list = optimizeConversionItemDTOListForGUI(list, model);
+        if (list == null) return;
+
+        model.addAll(list);
+    }
+
+    private static List<ConversionItemDTO> optimizeConversionItemDTOListForGUI(List<ConversionItemDTO> list, PerformantListModel model) {
+        list = list.stream()
+                .filter(item -> ConversionStatus.FAILED.equals(item.getStatus()))
+                .toList();
+
+        if (list.isEmpty()) {
+            return null;
+        }
+
+        int freeIndex = model.getData().size();
+        for (ConversionItemDTO item : list) {
+            item.setExternalIndex(freeIndex++);
+        }
+
+        return list;
+    }
+
+    private PerformantListModel getPerformantListModel() {
+        return (PerformantListModel) convertionStatusDTO.conversionFileList().getModel();
+    }
+
+    public void showJListPane(boolean show) {
+        SwingUtilities.invokeLater(() -> {
+            convertionStatusDTO.conversionFileListScrollPane().setVisible(show);
+            convertionStatusDTO.conversionFileList().setVisible(show);
+        });
+    }
 }

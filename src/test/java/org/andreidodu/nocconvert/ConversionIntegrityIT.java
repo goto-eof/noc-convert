@@ -1,11 +1,15 @@
 package org.andreidodu.nocconvert;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
+import org.andreidodu.nocconvert.dto.IntWrapper;
 import org.andreidodu.nocconvert.gui.GUIOrchestrator;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.gui.controller.ConversionController;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
+import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
 import org.andreidodu.nocconvert.mapper.ConcurrentItemDTOMapper;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -21,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
@@ -31,6 +36,7 @@ import static org.mockito.Mockito.when;
 
 public class ConversionIntegrityIT {
 
+    private static final Log log = LogFactory.getLog(ConversionIntegrityIT.class);
     @TempDir
     Path tempInputFolder;
 
@@ -54,6 +60,7 @@ public class ConversionIntegrityIT {
     @Mock
     private JButton mockedButton;
     private final int VALID_FILES_TO_CREATE = 10;
+
 
     private ConversionController controller;
     private List<ConversionItemDTO> conversionItemDTOList;
@@ -101,7 +108,7 @@ public class ConversionIntegrityIT {
         Files.createFile(tmpInvalidFile);
         conversionFileList.add(tmpInvalidFile);
 
-        conversionItemDTOList = ConcurrentItemDTOMapper.convertPathListToDTOList(tempOutputFolder, "png", conversionFileList);
+        conversionItemDTOList = ConcurrentItemDTOMapper.convertPathListToDTOList(tempOutputFolder, "png", conversionFileList, new IntWrapper(0));
         when(mockedSplitButtonComponent.getDropdownToggleButton()).thenReturn(mockedButton);
         when(mockedSplitButtonComponent.getMainActionButton()).thenReturn(mockedButton);
 
@@ -112,6 +119,9 @@ public class ConversionIntegrityIT {
                 .secondaryApplicationStatusLabel(mockedSecondaryApplicationStatusLabel)
                 .conversionFileJList(mockedConversionFileJList)
                 .build();
+        when(mockedGuiOrchestrator.getSourceDirectory()).thenReturn(tempInputFolder);
+        when(mockedGuiOrchestrator.getDestinationDirectory()).thenReturn(tempOutputFolder);
+        when(conversionDTO.convertComponent().getSelectedItem()).thenReturn(new FormatExtensionDTO("ico", "ico"));
         this.controller = new ConversionController(conversionDTO);
     }
 
@@ -139,10 +149,16 @@ public class ConversionIntegrityIT {
     @Test
     void shouldMatchInternalAndFileSystemSuccessCounts() throws InterruptedException, ExecutionException, IOException {
 
-        controller.startConversion(conversionItemDTOList);
-        List<ConversionItemDTO> result = controller.getWorker().get();
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        controller.startConversion(countDownLatch);
+        countDownLatch.await();
 
-        long actualFilesOnFS;        Path tmpDirectory = Path.of(tempOutputFolder.toString(), FINAL_OUTPUT_DIRECTORY_NAME);
+        long actualFilesOnFS;
+        Path tmpDirectory = Path.of(tempOutputFolder.toString(), FINAL_OUTPUT_DIRECTORY_NAME);
+
+        List<Path> filess = Files.list(tmpDirectory).toList();
+        log.debug("files: " + filess);
+        log.debug("tmpDirectory: " + mockedGuiOrchestrator.getDestinationDirectory());
 
         try (Stream<Path> files = Files.list(tmpDirectory)) {
             actualFilesOnFS = files.filter(Files::isRegularFile).count();

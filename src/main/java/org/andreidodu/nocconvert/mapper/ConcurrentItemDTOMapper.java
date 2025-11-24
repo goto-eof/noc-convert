@@ -2,19 +2,20 @@ package org.andreidodu.nocconvert.mapper;
 
 import org.andreidodu.nocconvert.dto.ConversionItemDTO;
 import org.andreidodu.nocconvert.dto.ConversionStatus;
-import org.andreidodu.nocconvert.helper.FileUtil;
+import org.andreidodu.nocconvert.dto.IntWrapper;
+import org.andreidodu.nocconvert.util.FileUtil;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ConcurrentItemDTOMapper {
-    public static List<ConversionItemDTO> convertPathListToDTOList(Path destPath, String targetFormat, List<Path> paths) {
-        int index = 0;
+
+    public static List<ConversionItemDTO> convertPathListToDTOList(Path destPath, String targetFormat, List<Path> paths, IntWrapper intWrapper) {
         List<ConversionItemDTO> list = new ArrayList<>();
         for (Path path : paths) {
             ConversionItemDTO item = ConversionItemDTO.builder()
-                    .index(index++)
+                    .index(intWrapper.incrementAndGetValue())
                     .targetFormat(targetFormat)
                     .targetExtension(targetFormat)
                     .sourceFile(path)
@@ -27,8 +28,10 @@ public class ConcurrentItemDTOMapper {
                     .build();
             list.add(item);
         }
+        paths.clear();
         return list;
     }
+
     private static String prepareFileName(Path path) {
         String filename = path.getFileName().toString();
         int maxLength = 50;

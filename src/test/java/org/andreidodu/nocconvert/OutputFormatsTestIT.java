@@ -5,8 +5,8 @@ import org.andreidodu.nocconvert.gui.GUIOrchestrator;
 import org.andreidodu.nocconvert.gui.components.SplitButtonComponent;
 import org.andreidodu.nocconvert.gui.controller.ConversionController;
 import org.andreidodu.nocconvert.gui.dto.ConversionDTO;
-import org.andreidodu.nocconvert.helper.TestHelper;
-import org.andreidodu.nocconvert.mapper.ConcurrentItemDTOMapper;
+import org.andreidodu.nocconvert.gui.dto.FormatExtensionDTO;
+import org.andreidodu.nocconvert.util.TestHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,11 +23,11 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.stream.Stream;
 
 import static org.andreidodu.nocconvert.constants.ApplicationConfig.FINAL_OUTPUT_DIRECTORY_NAME;
-import static org.andreidodu.nocconvert.helper.TestHelper.prepareInputFiles;
+import static org.andreidodu.nocconvert.util.TestHelper.prepareInputFiles;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -81,18 +81,21 @@ public class OutputFormatsTestIT {
     }
 
     @ParameterizedTest
-    @MethodSource("org.andreidodu.nocconvert.helper.TestHelper#getAllAvailableWriteFormats")
-    void shouldTestAllImageFormats(String targetFileFormat) throws ExecutionException, InterruptedException, IOException {
+    @MethodSource("org.andreidodu.nocconvert.util.TestHelper#getAllAvailableWriteFormats")
+    void shouldTestAllImageFormats(String targetFileFormat) throws InterruptedException, IOException {
 
-        Path tmpDirectory = temporaryOutputFolder;
-        ConversionController conversionController = prepareConversionController();
+        ConversionDTO conversionDTO = buildConversionDTO(targetFileFormat);
+        ConversionController conversionController = new ConversionController(conversionDTO);
 
-        List<ConversionItemDTO> conversionItemDTOList = ConcurrentItemDTOMapper.convertPathListToDTOList(tmpDirectory, targetFileFormat, sourceFileList);
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        conversionController.startConversion(countDownLatch);
+        countDownLatch.await();
 
-        conversionController.startConversion(conversionItemDTOList);
-        conversionController.getWorker().get();
+        List<Path> filess = Files.list(conversionDTO.guiOrchestrator().getDestinationDirectory()).toList();
+        log.debug("files: " + filess);
+        log.debug("tmpDirectory: " + conversionDTO.guiOrchestrator().getDestinationDirectory());
 
-        long successFilesFomFileSystem = countFilesInTmpDirectory(tmpDirectory);
+        long successFilesFomFileSystem = countFilesInTmpDirectory(conversionDTO.guiOrchestrator().getDestinationDirectory());
         long successFilesFromController = conversionController.getInternalSuccessCount();
 
         assertEquals(successFilesFromController, successFilesFomFileSystem, "The number of File System files does not match with the controller's one");
@@ -106,7 +109,7 @@ public class OutputFormatsTestIT {
         }
     }
 
-    private ConversionController prepareConversionController() {
+    private ConversionDTO buildConversionDTO(String targetFileFormat) {
         ConversionDTO conversionDTO = ConversionDTO.builder()
                 .guiOrchestrator(guiOrchestrator)
                 .convertComponent(mockedSplitButtonComponent)
@@ -114,7 +117,9 @@ public class OutputFormatsTestIT {
                 .secondaryApplicationStatusLabel(mockedSecondaryApplicationStatusLabel)
                 .conversionFileJList(mockedConversionFileJList)
                 .build();
-
-        return new ConversionController(conversionDTO);
+        when(conversionDTO.convertComponent().getSelectedItem()).thenReturn(new FormatExtensionDTO(targetFileFormat, targetFileFormat));
+        when(conversionDTO.guiOrchestrator().getSourceDirectory()).thenReturn(temporaryInputFolder);
+        when(conversionDTO.guiOrchestrator().getDestinationDirectory()).thenReturn(temporaryOutputFolder);
+        return conversionDTO;
     }
 }
