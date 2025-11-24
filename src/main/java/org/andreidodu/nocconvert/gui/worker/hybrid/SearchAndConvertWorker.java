@@ -227,6 +227,8 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
                 DEFCONLevel.set(DEFCON.LEVEL_3);
             } else if (newRaUsagePercentage < DEFCON.LEVEL_1.getCriticalPoint()) {
                 DEFCONLevel.set(DEFCON.LEVEL_2);
+            } else {
+                DEFCONLevel.set(DEFCON.LEVEL_1);
             }
         }
     }
@@ -271,9 +273,6 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
         if (currentRamUsagePercentage < DEFCON.LEVEL_3.getCriticalPoint() && adaptiveBucketSize < MAX_BUCKET_SIZE) {
             adaptiveBucketSize = adaptiveBucketSize * MINIMUM_BUCKET_SIZE;
             log.warn("\n\nbucketSize increased to {}\n\n", adaptiveBucketSize);
-            if (defcon3SecondsToWait.get() - 5 >= 0) {
-                defcon3SecondsToWait.set(defcon3SecondsToWait.get() - 5);
-            }
         } else if (currentRamUsagePercentage > DEFCON.LEVEL_3.getCriticalPoint() && adaptiveBucketSize > MINIMUM_BUCKET_SIZE) {
             int newValue = adaptiveBucketSize / MINIMUM_BUCKET_SIZE;
             adaptiveBucketSize = Math.max(newValue, MINIMUM_BUCKET_SIZE);
@@ -292,6 +291,10 @@ public class SearchAndConvertWorker extends SwingWorker<Void, Integer> {
             if (adaptiveBucketSize == MINIMUM_BUCKET_SIZE && defcon3SecondsToWait.get() >= DEFCON_3_MAX_SECONDS_TO_WAIT && currentPerc >= DEFCON.LEVEL_2.getCriticalPoint()) {
                 defcon3SecondsToWait.set(DEFCON_3_MAX_SECONDS_TO_WAIT);
                 DEFCONLevel.set(DEFCON.LEVEL_2);
+            }
+        }else {
+            if (defcon3SecondsToWait.get() - 5 >= 0) {
+                defcon3SecondsToWait.set(defcon3SecondsToWait.get() - 5);
             }
         }
     }

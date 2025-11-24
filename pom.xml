@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.andreidodu</groupId>
     <artifactId>noc-convert</artifactId>
-    <version>3.0.4</version>
+    <version>3.0.5</version>
     <name>Archetype - noc-convert</name>
     <url>http://maven.apache.org</url>
 
